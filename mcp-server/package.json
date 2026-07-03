@@ -1,0 +1,21 @@
+{
+  "name": "hspace-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for HSpace — 在 AI 对话里直接把 HTML/Markdown 私密发布成链接+密码",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "hspace-mcp": "dist/index.js" },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.6.0"
+  }
+}

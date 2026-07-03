@@ -16,6 +16,7 @@
 
 - ✅ VS Code / Cursor 插件:一键发布 `.html` / `.md`,自动生成 4 位密码,链接+密码复制即走
 - ✅ 文档合集:右键文件夹/多选文件 → 一批 md/html 打包成一个链接+密码+目录页,篇间导航
+- ✅ MCP server:在 Claude / Cursor 对话里直接发布(单篇 + 合集),内容诞生处即分享处
 - ✅ 密码网关:边缘验证 + 签名 Cookie(24h 免重输),防暴力破解(10 次锁 15 分钟)
 - ✅ 页面管理:最近发布面板(打开 / 复制 / 改密码 / 删除),匿名也可管理(editToken)
 - ✅ 私密性约束:匿名页面不可移除密码、不可替换内容、最长 7 天过期、访问量封顶
@@ -32,6 +33,8 @@ hspace/
 │   ├── schema.sql      D1 建表
 │   └── wrangler.toml   R2 / D1 / KV 绑定、域名与限制阈值
 ├── vscode-extension/   VS Code 插件(命令 / 最近发布视图 / 配置)
+├── mcp-server/         MCP server(在 AI 对话里直接发布,单篇 + 合集)
+├── docs/               设计文档
 ├── assets/             品牌资源(appicon / favicon / lockup / OG 卡)
 └── .github/workflows/  CI(后端部署 / 插件发布)
 ```
@@ -42,7 +45,7 @@ hspace/
 
 1. ~~**Markdown 分享 + 阅读模板**~~ ✅ 已上线:md 原文存储、边缘渲染、亮暗双主题阅读页
 2. ~~**文档合集**~~ ✅ v0.2.0 上线:一批 md/html 打包成一个链接+密码+目录页,深链保留、篇间导航([设计文档](docs/design-collections.md))
-3. **MCP server** —— 在 Claude / Cursor 对话里直接 `publish`(按 `files[]` 设计,兼容合集)
+3. ~~**MCP server**~~ ✅ 已上线:`publish` / `publish_collection` 两个工具,单篇与合集通用([mcp-server/](mcp-server/))
 4. **密码页精装修** —— 接收方唯一看到的品牌触点,值得体面
 5. **访问回执** —— "对方昨晚打开了 3 次":先做简单计数展示,后续按人归因
 6. **每人一链 / 多口令 + 撤回** —— 私域的完全体:知道谁看了、踢人不换全员密码(付费锚点)
