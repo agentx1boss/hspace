@@ -68,7 +68,10 @@ export default {
     const host = url.hostname;
 
     // 落地页:内容域的 hspace 子域(通配路由已覆盖;www/apex 已被其他服务占用)
-    if (host === "hspace." + env.USERCONTENT_DOMAIN) return landingResp();
+    if (host === "hspace." + env.USERCONTENT_DOMAIN) {
+      const asset = await serveBrandAsset(url.pathname, env);
+      return asset ?? landingResp();
+    }
 
     // ── 路由：用户内容子域 → 提供页面 ──
     if (host.endsWith("." + env.USERCONTENT_DOMAIN)) {
@@ -133,6 +136,8 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   if (path === "/health") return json({ ok: true, service: "hspace" });
   if (path === "/") return landingResp();
+  const asset = await serveBrandAsset(path, env);
+  if (asset) return asset;
 
   // AI 工具就绪:OpenAPI 规范(GPT Actions / agent 框架可直接消费),servers 按当前 origin 填充
   if (path === "/openapi.json" && request.method === "GET") {
@@ -607,6 +612,24 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
 
 function htmlResp(body: string, status: number): Response {
   return new Response(body, { status, headers: securityHeaders() });
+}
+
+/** 品牌静态资源(og 卡片 / favicon),存于 R2 assets/ 前缀,长缓存 */
+async function serveBrandAsset(path: string, env: Env): Promise<Response | null> {
+  const map: Record<string, string> = {
+    "/og-card.png": "assets/og-card.png",
+    "/favicon.ico": "assets/favicon.ico",
+  };
+  const key = map[path];
+  if (!key) return null;
+  const obj = await env.BUCKET.get(key);
+  if (!obj) return null;
+  return new Response(obj.body, {
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=86400",
+    },
+  });
 }
 
 /** 落地页响应:允许被搜索引擎索引,不加 noindex */

@@ -1,5 +1,8 @@
 // HSpace 落地页 —— 自包含单页,内联样式与 SVG,无外部请求。可被搜索引擎索引。
 
+import { FAVICON_LINK } from "./html";
+
+const SITE = "https://hspace.zhanjian.space";
 const GITHUB = "https://github.com/agentx1boss/hspace";
 const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=agentx1boss.hspace";
 const OPENVSX = "https://open-vsx.org/extension/agentx1boss/hspace";
@@ -23,10 +26,19 @@ export function landingPage(): string {
 <html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HSpace — 私密分享 AI 生成的内容</title>
+${FAVICON_LINK}
+<link rel="canonical" href="${SITE}/">
 <meta name="description" content="一键把 AI 生成的 HTML / Markdown 发布成「链接 + 密码」,只交给该看的人。不是托管,是私域分发。">
 <meta property="og:title" content="HSpace — 私密分享 AI 生成的内容">
 <meta property="og:description" content="一键把 AI 生成的 HTML / Markdown 发布成链接 + 密码,只给该看的人。">
 <meta property="og:type" content="website">
+<meta property="og:url" content="${SITE}/">
+<meta property="og:image" content="${SITE}/og-card.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HSpace — 私密分享 AI 生成的内容">
+<meta name="twitter:image" content="${SITE}/og-card.png">
 <style>
   :root{--bg:#faf9f7;--fg:#1d1d1f;--muted:#6a6a70;--accent:#E2603C;--card:#fff;
         --border:#e7e4df;--soft:#f2f0ec;--ink:#1A1D24;--ring:rgba(226,96,60,.14)}
@@ -46,7 +58,7 @@ export function landingPage(): string {
   .btn-s:hover{border-color:var(--accent)}
 
   header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(1.4) blur(10px);
-         background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid var(--border)}
+         background:var(--bg);background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid var(--border)}
   header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
   .logo{display:flex;align-items:center;gap:9px;font-weight:750;font-size:17px;letter-spacing:-.01em}
   .logo .tile{width:34px;height:34px;border-radius:9px;background:var(--ink);display:flex;align-items:center;justify-content:center}
@@ -117,7 +129,7 @@ export function landingPage(): string {
   .shot .cap{text-align:center;font-size:13.5px;color:var(--muted);margin-top:12px}
   /* TOC mock */
   .toc{padding:26px 24px 22px}
-  .toc h4{margin:0 0 4px;font-size:19px;letter-spacing:-.01em}
+  .toc .h{margin:0 0 4px;font-size:19px;font-weight:700;letter-spacing:-.01em}
   .toc .m{color:var(--muted);font-size:12.5px;margin-bottom:14px}
   .toc .r{display:flex;align-items:center;gap:13px;padding:11px 4px;border-top:1px solid var(--border);font-size:14.5px}
   .toc .r .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
@@ -129,12 +141,21 @@ export function landingPage(): string {
   .read .side .i{display:flex;gap:8px;padding:7px 8px;border-radius:6px;font-size:12.5px;color:var(--muted);border-left:2px solid transparent}
   .read .side .i.on{background:var(--card);color:var(--fg);border-left-color:var(--accent);font-weight:600}
   .read .main{flex:1;padding:20px 20px}
-  .read .main h5{margin:0 0 10px;font-size:16px}
+  .read .main .h{margin:0 0 10px;font-size:16px;font-weight:700}
   .read .main .p{height:8px;border-radius:4px;background:var(--soft);margin:8px 0}
   .read .main .tb{margin-top:14px;border:1px solid var(--border);border-radius:7px;overflow:hidden}
   .read .main .tb .tr{display:flex;font-size:11px}
   .read .main .tb .tr>div{flex:1;padding:6px 9px;border-right:1px solid var(--border)}
   .read .main .tb .th{background:var(--soft);font-weight:600}
+  /* FAQ */
+  .faqs{max-width:44rem;margin:0 auto}
+  .faqs details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin:10px 0;padding:0 18px}
+  .faqs summary{cursor:pointer;padding:15px 0;font-weight:600;font-size:15.5px;list-style:none;position:relative}
+  .faqs summary::after{content:"+";position:absolute;right:2px;color:var(--accent);font-weight:400;font-size:19px}
+  .faqs details[open] summary::after{content:"−"}
+  .faqs summary::-webkit-details-marker{display:none}
+  .faqs p{margin:0 0 15px;color:var(--muted);font-size:14.5px}
+  .faqs a{color:var(--accent)}
   @media(max-width:720px){.grid3,.steps,.feats,.shots{grid-template-columns:1fr}.hero{padding:52px 0 44px}}
 </style></head>
 <body>
@@ -143,6 +164,7 @@ export function landingPage(): string {
     <nav class="nav">
       <a class="ghost" href="#how">如何使用</a>
       <a class="ghost" href="#features">功能</a>
+      <a class="ghost" href="#faq">FAQ</a>
       <a class="ghost" href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装插件</a>
     </nav>
@@ -160,7 +182,7 @@ export function landingPage(): string {
     <div class="mock">
       <div class="row">
         <div class="lk">🔒</div>
-        <div><div class="url">a7k2m9.zhanjian.space</div><div class="sub">AI 生成的方案 · 7 天后自动失效</div></div>
+        <div><div class="url">a7k2m9x.zhanjian.space</div><div class="sub">AI 生成的方案 · 7 天后自动失效</div></div>
       </div>
       <div class="pw"><span class="k">访问密码</span><span class="v">4831</span></div>
       <div class="copied"><span class="d"></span>链接和密码已复制,粘贴发走即可</div>
@@ -175,7 +197,7 @@ export function landingPage(): string {
         <div class="shot">
           <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="addr">🔒 q3plan.zhanjian.space</div></div>
           <div class="toc">
-            <h4>Q3 增长方案</h4>
+            <div class="h">Q3 增长方案</div>
             <div class="m">5 篇 · 2026-07 分享</div>
             <div class="r"><span class="n">1</span><span>总览与目标</span><span class="a">→</span></div>
             <div class="r"><span class="n">2</span><span>数据分析</span><span class="a">→</span></div>
@@ -198,7 +220,7 @@ export function landingPage(): string {
               <div class="i"><span>4</span><span>预算与排期</span></div>
             </div>
             <div class="main">
-              <h5>数据分析</h5>
+              <div class="h">数据分析</div>
               <div class="p" style="width:96%"></div>
               <div class="p" style="width:88%"></div>
               <div class="p" style="width:70%"></div>
@@ -240,14 +262,25 @@ export function landingPage(): string {
     <div class="feats">
       ${feature("📝", "Markdown 成刊", "发布 .md 自动渲染成排版精良的阅读页:标题、表格、代码块,亮暗双主题。")}
       ${feature("📚", "文档合集", "一批 md/html 打包成一个链接、一个密码、一个目录页,篇间自由导航。")}
+      ${feature("👥", "每人一链", "给每个接收者一个专属密码:谁看了、看了几次一清二楚,踢掉一个人不用换所有人的密码。")}
       ${feature("👁", "访问回执", "在面板里看到每个链接被打开了多少次——对方到底看没看,一目了然。")}
       ${feature("🤖", "AI 可直接调用", "MCP server 让 Claude / Cursor 在对话里直接发布;OpenAPI 规范接入 GPT Actions 等。")}
       ${feature("🛡", "边缘密码网关", "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。")}
-      ${feature("⚡", "无服务器架构", "跑在 Cloudflare(R2 + D1 + KV),全球边缘,开源可自建。")}
     </div>
   </div></section>
 
-  <section class="cta-band"><div class="wrap">
+  <section id="faq"><div class="wrap">
+    <h2>你可能想问</h2>
+    <div class="faqs">
+      <details><summary>内容会被搜索引擎收录吗?</summary><p>不会。所有分享页面都带 noindex,且必须输入密码才能看到内容——链接被转发也没关系,没有密码就是一堵墙。</p></details>
+      <details><summary>内容存在哪里?保留多久?</summary><p>内容加密传输后存储在 Cloudflare 全球边缘(R2)。匿名分享最长 7 天自动失效;你也可以随时手动删除,链接立即失效。</p></details>
+      <details><summary>发错了 / 不想给某人看了怎么办?</summary><p>随时改密码(旧密码立即失效)或直接删除。用「每人一链」时,可以只撤销某一个人的密码,其他人不受影响。</p></details>
+      <details><summary>免费吗?有什么限制?</summary><p>匿名免费即用:单文件 ≤ 1MB、最长 7 天有效、每天 50 次。禁止钓鱼与恶意内容,违规会被下架。</p></details>
+      <details><summary>可以自己部署吗?</summary><p>可以。前后端完全开源(MIT),后端是一个 Cloudflare Worker,照 <a href="${GITHUB}" target="_blank" rel="noopener">README</a> 十分钟即可拥有自己的实例,插件与 MCP 均可指向自建地址。</p></details>
+    </div>
+  </div></section>
+
+  <section class="cta-band band"><div class="wrap">
     <h2>把下一份 AI 产出,私密地发出去</h2>
     <div class="cta">
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装 VS Code 插件</a>

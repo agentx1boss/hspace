@@ -1,5 +1,8 @@
 // 内嵌页面模板：密码页 / Markdown 阅读页 / 合集目录页 / 锁定页 / 404
 
+// 站点 favicon(32px PNG 内联,所有模板共用)
+export const FAVICON_LINK = '<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAByklEQVR4AexWvU4CQRCevcJYWKiFBQIac4mNUFCZQOIRa30BY0KIlS+hFL6CFYkk8gRqayCRwooCCpuLUf5ipQ2Vhjt3Vvay7t0eF+MFQm7Dx87Mfjvz5QMuaDDlFQmYTQficd1YT+i1WEK3Y0n93O9r4vACcL36eDpgEajZAAbgsuEMh2AoA8U5PDykXBSPYVC4BGBT+fKvIeIhHSimGFsa/AiHYMslINi1/2NFAiIH5tuB10LuoFPItShsihbm8u/H14HMygJwdAs5QwY/E/f9tcU9xitmjwjADR2YosBXCvN+MbuNCYdSwMnWElxmVh3YwJ6O+IR0IJ7z+GJn2WBci1T5EHG3LO1QzJUCmh+fIi+02FfA7v0bnDbfGah9eRn8TNzLz8MS4xFy7KV6NPq6E+tKAZyETiASlUZdBtZllF+GwHhXD1X6UaDd7XGvNuab149P45xtEwUw1h/fNiqN22SlkaYgFGnM5VahCpCHeeWRgMiB2XNAs6AO8iJQkkuY0weOizvomL7/ovGeCJcDvZ5ZB2EgDlE17XfNPOciT7MhLzYPErsE4CUcOOiaBMGGYFEBzkUeE6/gqcqeAlTkMOrzL2CSa98AAAD//6djUEEAAAAGSURBVAMASMzLQVmiCxsAAAAASUVORK5CYII=">';
+
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -28,7 +31,7 @@ const BRAND_MARK = `<svg viewBox="0 0 64 64" width="28" height="28" aria-hidden=
  */
 export function passwordPage(error = false): string {
   return `<!doctype html>
-<html lang="zh"><head><meta charset="utf-8">
+<html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>输入密码 · HSpace</title>
@@ -172,7 +175,7 @@ export function readingPage(title: string, articleHtml: string, nav?: Collection
     ? `<div class="crumb"><a href="/">← 目录</a><span class="sep">·</span>${esc(nav.collectionTitle)}</div>`
     : "";
   return `<!doctype html>
-<html lang="zh"><head><meta charset="utf-8">
+<html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(pageTitle)}</title>
 <style>${BASE_CSS}</style></head>
@@ -191,7 +194,7 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): 
     `<a class="row" href="/${d.index}"><span class="n">${d.index}</span><span class="t">${esc(d.title)}</span><span class="arw">→</span></a>`
   ).join("");
   return `<!doctype html>
-<html lang="zh"><head><meta charset="utf-8">
+<html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(collectionTitle)}</title>
 <style>${BASE_CSS}
