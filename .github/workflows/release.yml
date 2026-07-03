@@ -1,0 +1,61 @@
+# 打 tag(v*)自动发布 VS Code 插件到两个市场:
+#   - VS Code Marketplace(secret: VSCODE_KEY,Azure DevOps PAT)
+#   - Open VSX(secret: OPENVSX_KEY)
+# 并把 .vsix 附到 GitHub Release 上。
+#
+# 用法:package.json 升版本后 git tag v<同样的版本号> && git push --tags
+
+name: Release Extension
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # 创建 GitHub Release 用
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode-extension
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: vscode-extension/package-lock.json
+
+      - name: 校验 tag 与 package.json 版本一致
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag v$TAG 与 package.json 版本 $PKG 不一致"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run compile
+
+      - name: 打包 vsix
+        run: npx @vscode/vsce package
+
+      - name: 发布到 VS Code Marketplace
+        run: npx @vscode/vsce publish -p "$VSCE_PAT"
+        env:
+          VSCE_PAT: ${{ secrets.VSCODE_KEY }}
+
+      - name: 发布到 Open VSX
+        run: npx ovsx publish *.vsix -p "$OVSX_TOKEN"
+        env:
+          OVSX_TOKEN: ${{ secrets.OPENVSX_KEY }}
+
+      - name: 附加 vsix 到 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: vscode-extension/*.vsix
+          generate_release_notes: true
