@@ -48,7 +48,7 @@ Publish any HTML file as a shareable public link in one click, with optional pas
 
 ## 自建后端
 
-后端是一个 Cloudflare Worker(R2 + D1 + KV),完全开源。部署自己的实例后,把 `htmlshare.apiBaseUrl` 指过去即可。详见 [GitHub 仓库](https://github.com/agentx1boss/htmlspace)。
+后端是一个 Cloudflare Worker(R2 + D1 + KV),完全开源。部署自己的实例后,把 `htmlshare.apiBaseUrl` 指过去即可。详见 [GitHub 仓库](https://github.com/agentx1boss/hspace)。
 
 ## 隐私说明
 
