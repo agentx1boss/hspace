@@ -1,29 +1,19 @@
 <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4338ca"/>
-      <stop offset="1" stop-color="#9333ea"/>
-    </linearGradient>
-  </defs>
-  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
-  <!-- 星星点缀 -->
-  <circle cx="32" cy="26" r="2.2" fill="#fff" opacity=".6"/>
-  <circle cx="100" cy="30" r="1.6" fill="#fff" opacity=".45"/>
-  <circle cx="96" cy="104" r="2" fill="#fff" opacity=".4"/>
-  <circle cx="24" cy="86" r="1.5" fill="#fff" opacity=".5"/>
-  <!-- 轨道后半段(H 后面,细且淡) -->
+  <rect width="128" height="128" rx="28" fill="#0f172a"/>
+  <circle cx="32" cy="26" r="2" fill="#fff" opacity=".5"/>
+  <circle cx="100" cy="30" r="1.5" fill="#fff" opacity=".35"/>
+  <circle cx="96" cy="104" r="1.8" fill="#fff" opacity=".3"/>
+  <circle cx="24" cy="86" r="1.4" fill="#fff" opacity=".4"/>
   <g transform="rotate(-18 64 64)">
-    <path d="M 12 64 A 52 19 0 0 1 116 64" fill="none" stroke="#c4b5fd" stroke-width="4.5" stroke-linecap="round" opacity=".45"/>
+    <path d="M 12 64 A 52 19 0 0 1 116 64" fill="none" stroke="#475569" stroke-width="4.5" stroke-linecap="round"/>
   </g>
-  <!-- H 字标:更粗更稳 -->
-  <g fill="#ffffff">
+  <g fill="#f8fafc">
     <rect x="34" y="32" width="15" height="64" rx="6"/>
     <rect x="79" y="32" width="15" height="64" rx="6"/>
     <rect x="44" y="57" width="40" height="14" rx="6"/>
   </g>
-  <!-- 轨道前半段(H 前面,亮) + 卫星 -->
   <g transform="rotate(-18 64 64)">
-    <path d="M 12 64 A 52 19 0 0 0 116 64" fill="none" stroke="#f3e8ff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 12 64 A 52 19 0 0 0 116 64" fill="none" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
     <circle cx="27" cy="76.5" r="6.5" fill="#fbbf24"/>
   </g>
 </svg>
