@@ -76,6 +76,22 @@ export class ApiClient {
     });
     await this.parse(res);
   }
+
+  async stats(slug: string, editToken?: string): Promise<PageStats> {
+    const res = await fetch(`${this.baseUrl}/pages/${slug}/stats`, {
+      headers: this.headers(editToken ? { "X-Edit-Token": editToken } : {}),
+    });
+    return this.parse(res);
+  }
+}
+
+export interface PageStats {
+  slug: string;
+  hits: number;
+  createdAt: number;
+  expiresAt: string | null;
+  passwordProtected: boolean;
+  isCollection: boolean;
 }
 
 export function errorMessage(e: unknown): string {

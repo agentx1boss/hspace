@@ -103,6 +103,39 @@ export function openapiSpec(origin: string): Record<string, unknown> {
           },
         },
       },
+      "/pages/{slug}/stats": {
+        get: {
+          operationId: "getPageStats",
+          summary: "查看访问量(访问回执)",
+          description: "返回该页面/合集的累计访问次数等。鉴权用 Bearer(登录)或 `X-Edit-Token`。",
+          parameters: [
+            { name: "slug", in: "path", required: true, schema: { type: "string" } },
+            { $ref: "#/components/parameters/EditToken" },
+          ],
+          responses: {
+            "200": {
+              description: "访问统计",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      slug: { type: "string" },
+                      hits: { type: "integer", description: "累计访问次数(合集为目录+各篇总和)" },
+                      createdAt: { type: "integer" },
+                      expiresAt: { type: "string", nullable: true },
+                      passwordProtected: { type: "boolean" },
+                      isCollection: { type: "boolean" },
+                    },
+                  },
+                },
+              },
+            },
+            "403": { description: "无权限", content: errContent() },
+            "404": { description: "页面不存在", content: errContent() },
+          },
+        },
+      },
       "/pages": {
         get: {
           operationId: "listPages",

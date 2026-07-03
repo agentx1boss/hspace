@@ -2,7 +2,7 @@
   "name": "hspace",
   "displayName": "HSpace",
   "description": "私密分享 AI 生成的内容：一键把 HTML 发布成链接+密码，只给该看的人。Private sharing for AI-generated content.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",

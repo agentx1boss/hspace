@@ -107,6 +107,9 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   if (path === "/publish" && request.method === "POST") return publish(request, env);
 
+  const statsMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/stats$/);
+  if (statsMatch && request.method === "GET") return statsPage(statsMatch[1], request, env);
+
   const pageMatch = path.match(/^\/pages\/([A-Za-z0-9]+)$/);
   if (pageMatch) {
     const slug = pageMatch[1];
@@ -361,6 +364,21 @@ async function listPages(request: Request, env: Env): Promise<Response> {
      FROM pages WHERE owner_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 200`
   ).bind(ownerId).all();
   return json({ pages: results });
+}
+
+// ---- GET /pages/:slug/stats ----（访问回执：凭 owner 或 editToken 查访问量）
+async function statsPage(slug: string, request: Request, env: Env): Promise<Response> {
+  const page = await getPage(env, slug);
+  if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
+  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  return json({
+    slug,
+    hits: page.hits,
+    createdAt: page.created_at,
+    expiresAt: page.expires_at ? new Date(page.expires_at * 1000).toISOString() : null,
+    passwordProtected: !!page.password_hash,
+    isCollection: page.object_key.endsWith("/index.json"),
+  });
 }
 
 /** 校验修改权限并区分角色：owner（登录且匹配）/ anon（editToken 匹配）/ none */

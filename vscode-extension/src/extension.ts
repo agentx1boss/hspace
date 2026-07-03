@@ -13,6 +13,8 @@ interface Record {
   passwordProtected: boolean;
   kind?: "single" | "collection";
   docs?: { index: number; title: string }[]; // 合集篇目
+  hits?: number;         // 访问回执:累计访问量
+  statsAt?: string;      // 上次拉取访问量的时间
 }
 
 // ─────────────────────────── activate ───────────────────────────
@@ -32,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
   reg("hspace.copyLink", (node?: RecentNode) => node && copyLink(node.record.url));
   reg("hspace.openInBrowser", (node?: RecentNode) => node && vscode.env.openExternal(vscode.Uri.parse(node.record.url)));
   reg("hspace.delete", (node?: RecentNode) => node && deletePage(context, provider, node.record));
-  reg("hspace.refresh", () => provider.refresh());
+  reg("hspace.refresh", () => refreshStats(context, provider));
 }
 
 export function deactivate() {}
@@ -329,6 +331,35 @@ async function copyLink(url: string) {
   vscode.window.showInformationMessage("链接已复制。");
 }
 
+// ---- 访问回执:刷新时拉取各页面访问量 ----
+async function refreshStats(context: vscode.ExtensionContext, provider: RecentProvider) {
+  const records = loadRecords(context);
+  if (records.length === 0) { provider.refresh(); return; }
+
+  await vscode.window.withProgress(
+    { location: { viewId: "hspace.recent" } },
+    async () => {
+      const client = await getClient(context);
+      // 分批并发,避免一次打太多请求
+      const batchSize = 8;
+      for (let i = 0; i < records.length; i += batchSize) {
+        const batch = records.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (rec) => {
+          try {
+            const s = await client.stats(rec.slug, rec.editToken || undefined);
+            rec.hits = s.hits;
+            rec.statsAt = new Date().toISOString();
+          } catch {
+            // 页面可能已过期/删除;保留原值,不打断整体刷新
+          }
+        }));
+      }
+      await context.globalState.update(STATE_KEY, records);
+      provider.refresh();
+    }
+  );
+}
+
 // ─────────────────────────── 工具 ───────────────────────────
 
 /** 随机 4 位数字密码 */
@@ -373,8 +404,13 @@ class RecentNode extends vscode.TreeItem {
       record.filename,
       isColl ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
     );
-    this.description = isColl ? `合集 · ${record.docs?.length ?? 0} 篇` : new URL(record.url).hostname;
-    this.tooltip = `${record.url}\n发布于 ${new Date(record.createdAt).toLocaleString()}`;
+    const views = record.hits === undefined ? "" : `👁 ${record.hits}`;
+    const base = isColl ? `合集 · ${record.docs?.length ?? 0} 篇` : new URL(record.url).hostname;
+    this.description = views ? `${base} · ${views}` : base;
+    const viewLine = record.hits === undefined
+      ? "访问量:点刷新查看"
+      : `访问量:${record.hits}${isColl ? "(目录+各篇)" : ""}${record.statsAt ? `  ·  更新于 ${new Date(record.statsAt).toLocaleString()}` : ""}`;
+    this.tooltip = `${record.url}\n发布于 ${new Date(record.createdAt).toLocaleString()}\n${viewLine}`;
     this.iconPath = new vscode.ThemeIcon(isColl ? "book" : record.passwordProtected ? "lock" : "globe");
     this.contextValue = "hspacePage";
     // 合集节点展开看篇目,不整体跳转;单页点击直接打开
