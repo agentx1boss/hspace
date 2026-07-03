@@ -11,7 +11,7 @@
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],
   "keywords": ["html", "share", "publish", "host", "ai"],
-  "galleryBanner": { "color": "#0f172a", "theme": "dark" },
+  "galleryBanner": { "color": "#1A1D24", "theme": "dark" },
   "activationEvents": ["onLanguage:html"],
   "main": "./out/extension.js",
   "contributes": {
