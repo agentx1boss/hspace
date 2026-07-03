@@ -6,11 +6,20 @@ export interface PublishResult {
   expiresAt: string | null;
   passwordProtected: boolean;
   editToken: string | null;
+  docs?: { index: number; title: string }[]; // 合集时返回
+}
+
+export interface CollectionFile {
+  name: string;
+  html?: string;
+  markdown?: string; // 每项与 html 二选一
 }
 
 export interface PublishOptions {
   html?: string;
   markdown?: string; // 与 html 二选一：md 由后端渲染成阅读页
+  files?: CollectionFile[]; // 出现即为合集（2..N 项）
+  title?: string; // 合集标题
   filename?: string;
   password?: string;
   expiresIn?: number | null; // 秒；null=永不过期（需登录）
@@ -75,6 +84,9 @@ export function errorMessage(e: unknown): string {
       missing_html: "文件内容为空。",
       missing_content: "文件内容为空。",
       content_type_mismatch: "内容类型与原页面不一致（md 页面只能用 md 更新）。",
+      collection_too_few: "合集至少需要 2 个文件。",
+      too_many_docs: "文件数量超过合集上限。",
+      collection_content_immutable: "合集暂不支持修改内容，请删除后重新发布。",
       too_large: "文件超过大小上限（默认 2MB）。",
       content_blocked: "内容被安全扫描拦截。",
       rate_limited: "发布过于频繁，请稍后再试。",

@@ -16,7 +16,7 @@ import {
   verifyCookie,
 } from "./crypto";
 import { marked } from "marked";
-import { passwordPage, notFoundPage, lockedPage, readingPage } from "./html";
+import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, CollectionNav } from "./html";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -32,6 +32,15 @@ export interface Env {
   ANON_MAX_SIZE_BYTES: string;
   ANON_MAX_HITS: string;
   ANON_DAILY_GLOBAL_BYTES: string;
+  COLLECTION_MAX_SIZE_BYTES: string;
+  ANON_MAX_DOCS: string;
+  MAX_DOCS: string;
+}
+
+/** R2 中合集清单(pages/<slug>/index.json)的结构 */
+interface CollectionIndex {
+  title: string;
+  docs: { name: string; title: string; ext: "md" | "html" }[];
 }
 
 interface PageRow {
@@ -59,11 +68,15 @@ export default {
     // ── 路由：用户内容子域 → 提供页面 ──
     if (host.endsWith("." + env.USERCONTENT_DOMAIN)) {
       const slug = host.slice(0, host.length - env.USERCONTENT_DOMAIN.length - 1);
-      return servePage(slug, request, env, ctx);
+      return servePage(slug, url.pathname, request, env, ctx);
     }
-    // dev 便利：/p/<slug> 也提供页面
+    // dev 便利：/p/<slug>[/<n>] 也提供页面
     if (url.pathname.startsWith("/p/")) {
-      return servePage(url.pathname.slice(3), request, env, ctx);
+      const rest = url.pathname.slice(3);            // "<slug>" 或 "<slug>/2"
+      const slash = rest.indexOf("/");
+      const slug = slash === -1 ? rest : rest.slice(0, slash);
+      const docPath = slash === -1 ? "/" : rest.slice(slash); // "/" 或 "/2"
+      return servePage(slug, docPath, request, env, ctx);
     }
 
     // ── 其余按 API 处理 ──
@@ -136,23 +149,37 @@ async function publish(request: Request, env: Env): Promise<Response> {
     return json({ error: "invalid_json" }, 400);
   }
 
-  // 内容：html 与 markdown 二选一（md 存原文，访问时渲染进阅读模板）
-  const picked = pickContent(body);
-  if (!picked) return json({ error: "missing_content" }, 400);
-  const { content, ext } = picked;
+  // 内容收集与逐篇校验：files[] 为合集,否则 html/markdown 单文件
+  const rawFiles = (body as any)?.files;
+  const isCollection = Array.isArray(rawFiles);
+  const prepared: PreparedDoc[] = [];
 
-  // 体积上限：匿名比登录更小
-  const maxSize = Number(ownerId ? env.MAX_SIZE_BYTES : env.ANON_MAX_SIZE_BYTES);
-  const size = new TextEncoder().encode(content).length;
-  if (size > maxSize) return json({ error: "too_large", maxBytes: maxSize }, 413);
+  if (isCollection) {
+    const maxDocs = Number(ownerId ? env.MAX_DOCS : env.ANON_MAX_DOCS);
+    if (rawFiles.length < 2) return json({ error: "collection_too_few" }, 400);
+    if (rawFiles.length > maxDocs) return json({ error: "too_many_docs", maxDocs }, 400);
+    for (const f of rawFiles) {
+      const p = prepareDoc(f, ownerId, prepared.length + 1);
+      if ("error" in p) return json({ error: p.error, file: p.name }, p.status);
+      prepared.push(p);
+    }
+  } else {
+    const p = prepareDoc(body, ownerId, 1, typeof body.filename === "string" ? body.filename : undefined);
+    if ("error" in p) return json({ error: p.error }, p.status);
+    prepared.push(p);
+  }
 
-  // 内容扫描对 md 同样生效：md 中内嵌的原始 HTML 会原文出现在源码里
-  if (isSuspicious(content)) return json({ error: "content_blocked" }, 422);
-  // 匿名内容从严：命中钓鱼特征直接拒绝
-  if (!ownerId && isPhishy(content)) return json({ error: "content_blocked" }, 422);
+  // 体积上限（合集看总量,单文件看单量;匿名更小）
+  const totalSize = prepared.reduce((a, p) => a + p.size, 0);
+  const maxSize = Number(
+    isCollection
+      ? (ownerId ? env.COLLECTION_MAX_SIZE_BYTES : env.ANON_MAX_SIZE_BYTES)
+      : (ownerId ? env.MAX_SIZE_BYTES : env.ANON_MAX_SIZE_BYTES)
+  );
+  if (totalSize > maxSize) return json({ error: "too_large", maxBytes: maxSize }, 413);
 
   // 全局匿名日配额熔断：兜住 R2/D1 成本
-  if (!ownerId && !(await allowGlobalBudget(size, env))) {
+  if (!ownerId && !(await allowGlobalBudget(totalSize, env))) {
     return json({ error: "service_busy" }, 503);
   }
 
@@ -170,12 +197,34 @@ async function publish(request: Request, env: Env): Promise<Response> {
     passwordSalt = p.salt;
   }
 
-  // 生成唯一 slug 并写 R2（后缀即内容类型，无需改表）
+  // 生成唯一 slug 并写 R2（后缀即内容类型：单文件 pages/<slug>.<ext>；合集 pages/<slug>/…）
   const slug = await uniqueSlug(env);
-  const objectKey = `pages/${slug}.${ext}`;
-  await env.BUCKET.put(objectKey, content, {
-    httpMetadata: { contentType: ext === "md" ? "text/markdown; charset=utf-8" : "text/html; charset=utf-8" },
-  });
+  const ct = (ext: string) => ext === "md" ? "text/markdown; charset=utf-8" : "text/html; charset=utf-8";
+  let objectKey: string;
+  let dbFilename: string | null;
+  let docsResp: { index: number; title: string }[] | undefined;
+
+  if (isCollection) {
+    const title = typeof body.title === "string" && body.title.trim()
+      ? body.title.slice(0, 200) : (prepared[0].title || "合集");
+    const index: CollectionIndex = {
+      title,
+      docs: prepared.map((p) => ({ name: p.name, title: p.title, ext: p.ext })),
+    };
+    await Promise.all(prepared.map((p, i) =>
+      env.BUCKET.put(`pages/${slug}/${i + 1}.${p.ext}`, p.content, { httpMetadata: { contentType: ct(p.ext) } })
+    ));
+    await env.BUCKET.put(`pages/${slug}/index.json`, JSON.stringify(index),
+      { httpMetadata: { contentType: "application/json; charset=utf-8" } });
+    objectKey = `pages/${slug}/index.json`;
+    dbFilename = title;
+    docsResp = prepared.map((p, i) => ({ index: i + 1, title: p.title }));
+  } else {
+    const p = prepared[0];
+    objectKey = `pages/${slug}.${p.ext}`;
+    await env.BUCKET.put(objectKey, p.content, { httpMetadata: { contentType: ct(p.ext) } });
+    dbFilename = typeof body.filename === "string" ? body.filename.slice(0, 200) : null;
+  }
 
   // 匿名编辑凭据
   const editToken = ownerId ? null : randomToken();
@@ -186,9 +235,8 @@ async function publish(request: Request, env: Env): Promise<Response> {
        password_hash, password_salt, created_at, expires_at, size_bytes, hits, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'active')`
   ).bind(
-    slug, ownerId, editTokenHash, objectKey,
-    typeof body.filename === "string" ? body.filename.slice(0, 200) : null,
-    passwordHash, passwordSalt, now(), expiresAt, size
+    slug, ownerId, editTokenHash, objectKey, dbFilename,
+    passwordHash, passwordSalt, now(), expiresAt, totalSize
   ).run();
 
   return json({
@@ -196,8 +244,30 @@ async function publish(request: Request, env: Env): Promise<Response> {
     url: `https://${slug}.${env.USERCONTENT_DOMAIN}`,
     expiresAt: expiresAt ? new Date(expiresAt * 1000).toISOString() : null,
     passwordProtected: !!passwordHash,
+    ...(docsResp ? { docs: docsResp } : {}),
     editToken,
   });
+}
+
+interface PreparedDoc { name: string; content: string; ext: "md" | "html"; title: string; size: number; }
+
+/** 校验并准备单篇内容(体积在上层按单/合集分别判定,这里只做类型/扫描/取标题) */
+function prepareDoc(
+  src: any, ownerId: string | null, ordinal: number, filename?: string
+): PreparedDoc | { error: string; status: number; name?: string } {
+  const picked = pickContent(src);
+  const name = typeof src?.name === "string" ? src.name.slice(0, 200)
+    : (filename ? filename.slice(0, 200) : `${ordinal}`);
+  if (!picked) return { error: "missing_content", status: 400, name };
+  if (isSuspicious(picked.content)) return { error: "content_blocked", status: 422, name };
+  if (!ownerId && isPhishy(picked.content)) return { error: "content_blocked", status: 422, name };
+  return {
+    name,
+    content: picked.content,
+    ext: picked.ext,
+    title: docTitle(picked.content, picked.ext, name),
+    size: new TextEncoder().encode(picked.content).length,
+  };
 }
 
 // ---- PATCH /pages/:slug ----（改密码 / 覆盖内容 / 改过期）
@@ -216,6 +286,8 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
 
   const picked = pickContent(body);
   if (picked) {
+    // 合集 MVP 不可变：增删改篇目并入"内容版本化"里程碑
+    if (page.object_key.endsWith("/index.json")) return json({ error: "collection_content_immutable" }, 400);
     // 匿名不允许覆盖内容：防止先发正常页面过扫描、再整体换成钓鱼页
     if (!isOwner) return json({ error: "content_update_requires_login" }, 403);
     // 类型不可变：md 页面只能用 markdown 更新,html 页面只能用 html 更新
@@ -263,7 +335,13 @@ async function deletePage(slug: string, request: Request, env: Env): Promise<Res
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
   if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
 
-  await env.BUCKET.delete(page.object_key);
+  if (page.object_key.endsWith("/index.json")) {
+    // 合集：按前缀清空整本册子
+    const listed = await env.BUCKET.list({ prefix: `pages/${slug}/` });
+    await Promise.all(listed.objects.map((o) => env.BUCKET.delete(o.key)));
+  } else {
+    await env.BUCKET.delete(page.object_key);
+  }
   await env.DB.prepare("UPDATE pages SET status = 'deleted' WHERE slug = ?").bind(slug).run();
   return json({ ok: true });
 }
@@ -292,7 +370,7 @@ async function mutateRole(page: PageRow, request: Request, env: Env): Promise<"o
 
 // ============================ 提供页面 ============================
 
-async function servePage(slug: string, request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+async function servePage(slug: string, docPath: string, request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   slug = slug.toLowerCase(); // 域名不区分大小写，slug 统一按小写存取
   if (!/^[a-z0-9]+$/.test(slug)) return htmlResp(notFoundPage(), 404);
 
@@ -321,7 +399,9 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
       if (await verifyPassword(pw, page.password_hash, page.password_salt)) {
         const exp = now() + 24 * 3600; // Cookie 24h 有效
         const value = await signCookie(env.COOKIE_SIGNING_SECRET, slug, exp);
-        const headers = new Headers({ Location: "/" });
+        // 跳回原请求路径,合集深链(/3)验密后直达该篇,而非被扔回目录
+        const back = new URL(request.url).pathname || "/";
+        const headers = new Headers({ Location: back });
         headers.append(
           "Set-Cookie",
           `${cookieName}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`
@@ -329,9 +409,9 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
         return new Response(null, { status: 303, headers });
       }
       await env.RATELIMIT.put(attemptKey, String(failed + 1), { expirationTtl: 900 });
-      return htmlResp(passwordPage(slug, true), 401);
+      return htmlResp(passwordPage(true), 401);
     } else {
-      return htmlResp(passwordPage(slug, false), 401);
+      return htmlResp(passwordPage(false), 401);
     }
   }
 
@@ -339,6 +419,11 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
   ctx.waitUntil(
     env.DB.prepare("UPDATE pages SET hits = hits + 1 WHERE slug = ?").bind(slug).run()
   );
+
+  // 合集：目录页 / 篇目页
+  if (page.object_key.endsWith("/index.json")) {
+    return serveCollection(env, page, docPath);
+  }
 
   const obj = await env.BUCKET.get(page.object_key);
   if (!obj) return htmlResp(notFoundPage(), 404);
@@ -350,6 +435,39 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
     return htmlResp(readingPage(mdTitle(md, page.filename), article), 200);
   }
 
+  return new Response(obj.body, { status: 200, headers: securityHeaders() });
+}
+
+/** 合集分发：docPath "/" → 目录页；"/<n>" → 第 n 篇 */
+async function serveCollection(env: Env, page: PageRow, docPath: string): Promise<Response> {
+  const idxObj = await env.BUCKET.get(page.object_key);
+  if (!idxObj) return htmlResp(notFoundPage(), 404);
+  const index = JSON.parse(await idxObj.text()) as CollectionIndex;
+  const navDocs = index.docs.map((d, i) => ({ index: i + 1, title: d.title }));
+  const slug = page.slug;
+
+  const path = docPath.replace(/\/+$/, "") || "/";
+  if (path === "/") {
+    const date = new Date(page.created_at * 1000).toISOString().slice(0, 10);
+    const meta = `${index.docs.length} 篇 · ${date} 分享`;
+    return htmlResp(tocPage(index.title, navDocs, meta), 200);
+  }
+
+  const m = path.match(/^\/(\d+)$/);
+  if (!m) return htmlResp(notFoundPage(), 404);
+  const n = Number(m[1]);
+  if (n < 1 || n > index.docs.length) return htmlResp(notFoundPage(), 404);
+
+  const doc = index.docs[n - 1];
+  const obj = await env.BUCKET.get(`pages/${slug}/${n}.${doc.ext}`);
+  if (!obj) return htmlResp(notFoundPage(), 404);
+
+  if (doc.ext === "md") {
+    const article = await marked.parse(await obj.text(), { gfm: true, async: true });
+    const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
+    return htmlResp(readingPage(doc.title, article, nav), 200);
+  }
+  // html 篇目原样服务,不注入导航(不篡改用户内容)
   return new Response(obj.body, { status: 200, headers: securityHeaders() });
 }
 
@@ -389,6 +507,14 @@ function mdTitle(md: string, filename: string | null): string {
   if (m) return m[1].replace(/[*_`~\[\]]/g, "").trim().slice(0, 120);
   if (filename) return filename.replace(/\.(md|markdown)$/i, "");
   return "HSpace";
+}
+
+/** 篇目标题：md 取首个 # 标题；html 取 <title>；均退回文件名(去扩展名) */
+function docTitle(content: string, ext: "md" | "html", name: string): string {
+  if (ext === "md") return mdTitle(content, name);
+  const m = content.match(/<title>([^<]*)<\/title>/i);
+  if (m && m[1].trim()) return m[1].trim().slice(0, 120);
+  return name.replace(/\.(html?|md|markdown)$/i, "");
 }
 
 function getPage(env: Env, slug: string): Promise<PageRow | null> {

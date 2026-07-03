@@ -2,7 +2,7 @@
   "name": "hspace",
   "displayName": "HSpace",
   "description": "私密分享 AI 生成的内容：一键把 HTML 发布成链接+密码，只给该看的人。Private sharing for AI-generated content.",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",
@@ -17,6 +17,7 @@
   "contributes": {
     "commands": [
       { "command": "hspace.publish", "title": "HSpace: 发布当前文件", "icon": "$(cloud-upload)" },
+      { "command": "hspace.publishFolder", "title": "HSpace: 发布为合集" },
       { "command": "hspace.setApiKey", "title": "HSpace: 设置 API Key（登录）" },
       { "command": "hspace.signOut", "title": "HSpace: 退出登录（清除 API Key）" },
       { "command": "hspace.setPassword", "title": "HSpace: 设置/修改密码" },
@@ -30,7 +31,8 @@
         { "command": "hspace.publish", "when": "resourceExtname == .html || resourceExtname == .htm || resourceExtname == .md || resourceExtname == .markdown", "group": "navigation" }
       ],
       "explorer/context": [
-        { "command": "hspace.publish", "when": "resourceExtname == .html || resourceExtname == .htm || resourceExtname == .md || resourceExtname == .markdown", "group": "7_modification" }
+        { "command": "hspace.publish", "when": "resourceExtname == .html || resourceExtname == .htm || resourceExtname == .md || resourceExtname == .markdown", "group": "7_modification" },
+        { "command": "hspace.publishFolder", "when": "explorerResourceIsFolder || resourceExtname == .html || resourceExtname == .htm || resourceExtname == .md || resourceExtname == .markdown", "group": "7_modification" }
       ],
       "view/title": [
         { "command": "hspace.refresh", "when": "view == hspace.recent", "group": "navigation" }

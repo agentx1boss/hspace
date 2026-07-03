@@ -9,6 +9,7 @@ AI-generated demos, reports, data visualizations — you want to send them to a 
 ## Why it's different
 
 - 📝 **Markdown, beautifully published** — `.md` files render into a clean reading page (headings, tables, code blocks, light/dark themes)
+- 📚 **Folders become booklets** — right-click a folder or multi-select files → "Publish as collection": a batch of md/html becomes one link + one password + a table of contents with cross-doc navigation
 - 🔐 **Private by default** — every publish gets a random 4-digit password; without it, nobody gets in. Viewers enter it once and stay signed in for 24 hours
 - 📋 **One paste and it's sent** — link and password land on your clipboard together; paste straight into Slack, email, or WeChat
 - 🎯 **Controlled and revocable** — change the password anytime (old one dies instantly), delete the page and the link goes dark; expired pages clean themselves up

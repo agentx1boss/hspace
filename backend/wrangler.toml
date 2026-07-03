@@ -30,6 +30,11 @@ RATE_LIMIT_PER_DAY = "50"
 ANON_MAX_HITS = "10000"
 # 全局匿名日上传总量(字节),超过后当天匿名发布 503 熔断
 ANON_DAILY_GLOBAL_BYTES = "524288000"   # 500 MB
+# 合集:总体积上限(登录),匿名沿用 ANON_MAX_SIZE_BYTES
+COLLECTION_MAX_SIZE_BYTES = "5242880"   # 5 MB
+# 合集:篇数上限
+ANON_MAX_DOCS = "10"
+MAX_DOCS = "50"
 
 # ── 密钥(用 `wrangler secret put` 设置,勿写进本文件)──
 # COOKIE_SIGNING_SECRET  用于给密码通过后的 Cookie 签名(随机长字符串)
