@@ -16,7 +16,7 @@ import {
   verifyCookie,
 } from "./crypto";
 import { marked } from "marked";
-import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, CollectionNav } from "./html";
+import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectBackButton, CollectionNav } from "./html";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -467,8 +467,8 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
     const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
     return htmlResp(readingPage(doc.title, article, nav), 200);
   }
-  // html 篇目原样服务,不注入导航(不篡改用户内容)
-  return new Response(obj.body, { status: 200, headers: securityHeaders() });
+  // html 篇目:保留原样,仅注入一个悬浮「← 目录」按钮(不改动用户 DOM 结构)
+  return new Response(injectBackButton(await obj.text()), { status: 200, headers: securityHeaders() });
 }
 
 function htmlResp(body: string, status: number): Response {

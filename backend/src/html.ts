@@ -171,6 +171,32 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): 
 </body></html>`;
 }
 
+/**
+ * 合集中 html 篇目的悬浮「← 目录」按钮。
+ * 只注入这一个自包含元素,不改动用户 DOM;内联样式全部 !important 以抵御页面 CSS。
+ */
+export function backToTocButton(): string {
+  const s = [
+    "position:fixed!important", "left:16px!important", "bottom:16px!important",
+    "z-index:2147483647!important", "margin:0!important",
+    "display:inline-flex!important", "align-items:center!important", "gap:7px!important",
+    "padding:9px 15px!important", "background:#1A1D24!important", "color:#fff!important",
+    "font:600 13.5px/1 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif!important",
+    "text-decoration:none!important", "border-radius:999px!important",
+    "box-shadow:0 4px 16px rgba(0,0,0,.28)!important", "border:1px solid rgba(255,255,255,.14)!important",
+    "opacity:.92!important",
+  ].join(";");
+  const dot = "width:7px;height:7px;border-radius:50%;background:#F0784F;display:inline-block";
+  return `<a href="/" aria-label="返回目录" style="${s}"><span style="${dot}"></span>← 目录</a>`;
+}
+
+/** 把悬浮按钮注入 html 篇目:插到最后一个 </body> 前,缺失则追加 */
+export function injectBackButton(html: string): string {
+  const btn = backToTocButton();
+  const i = html.toLowerCase().lastIndexOf("</body>");
+  return i === -1 ? html + btn : html.slice(0, i) + btn + html.slice(i);
+}
+
 export function lockedPage(): string {
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>尝试次数过多</title>
