@@ -1,0 +1,81 @@
+{
+  "name": "html-share",
+  "displayName": "HTML Share",
+  "description": "一键把 HTML 文件发布成可分享的公网链接，支持共享密码。适合分享 AI 生成的单页。",
+  "version": "0.1.0",
+  "publisher": "wjllance",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": { "type": "git", "url": "https://github.com/wjllance/html-share" },
+  "bugs": { "url": "https://github.com/wjllance/html-share/issues" },
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "keywords": ["html", "share", "publish", "host", "ai"],
+  "galleryBanner": { "color": "#1e1b4b", "theme": "dark" },
+  "activationEvents": ["onLanguage:html"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "htmlshare.publish", "title": "HTML Share: 发布当前 HTML", "icon": "$(cloud-upload)" },
+      { "command": "htmlshare.setApiKey", "title": "HTML Share: 设置 API Key（登录）" },
+      { "command": "htmlshare.signOut", "title": "HTML Share: 退出登录（清除 API Key）" },
+      { "command": "htmlshare.setPassword", "title": "HTML Share: 设置/修改密码" },
+      { "command": "htmlshare.copyLink", "title": "HTML Share: 复制链接" },
+      { "command": "htmlshare.openInBrowser", "title": "HTML Share: 浏览器打开" },
+      { "command": "htmlshare.delete", "title": "HTML Share: 删除页面", "icon": "$(trash)" },
+      { "command": "htmlshare.refresh", "title": "HTML Share: 刷新列表", "icon": "$(refresh)" }
+    ],
+    "menus": {
+      "editor/title": [
+        { "command": "htmlshare.publish", "when": "resourceExtname == .html || resourceExtname == .htm", "group": "navigation" }
+      ],
+      "explorer/context": [
+        { "command": "htmlshare.publish", "when": "resourceExtname == .html || resourceExtname == .htm", "group": "7_modification" }
+      ],
+      "view/title": [
+        { "command": "htmlshare.refresh", "when": "view == htmlshare.recent", "group": "navigation" }
+      ],
+      "view/item/context": [
+        { "command": "htmlshare.openInBrowser", "when": "view == htmlshare.recent", "group": "inline" },
+        { "command": "htmlshare.copyLink", "when": "view == htmlshare.recent", "group": "1_actions" },
+        { "command": "htmlshare.setPassword", "when": "view == htmlshare.recent", "group": "1_actions" },
+        { "command": "htmlshare.delete", "when": "view == htmlshare.recent", "group": "2_danger" }
+      ]
+    },
+    "views": {
+      "explorer": [
+        { "id": "htmlshare.recent", "name": "HTML Share · 最近发布" }
+      ]
+    },
+    "configuration": {
+      "title": "HTML Share",
+      "properties": {
+        "htmlshare.apiBaseUrl": {
+          "type": "string",
+          "default": "https://html-share.kzhan.workers.dev",
+          "description": "后端 API 地址（不含末尾斜杠）。"
+        },
+        "htmlshare.defaultExpiryDays": {
+          "type": "number",
+          "default": 7,
+          "description": "发布链接的默认过期天数（登录后可设 0 表示永不过期）。"
+        },
+        "htmlshare.alwaysAskPassword": {
+          "type": "boolean",
+          "default": false,
+          "description": "每次发布时都询问是否设置密码。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.6.0"
+  }
+}

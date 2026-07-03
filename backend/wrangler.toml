@@ -1,0 +1,44 @@
+# Cloudflare Worker 配置 —— HTML Share 后端
+
+name = "html-share"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+account_id = "8454d2105ed138c8eb93539064db30dc"
+
+# API 走 workers.dev(html-share.<subdomain>.workers.dev)
+workers_dev = true
+
+# ── 路由:用户内容通配子域 <slug>.zhanjian.space ──
+routes = [
+  { pattern = "*.zhanjian.space/*", zone_name = "zhanjian.space" },
+]
+
+[vars]
+# 供代码读取的域名(不含协议)
+API_DOMAIN = "html-share.kzhan.workers.dev"
+USERCONTENT_DOMAIN = "zhanjian.space"
+# 单文件大小上限(字节)
+MAX_SIZE_BYTES = "2097152"        # 2 MB
+# 匿名链接默认过期(秒)
+ANON_DEFAULT_TTL = "604800"       # 7 天
+# 频率限制:每个 IP 每小时最大发布次数
+RATE_LIMIT_PER_HOUR = "20"
+
+# ── 密钥(用 `wrangler secret put` 设置,勿写进本文件)──
+# COOKIE_SIGNING_SECRET  用于给密码通过后的 Cookie 签名(随机长字符串)
+
+# ── R2:存 HTML 对象 ──
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "html-share-pages"
+
+# ── D1:存页面元数据、计数、api_keys ──
+[[d1_databases]]
+binding = "DB"
+database_name = "html-share"
+database_id = "b2f58ae9-217d-452d-bf83-33be5c731bc5"
+
+# ── KV:频率限制计数 ──
+[[kv_namespaces]]
+binding = "RATELIMIT"
+id = "2a08b7587fd943368ef4ce9e5482da9a"

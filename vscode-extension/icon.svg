@@ -1,0 +1,27 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#9333ea"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <!-- 云朵 -->
+  <g fill="#ffffff">
+    <circle cx="46" cy="66" r="17"/>
+    <circle cx="72" cy="58" r="21"/>
+    <circle cx="88" cy="72" r="14"/>
+    <rect x="46" y="66" width="42" height="20" rx="10"/>
+  </g>
+  <!-- 上传箭头 -->
+  <g fill="#5b21b6">
+    <polygon points="64,52 49,70 79,70"/>
+    <rect x="59" y="68" width="10" height="18" rx="2"/>
+  </g>
+  <!-- 链接符号:表示"分享链接" -->
+  <g stroke="#ffffff" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.95">
+    <path d="M 42 103 a 8 8 0 0 1 0 -14 h 12"/>
+    <path d="M 66 89 a 8 8 0 0 1 0 14 h -12"/>
+    <line x1="46" y1="96" x2="62" y2="96"/>
+  </g>
+</svg>
