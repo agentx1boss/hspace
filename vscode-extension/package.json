@@ -16,46 +16,46 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      { "command": "htmlshare.publish", "title": "HTML Share: 发布当前 HTML", "icon": "$(cloud-upload)" },
-      { "command": "htmlshare.setApiKey", "title": "HTML Share: 设置 API Key（登录）" },
-      { "command": "htmlshare.signOut", "title": "HTML Share: 退出登录（清除 API Key）" },
-      { "command": "htmlshare.setPassword", "title": "HTML Share: 设置/修改密码" },
-      { "command": "htmlshare.copyLink", "title": "HTML Share: 复制链接" },
-      { "command": "htmlshare.openInBrowser", "title": "HTML Share: 浏览器打开" },
-      { "command": "htmlshare.delete", "title": "HTML Share: 删除页面", "icon": "$(trash)" },
-      { "command": "htmlshare.refresh", "title": "HTML Share: 刷新列表", "icon": "$(refresh)" }
+      { "command": "hspace.publish", "title": "HSpace: 发布当前 HTML", "icon": "$(cloud-upload)" },
+      { "command": "hspace.setApiKey", "title": "HSpace: 设置 API Key（登录）" },
+      { "command": "hspace.signOut", "title": "HSpace: 退出登录（清除 API Key）" },
+      { "command": "hspace.setPassword", "title": "HSpace: 设置/修改密码" },
+      { "command": "hspace.copyLink", "title": "HSpace: 复制链接" },
+      { "command": "hspace.openInBrowser", "title": "HSpace: 浏览器打开" },
+      { "command": "hspace.delete", "title": "HSpace: 删除页面", "icon": "$(trash)" },
+      { "command": "hspace.refresh", "title": "HSpace: 刷新列表", "icon": "$(refresh)" }
     ],
     "menus": {
       "editor/title": [
-        { "command": "htmlshare.publish", "when": "resourceExtname == .html || resourceExtname == .htm", "group": "navigation" }
+        { "command": "hspace.publish", "when": "resourceExtname == .html || resourceExtname == .htm", "group": "navigation" }
       ],
       "explorer/context": [
-        { "command": "htmlshare.publish", "when": "resourceExtname == .html || resourceExtname == .htm", "group": "7_modification" }
+        { "command": "hspace.publish", "when": "resourceExtname == .html || resourceExtname == .htm", "group": "7_modification" }
       ],
       "view/title": [
-        { "command": "htmlshare.refresh", "when": "view == htmlshare.recent", "group": "navigation" }
+        { "command": "hspace.refresh", "when": "view == hspace.recent", "group": "navigation" }
       ],
       "view/item/context": [
-        { "command": "htmlshare.openInBrowser", "when": "view == htmlshare.recent", "group": "inline" },
-        { "command": "htmlshare.copyLink", "when": "view == htmlshare.recent", "group": "1_actions" },
-        { "command": "htmlshare.setPassword", "when": "view == htmlshare.recent", "group": "1_actions" },
-        { "command": "htmlshare.delete", "when": "view == htmlshare.recent", "group": "2_danger" }
+        { "command": "hspace.openInBrowser", "when": "view == hspace.recent", "group": "inline" },
+        { "command": "hspace.copyLink", "when": "view == hspace.recent", "group": "1_actions" },
+        { "command": "hspace.setPassword", "when": "view == hspace.recent", "group": "1_actions" },
+        { "command": "hspace.delete", "when": "view == hspace.recent", "group": "2_danger" }
       ]
     },
     "views": {
       "explorer": [
-        { "id": "htmlshare.recent", "name": "HTML Share · 最近发布" }
+        { "id": "hspace.recent", "name": "HSpace · 最近发布" }
       ]
     },
     "configuration": {
-      "title": "HTML Share",
+      "title": "HSpace",
       "properties": {
-        "htmlshare.apiBaseUrl": {
+        "hspace.apiBaseUrl": {
           "type": "string",
           "default": "https://html-share.kzhan.workers.dev",
           "description": "后端 API 地址（不含末尾斜杠）。"
         },
-        "htmlshare.defaultExpiryDays": {
+        "hspace.defaultExpiryDays": {
           "type": "number",
           "default": 7,
           "description": "发布链接的默认过期天数（登录后可设 0 表示永不过期）。"

@@ -1,4 +1,4 @@
-// HTML Share —— Cloudflare Worker
+// HSpace —— Cloudflare Worker
 // 一个 Worker 同时承载：
 //   1) API 域名(api.myhost.com)：发布/更新/删除/列表
 //   2) 用户内容子域(<slug>.usercontent-host.com)：实际访问 + 密码网关 + 计数
@@ -101,7 +101,7 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   if (path === "/pages" && request.method === "GET") return listPages(request, env);
 
-  if (path === "/" || path === "/health") return json({ ok: true, service: "html-share" });
+  if (path === "/" || path === "/health") return json({ ok: true, service: "hspace" });
 
   return json({ error: "not_found" }, 404);
 }

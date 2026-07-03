@@ -8,7 +8,7 @@
 
 - ☁️ **一键发布**:打开 `.html` 文件,点编辑器右上角云图标(或右键菜单),链接和密码自动复制到剪贴板
 - 🔒 **默认密码保护**:每次发布自动生成随机 4 位数字密码,访客需输入密码才能查看(24 小时内免重复输入),密码可随时修改
-- 🗂 **发布管理**:资源管理器侧栏的「HTML Share · 最近发布」面板,可打开 / 复制链接 / 设密码 / 删除
+- 🗂 **发布管理**:资源管理器侧栏的「HSpace · 最近发布」面板,可打开 / 复制链接 / 设密码 / 删除
 - ⏳ **自动过期**:匿名发布默认 7 天后自动失效,不留垃圾
 - 🛡 **内容隔离**:每个页面独立子域(`<slug>.zhanjian.space`),互不影响,且与 API 域名隔离
 
@@ -27,7 +27,7 @@
 
 - 发布成功的通知里点「修改密码」
 - 侧栏「最近发布」面板右键页面 →「设置/修改密码」
-- 命令面板 → `HTML Share: 设置/修改密码`
+- 命令面板 → `HSpace: 设置/修改密码`
 
 输入时留空回车 = 移除密码。
 
@@ -35,8 +35,8 @@
 
 | 设置 | 默认值 | 说明 |
 |---|---|---|
-| `htmlshare.apiBaseUrl` | 官方托管实例 | 后端 API 地址,可指向自建后端 |
-| `htmlshare.defaultExpiryDays` | `7` | 发布链接的默认过期天数 |
+| `hspace.apiBaseUrl` | 官方托管实例 | 后端 API 地址,可指向自建后端 |
+| `hspace.defaultExpiryDays` | `7` | 发布链接的默认过期天数 |
 
 ## 使用限制(默认托管实例)
 
@@ -50,7 +50,7 @@
 
 ## 自建后端
 
-后端是一个 Cloudflare Worker(R2 + D1 + KV),完全开源。部署自己的实例后,把 `htmlshare.apiBaseUrl` 指过去即可。详见 [GitHub 仓库](https://github.com/agentx1boss/hspace)。
+后端是一个 Cloudflare Worker(R2 + D1 + KV),完全开源。部署自己的实例后,把 `hspace.apiBaseUrl` 指过去即可。详见 [GitHub 仓库](https://github.com/agentx1boss/hspace)。
 
 ## 隐私说明
 

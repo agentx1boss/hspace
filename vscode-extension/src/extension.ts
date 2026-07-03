@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { ApiClient, PublishResult, errorMessage } from "./api";
 
-const SECRET_KEY = "htmlshare.apiKey";
-const STATE_KEY = "htmlshare.recent";
+const SECRET_KEY = "hspace.apiKey";
+const STATE_KEY = "hspace.recent";
 
 interface Record {
   slug: string;
@@ -17,19 +17,19 @@ interface Record {
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = new RecentProvider(context);
-  vscode.window.registerTreeDataProvider("htmlshare.recent", provider);
+  vscode.window.registerTreeDataProvider("hspace.recent", provider);
 
   const reg = (id: string, fn: (...a: any[]) => any) =>
     context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
-  reg("htmlshare.publish", (uri?: vscode.Uri) => publishCommand(context, provider, uri));
-  reg("htmlshare.setApiKey", () => setApiKey(context));
-  reg("htmlshare.signOut", () => signOut(context));
-  reg("htmlshare.setPassword", (node?: RecentNode) => setPassword(context, provider, node));
-  reg("htmlshare.copyLink", (node?: RecentNode) => node && copyLink(node.record.url));
-  reg("htmlshare.openInBrowser", (node?: RecentNode) => node && vscode.env.openExternal(vscode.Uri.parse(node.record.url)));
-  reg("htmlshare.delete", (node?: RecentNode) => node && deletePage(context, provider, node.record));
-  reg("htmlshare.refresh", () => provider.refresh());
+  reg("hspace.publish", (uri?: vscode.Uri) => publishCommand(context, provider, uri));
+  reg("hspace.setApiKey", () => setApiKey(context));
+  reg("hspace.signOut", () => signOut(context));
+  reg("hspace.setPassword", (node?: RecentNode) => setPassword(context, provider, node));
+  reg("hspace.copyLink", (node?: RecentNode) => node && copyLink(node.record.url));
+  reg("hspace.openInBrowser", (node?: RecentNode) => node && vscode.env.openExternal(vscode.Uri.parse(node.record.url)));
+  reg("hspace.delete", (node?: RecentNode) => node && deletePage(context, provider, node.record));
+  reg("hspace.refresh", () => provider.refresh());
 }
 
 export function deactivate() {}
@@ -37,7 +37,7 @@ export function deactivate() {}
 // ─────────────────────────── 命令 ───────────────────────────
 
 async function getClient(context: vscode.ExtensionContext): Promise<ApiClient> {
-  const base = vscode.workspace.getConfiguration("htmlshare").get<string>("apiBaseUrl", "").replace(/\/$/, "");
+  const base = vscode.workspace.getConfiguration("hspace").get<string>("apiBaseUrl", "").replace(/\/$/, "");
   const key = await context.secrets.get(SECRET_KEY);
   return new ApiClient(base, key || undefined);
 }
@@ -54,7 +54,7 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
     return;
   }
 
-  const cfg = vscode.workspace.getConfiguration("htmlshare");
+  const cfg = vscode.workspace.getConfiguration("hspace");
   // 所有发布强制带密码：默认随机 4 位数字（alwaysAskPassword 暂时屏蔽）
   const password = randomPin();
 
@@ -221,8 +221,8 @@ class RecentNode extends vscode.TreeItem {
     this.description = new URL(record.url).hostname;
     this.tooltip = `${record.url}\n发布于 ${new Date(record.createdAt).toLocaleString()}`;
     this.iconPath = new vscode.ThemeIcon(record.passwordProtected ? "lock" : "globe");
-    this.contextValue = "htmlsharePage";
-    this.command = { command: "htmlshare.openInBrowser", title: "打开", arguments: [this] };
+    this.contextValue = "hspacePage";
+    this.command = { command: "hspace.openInBrowser", title: "打开", arguments: [this] };
   }
 }
 

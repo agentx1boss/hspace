@@ -1,4 +1,4 @@
-# HTML Share —— MVP 实现
+# HSpace —— MVP 实现
 
 一键把 HTML 文件发布成可分享的公网链接，支持共享密码。面向"分享 AI 生成的单页 HTML"场景。
 
@@ -81,9 +81,9 @@ npm run compile
 
 在宿主窗口里：
 
-1. 设置后端地址：命令面板 →「Preferences: Open Settings」搜 `htmlshare.apiBaseUrl`，填你的 API 地址（本地填 `http://localhost:8787`）
+1. 设置后端地址：命令面板 →「Preferences: Open Settings」搜 `hspace.apiBaseUrl`，填你的 API 地址（本地填 `http://localhost:8787`）
 2. 打开任意 `.html` 文件 → 右上角 ☁ 按钮 / 右键「发布当前 HTML」
-3. 链接自动复制，可在「资源管理器 → HTML Share · 最近发布」里管理（打开 / 复制 / 设密码 / 删除）
+3. 链接自动复制，可在「资源管理器 → HSpace · 最近发布」里管理（打开 / 复制 / 设密码 / 删除）
 4. （可选）命令「设置 API Key」登录以获得永久链接
 
 打包：`npx @vscode/vsce package` 生成 `.vsix`；上架 VS Code Marketplace，并用 `ovsx publish` 上架 Open VSX（供 Cursor / VSCodium）。
