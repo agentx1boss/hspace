@@ -59,11 +59,6 @@
           "type": "number",
           "default": 7,
           "description": "发布链接的默认过期天数（登录后可设 0 表示永不过期）。"
-        },
-        "htmlshare.alwaysAskPassword": {
-          "type": "boolean",
-          "default": false,
-          "description": "每次发布时都询问是否设置密码。"
         }
       }
     }

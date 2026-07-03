@@ -6,8 +6,8 @@ Publish any HTML file as a shareable public link in one click, with optional pas
 
 ## Features
 
-- ☁️ **One-click publish** — open an `.html` file, click the cloud icon in the editor title bar (or use the context menu); the link is copied to your clipboard automatically
-- 🔒 **Password protection** — set, change, or remove a password on any page; visitors must enter it before viewing (remembered for 24 hours)
+- ☁️ **One-click publish** — open an `.html` file, click the cloud icon in the editor title bar (or use the context menu); the link and password are copied to your clipboard automatically
+- 🔒 **Password protected by default** — every publish gets a random 4-digit password automatically; visitors must enter it before viewing (remembered for 24 hours). You can change the password anytime
 - 🗂 **Manage published pages** — the "HTML Share · 最近发布" (recent publishes) panel in the Explorer sidebar lets you open, copy link, set password, or delete
 - ⏳ **Auto expiry** — anonymous pages expire after 7 days by default, so nothing piles up
 - 🛡 **Content isolation** — every page gets its own subdomain (`<slug>.zhanjian.space`), isolated from each other and from the API domain
@@ -17,15 +17,15 @@ Publish any HTML file as a shareable public link in one click, with optional pas
 1. Install the extension
 2. Open any `.html` file
 3. Click the ☁️ icon in the editor title bar
-4. The link is on your clipboard — paste it anywhere 🎉
+4. The link and its password are on your clipboard — paste them anywhere 🎉
 
 No sign-up, no configuration. It just works.
 
-## Setting a Password
+## Changing the Password
 
-Pick any of the three entry points:
+Every page is published with a random 4-digit password. To change it:
 
-- Click "Set password" on the publish-success notification
+- Click "修改密码" (Change password) on the publish-success notification
 - Right-click a page in the recent-publishes sidebar panel → "设置/修改密码" (Set/Change password)
 - Command Palette → `HTML Share: 设置/修改密码` (Set/Change password)
 
@@ -37,7 +37,6 @@ Submitting an empty input removes the password.
 |---|---|---|
 | `htmlshare.apiBaseUrl` | official hosted instance | Backend API base URL; point it at your own deployment if you self-host |
 | `htmlshare.defaultExpiryDays` | `7` | Default expiry (in days) for published links |
-| `htmlshare.alwaysAskPassword` | `false` | Ask whether to set a password on every publish |
 
 ## Limits (default hosted instance)
 

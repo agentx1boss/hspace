@@ -55,13 +55,8 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
   }
 
   const cfg = vscode.workspace.getConfiguration("htmlshare");
-  let password: string | undefined;
-  if (cfg.get<boolean>("alwaysAskPassword", false)) {
-    password = await vscode.window.showInputBox({
-      prompt: "设置访问密码（留空表示不加密码）",
-      password: true,
-    }) || undefined;
-  }
+  // 所有发布强制带密码：默认随机 4 位数字（alwaysAskPassword 暂时屏蔽）
+  const password = randomPin();
 
   const hasKey = !!(await context.secrets.get(SECRET_KEY));
   const days = cfg.get<number>("defaultExpiryDays", 7);
@@ -86,10 +81,10 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
         });
         provider.refresh();
 
-        await vscode.env.clipboard.writeText(result.url);
-        const actions = ["浏览器打开", result.passwordProtected ? "修改密码" : "设置密码"];
+        await vscode.env.clipboard.writeText(`${result.url} 密码：${password}`);
+        const actions = ["浏览器打开", "修改密码"];
         const pick = await vscode.window.showInformationMessage(
-          `已发布并复制链接：${result.url}`,
+          `已发布：${result.url}（密码 ${password}，链接和密码已复制）`,
           ...actions
         );
         if (pick === "浏览器打开") vscode.env.openExternal(vscode.Uri.parse(result.url));
@@ -184,6 +179,11 @@ async function copyLink(url: string) {
 }
 
 // ─────────────────────────── 工具 ───────────────────────────
+
+/** 随机 4 位数字密码 */
+function randomPin(len = 4): string {
+  return Array.from({ length: len }, () => Math.floor(Math.random() * 10)).join("");
+}
 
 function resolveTargetUri(uriArg?: vscode.Uri): vscode.Uri | undefined {
   if (uriArg instanceof vscode.Uri) return uriArg;
