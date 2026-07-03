@@ -18,6 +18,7 @@ import {
 import { marked } from "marked";
 import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectBackButton, CollectionNav } from "./html";
 import { openapiSpec } from "./openapi";
+import { landingPage } from "./landing";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -65,6 +66,9 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const host = url.hostname;
+
+    // 落地页:内容域的 hspace 子域(通配路由已覆盖;www/apex 已被其他服务占用)
+    if (host === "hspace." + env.USERCONTENT_DOMAIN) return landingResp();
 
     // ── 路由：用户内容子域 → 提供页面 ──
     if (host.endsWith("." + env.USERCONTENT_DOMAIN)) {
@@ -119,7 +123,8 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   if (path === "/pages" && request.method === "GET") return listPages(request, env);
 
-  if (path === "/" || path === "/health") return json({ ok: true, service: "hspace" });
+  if (path === "/health") return json({ ok: true, service: "hspace" });
+  if (path === "/") return landingResp();
 
   // AI 工具就绪:OpenAPI 规范(GPT Actions / agent 框架可直接消费),servers 按当前 origin 填充
   if (path === "/openapi.json" && request.method === "GET") {
@@ -497,6 +502,19 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
 
 function htmlResp(body: string, status: number): Response {
   return new Response(body, { status, headers: securityHeaders() });
+}
+
+/** 落地页响应:允许被搜索引擎索引,不加 noindex */
+function landingResp(): Response {
+  return new Response(landingPage(), {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Cache-Control": "public, max-age=300",
+    },
+  });
 }
 
 /** 隔离域名上的安全响应头 */

@@ -1,5 +1,7 @@
 # HSpace
 
+**落地页:https://hspace.zhanjian.space** · **API/OpenAPI:https://html-share.kzhan.workers.dev/openapi.json**
+
 **私密分享 AI 生成的内容。** 一键把 AI 帮你写好的 HTML 或 Markdown 发布成"链接 + 密码",像递名片一样只交给该看的人。
 
 ## 这不是又一个 HTML 托管
