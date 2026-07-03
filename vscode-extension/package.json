@@ -1,9 +1,9 @@
 {
-  "name": "html-share",
-  "displayName": "HTML Share",
+  "name": "hspace",
+  "displayName": "HSpace",
   "description": "一键把 HTML 文件发布成可分享的公网链接，支持共享密码。适合分享 AI 生成的单页。",
   "version": "0.1.0",
-  "publisher": "wjllance",
+  "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",
   "repository": { "type": "git", "url": "https://github.com/agentx1boss/htmlspace" },

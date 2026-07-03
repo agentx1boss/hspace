@@ -3,3 +3,5 @@ out/
 *.vsix
 .wrangler/
 .DS_Store
+.env
+.env.*
