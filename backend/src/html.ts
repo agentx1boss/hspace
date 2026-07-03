@@ -14,33 +14,77 @@ export interface CollectionNav {
   current: number; // 1-based
 }
 
+/** 品牌标记(白 H + 橙,置于墨色圆角砖上) */
+const BRAND_MARK = `<svg viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
+  <rect x="9" y="8" width="11" height="48" rx="5.5" fill="#fff"/>
+  <rect x="30" y="8" width="11" height="48" rx="5.5" fill="#fff"/>
+  <rect x="13" y="29.5" width="35" height="5" rx="2.5" fill="#F0784F"/>
+  <circle cx="51" cy="32" r="6" fill="#F0784F"/>
+</svg>`;
+
+/**
+ * 密码门 —— 接收方唯一的品牌触点。私密、可信、亮暗自适应、移动端友好。
+ * action="" → 提交到当前 URL；成功后服务端 303 跳回同一路径,深链得以保留。
+ */
 export function passwordPage(error = false): string {
-  // action="" → 提交到当前 URL；成功后由服务端 303 跳回同一路径，深链得以保留
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>需要密码</title>
+<meta name="robots" content="noindex">
+<title>输入密码 · HSpace</title>
 <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-       display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#17181c;color:#e8e6e3}
-  .card{background:#22242a;padding:32px;border-radius:14px;width:320px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
-  .brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:650;margin:0 0 20px}
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:#F0784F;display:inline-block}
-  h1{font-size:16px;margin:0 0 16px;font-weight:600}
-  input{width:100%;box-sizing:border-box;padding:11px 13px;border-radius:9px;border:1px solid #34363d;background:#17181c;color:#fff;font-size:15px}
-  input:focus{outline:none;border-color:#F0784F}
-  button{width:100%;margin-top:12px;padding:11px;border:0;border-radius:9px;background:#F0784F;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
-  button:hover{background:#e2603c}
-  .err{color:#ff8a6b;font-size:13px;margin-top:10px}
+  :root{--bg:#f4f2ef;--fg:#1d1d1f;--muted:#6e6e73;--accent:#E2603C;--card:#fff;
+        --field:#f7f6f4;--border:#e3e0db;--ring:rgba(226,96,60,.18);--ink:#1A1D24}
+  @media(prefers-color-scheme:dark){:root{--bg:#141519;--fg:#e8e6e3;--muted:#8b8b90;--accent:#F0784F;
+        --card:#212329;--field:#191b20;--border:#31343b;--ring:rgba(240,120,79,.22);--ink:#1A1D24}}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;
+       font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+       background-image:radial-gradient(120% 90% at 50% -10%,var(--ring),transparent 60%)}
+  .card{background:var(--card);width:100%;max-width:360px;padding:34px 30px 28px;border-radius:20px;
+        border:1px solid var(--border);box-shadow:0 12px 40px rgba(0,0,0,.10);
+        animation:rise .45s cubic-bezier(.16,1,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .tile{width:52px;height:52px;border-radius:14px;background:var(--ink);
+        display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+        box-shadow:0 6px 18px rgba(26,29,36,.28)}
+  h1{font-size:19px;font-weight:680;letter-spacing:-.01em;margin:0 0 6px;text-align:center}
+  .sub{font-size:13.5px;color:var(--muted);text-align:center;margin:0 0 22px}
+  .field{position:relative;display:flex;align-items:center}
+  .field .lk{position:absolute;left:14px;font-size:15px;opacity:.55;pointer-events:none}
+  input{width:100%;box-sizing:border-box;padding:13px 14px 13px 40px;border-radius:12px;
+        border:1.5px solid var(--border);background:var(--field);color:var(--fg);
+        font-size:16px;letter-spacing:.02em;transition:border-color .15s,box-shadow .15s}
+  input::placeholder{color:var(--muted);letter-spacing:0}
+  input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+  button{width:100%;margin-top:14px;padding:13px;border:0;border-radius:12px;background:var(--accent);
+         color:#fff;font-size:15.5px;font-weight:650;cursor:pointer;transition:filter .15s,transform .05s}
+  button:hover{filter:brightness(1.05)}
+  button:active{transform:translateY(1px)}
+  .err{color:var(--accent);font-size:13px;margin:12px 0 0;text-align:center;font-weight:550}
+  .foot{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:6px}
+  .foot .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block}
+  .shake{animation:shake .4s}
+  @keyframes shake{10%,90%{transform:translateX(-1px)}30%,70%{transform:translateX(-4px)}50%{transform:translateX(4px)}}
+  @media(prefers-reduced-motion:reduce){.card,.shake{animation:none}}
 </style></head>
 <body>
-  <form class="card" method="POST" action="">
-    <div class="brand"><span class="dot"></span>HSpace</div>
-    <h1>🔒 有人分享了内容给你</h1>
-    <input type="password" name="password" placeholder="请输入访问密码" autofocus required autocomplete="off">
+  <form class="card${error ? " shake" : ""}" method="POST" action="" autocomplete="off">
+    <div class="tile">${BRAND_MARK}</div>
+    <h1>有人给你分享了内容</h1>
+    <p class="sub">输入访问密码即可查看</p>
+    <div class="field">
+      <span class="lk">🔒</span>
+      <input type="password" name="password" placeholder="访问密码" autofocus required
+             autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+             aria-label="访问密码">
+    </div>
     <button type="submit">查看内容</button>
-    ${error ? '<div class="err">密码不正确，请重试。</div>' : ""}
+    ${error ? '<p class="err" role="alert">密码不正确，请重试</p>' : ""}
   </form>
+  <div class="foot"><span class="dot"></span>由 HSpace 私密分享 · 仅凭密码可见</div>
 </body></html>`;
 }
 
