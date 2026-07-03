@@ -2,12 +2,13 @@
 
 English | [简体中文](https://github.com/agentx1boss/hspace/blob/main/vscode-extension/README.zh-CN.md)
 
-**Private sharing for AI-generated content.** Turn the HTML your AI just wrote into a link + password, and hand it only to the people who should see it.
+**Private sharing for AI-generated content.** Turn the HTML or Markdown your AI just wrote into a link + password, and hand it only to the people who should see it.
 
 AI-generated demos, reports, data visualizations — you want to send them to a client, a teammate, a small circle, not to the whole internet. HSpace is not hosting; it's **private distribution**: every link is password-gated, never indexed by search engines, safe against accidental forwarding, and revocable at any time.
 
 ## Why it's different
 
+- 📝 **Markdown, beautifully published** — `.md` files render into a clean reading page (headings, tables, code blocks, light/dark themes)
 - 🔐 **Private by default** — every publish gets a random 4-digit password; without it, nobody gets in. Viewers enter it once and stay signed in for 24 hours
 - 📋 **One paste and it's sent** — link and password land on your clipboard together; paste straight into Slack, email, or WeChat
 - 🎯 **Controlled and revocable** — change the password anytime (old one dies instantly), delete the page and the link goes dark; expired pages clean themselves up
@@ -17,7 +18,7 @@ AI-generated demos, reports, data visualizations — you want to send them to a 
 ## Quick Start
 
 1. Install the extension
-2. Open any `.html` file
+2. Open any `.html` or `.md` file
 3. Click the ☁️ icon in the editor title bar
 4. The link and its password are on your clipboard — send them to whoever should see it 🎉
 
@@ -38,7 +39,7 @@ No sign-up, no configuration. It just works.
 
 ## Limits (default hosted instance)
 
-- Single HTML file only; ≤ 1 MB anonymous, ≤ 2 MB signed in
+- Single HTML / Markdown file only; ≤ 1 MB anonymous, ≤ 2 MB signed in
 - Anonymous shares expire after 7 days at most (sign in for permanent links)
 - Max 20 publishes per IP per hour; anonymous publishes also capped at 50 per day
 - Anonymous pages always keep a password, and their content cannot be replaced after publishing (sign in to unlock both)
@@ -56,7 +57,7 @@ Publishing uploads the current HTML file to the backend and creates a password-g
 
 ## Roadmap
 
-Private Markdown sharing with a beautiful reading theme, publish-from-chat (MCP), view receipts, per-recipient links.
+Publish-from-chat (MCP), view receipts, per-recipient links, content versioning.
 
 ## License
 

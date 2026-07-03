@@ -48,9 +48,10 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
     vscode.window.showWarningMessage("请先打开或选中一个 .html 文件。");
     return;
   }
-  const ext = uri.path.toLowerCase();
-  if (!ext.endsWith(".html") && !ext.endsWith(".htm")) {
-    vscode.window.showWarningMessage("只能发布 .html / .htm 文件。");
+  const path = uri.path.toLowerCase();
+  const isMd = path.endsWith(".md") || path.endsWith(".markdown");
+  if (!isMd && !path.endsWith(".html") && !path.endsWith(".htm")) {
+    vscode.window.showWarningMessage("只能发布 .html / .htm / .md 文件。");
     return;
   }
 
@@ -63,13 +64,16 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
   const expiresIn = days === 0 && hasKey ? null : Math.max(1, days) * 86400;
 
   await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Notification, title: "正在发布 HTML…" },
+    { location: vscode.ProgressLocation.Notification, title: "正在发布…" },
     async () => {
       try {
-        const html = await readHtml(uri);
+        const text = await readHtml(uri);
         const client = await getClient(context);
-        const filename = uri.path.split("/").pop() || "index.html";
-        const result: PublishResult = await client.publish({ html, filename, password, expiresIn });
+        const filename = uri.path.split("/").pop() || (isMd ? "index.md" : "index.html");
+        const result: PublishResult = await client.publish({
+          ...(isMd ? { markdown: text } : { html: text }),
+          filename, password, expiresIn,
+        });
 
         await saveRecord(context, {
           slug: result.slug,

@@ -9,7 +9,8 @@ export interface PublishResult {
 }
 
 export interface PublishOptions {
-  html: string;
+  html?: string;
+  markdown?: string; // 与 html 二选一：md 由后端渲染成阅读页
   filename?: string;
   password?: string;
   expiresIn?: number | null; // 秒；null=永不过期（需登录）
@@ -72,6 +73,8 @@ export function errorMessage(e: unknown): string {
   if (e instanceof ApiError) {
     const map: Record<string, string> = {
       missing_html: "文件内容为空。",
+      missing_content: "文件内容为空。",
+      content_type_mismatch: "内容类型与原页面不一致（md 页面只能用 md 更新）。",
       too_large: "文件超过大小上限（默认 2MB）。",
       content_blocked: "内容被安全扫描拦截。",
       rate_limited: "发布过于频繁，请稍后再试。",

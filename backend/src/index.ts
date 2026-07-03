@@ -15,7 +15,8 @@ import {
   signCookie,
   verifyCookie,
 } from "./crypto";
-import { passwordPage, notFoundPage, lockedPage } from "./html";
+import { marked } from "marked";
+import { passwordPage, notFoundPage, lockedPage, readingPage } from "./html";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -135,19 +136,20 @@ async function publish(request: Request, env: Env): Promise<Response> {
     return json({ error: "invalid_json" }, 400);
   }
 
-  const html: unknown = body?.html;
-  if (typeof html !== "string" || html.trim() === "") {
-    return json({ error: "missing_html" }, 400);
-  }
+  // 内容：html 与 markdown 二选一（md 存原文，访问时渲染进阅读模板）
+  const picked = pickContent(body);
+  if (!picked) return json({ error: "missing_content" }, 400);
+  const { content, ext } = picked;
 
   // 体积上限：匿名比登录更小
   const maxSize = Number(ownerId ? env.MAX_SIZE_BYTES : env.ANON_MAX_SIZE_BYTES);
-  const size = new TextEncoder().encode(html).length;
+  const size = new TextEncoder().encode(content).length;
   if (size > maxSize) return json({ error: "too_large", maxBytes: maxSize }, 413);
 
-  if (isSuspicious(html)) return json({ error: "content_blocked" }, 422);
+  // 内容扫描对 md 同样生效：md 中内嵌的原始 HTML 会原文出现在源码里
+  if (isSuspicious(content)) return json({ error: "content_blocked" }, 422);
   // 匿名内容从严：命中钓鱼特征直接拒绝
-  if (!ownerId && isPhishy(html)) return json({ error: "content_blocked" }, 422);
+  if (!ownerId && isPhishy(content)) return json({ error: "content_blocked" }, 422);
 
   // 全局匿名日配额熔断：兜住 R2/D1 成本
   if (!ownerId && !(await allowGlobalBudget(size, env))) {
@@ -168,10 +170,12 @@ async function publish(request: Request, env: Env): Promise<Response> {
     passwordSalt = p.salt;
   }
 
-  // 生成唯一 slug 并写 R2
+  // 生成唯一 slug 并写 R2（后缀即内容类型，无需改表）
   const slug = await uniqueSlug(env);
-  const objectKey = `pages/${slug}.html`;
-  await env.BUCKET.put(objectKey, html, { httpMetadata: { contentType: "text/html; charset=utf-8" } });
+  const objectKey = `pages/${slug}.${ext}`;
+  await env.BUCKET.put(objectKey, content, {
+    httpMetadata: { contentType: ext === "md" ? "text/markdown; charset=utf-8" : "text/html; charset=utf-8" },
+  });
 
   // 匿名编辑凭据
   const editToken = ownerId ? null : randomToken();
@@ -210,13 +214,18 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
   const sets: string[] = [];
   const args: unknown[] = [];
 
-  if (typeof body.html === "string" && body.html !== "") {
+  const picked = pickContent(body);
+  if (picked) {
     // 匿名不允许覆盖内容：防止先发正常页面过扫描、再整体换成钓鱼页
     if (!isOwner) return json({ error: "content_update_requires_login" }, 403);
-    if (isSuspicious(body.html)) return json({ error: "content_blocked" }, 422);
-    const size = new TextEncoder().encode(body.html).length;
+    // 类型不可变：md 页面只能用 markdown 更新,html 页面只能用 html 更新
+    if (!page.object_key.endsWith("." + picked.ext)) return json({ error: "content_type_mismatch" }, 400);
+    if (isSuspicious(picked.content)) return json({ error: "content_blocked" }, 422);
+    const size = new TextEncoder().encode(picked.content).length;
     if (size > Number(env.MAX_SIZE_BYTES)) return json({ error: "too_large" }, 413);
-    await env.BUCKET.put(page.object_key, body.html, { httpMetadata: { contentType: "text/html; charset=utf-8" } });
+    await env.BUCKET.put(page.object_key, picked.content, {
+      httpMetadata: { contentType: picked.ext === "md" ? "text/markdown; charset=utf-8" : "text/html; charset=utf-8" },
+    });
     sets.push("size_bytes = ?"); args.push(size);
   }
 
@@ -334,6 +343,13 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
   const obj = await env.BUCKET.get(page.object_key);
   if (!obj) return htmlResp(notFoundPage(), 404);
 
+  // Markdown:边缘渲染进阅读模板(存原文,模板升级即时生效)
+  if (page.object_key.endsWith(".md")) {
+    const md = await obj.text();
+    const article = await marked.parse(md, { gfm: true, async: true });
+    return htmlResp(readingPage(mdTitle(md, page.filename), article), 200);
+  }
+
   return new Response(obj.body, { status: 200, headers: securityHeaders() });
 }
 
@@ -355,6 +371,25 @@ function securityHeaders(): HeadersInit {
 }
 
 // ============================ 工具 ============================
+
+/** 从请求体取内容：html 与 markdown 二选一,markdown 优先级更高 */
+function pickContent(body: any): { content: string; ext: "md" | "html" } | null {
+  if (typeof body?.markdown === "string" && body.markdown.trim() !== "") {
+    return { content: body.markdown, ext: "md" };
+  }
+  if (typeof body?.html === "string" && body.html.trim() !== "") {
+    return { content: body.html, ext: "html" };
+  }
+  return null;
+}
+
+/** md 标题：第一个 # 标题,退回文件名(去扩展名),再退回品牌名 */
+function mdTitle(md: string, filename: string | null): string {
+  const m = md.match(/^#\s+(.+)$/m);
+  if (m) return m[1].replace(/[*_`~\[\]]/g, "").trim().slice(0, 120);
+  if (filename) return filename.replace(/\.(md|markdown)$/i, "");
+  return "HSpace";
+}
 
 function getPage(env: Env, slug: string): Promise<PageRow | null> {
   return env.DB.prepare("SELECT * FROM pages WHERE slug = ?").bind(slug).first<PageRow>();

@@ -1,6 +1,6 @@
 # HSpace
 
-**私密分享 AI 生成的内容。** 一键把 AI 帮你写好的 HTML 发布成"链接 + 密码",像递名片一样只交给该看的人。
+**私密分享 AI 生成的内容。** 一键把 AI 帮你写好的 HTML 或 Markdown 发布成"链接 + 密码",像递名片一样只交给该看的人。
 
 ## 这不是又一个 HTML 托管
 
@@ -14,7 +14,7 @@
 
 ## 现状(MVP 已上线)
 
-- ✅ VS Code / Cursor 插件:一键发布 `.html`,自动生成 4 位密码,链接+密码复制即走
+- ✅ VS Code / Cursor 插件:一键发布 `.html` / `.md`,自动生成 4 位密码,链接+密码复制即走
 - ✅ 密码网关:边缘验证 + 签名 Cookie(24h 免重输),防暴力破解(10 次锁 15 分钟)
 - ✅ 页面管理:最近发布面板(打开 / 复制 / 改密码 / 删除),匿名也可管理(editToken)
 - ✅ 私密性约束:匿名页面不可移除密码、不可替换内容、最长 7 天过期、访问量封顶
@@ -39,7 +39,7 @@ hspace/
 
 ## 路线图(按"私域分发"定位排序)
 
-1. **Markdown 分享 + 阅读模板** —— AI 对话的原生产物是 md;渲染成排版精良的私密阅读页,覆盖"文档分享"这个更大的场景
+1. ~~**Markdown 分享 + 阅读模板**~~ ✅ 已上线:md 原文存储、边缘渲染、亮暗双主题阅读页
 2. **MCP server** —— 在 Claude / Cursor 对话里直接 `publish`,内容在哪诞生,分享就在哪发生
 3. **密码页精装修** —— 接收方唯一看到的品牌触点,值得体面
 4. **访问回执** —— "对方昨晚打开了 3 次":先做简单计数展示,后续按人归因
@@ -89,6 +89,11 @@ curl -X POST http://localhost:8787/publish \
 
 # 访问(dev 路由)
 curl http://localhost:8787/p/ab12cd7
+
+# Markdown:发布后访问即渲染成阅读页
+curl -X POST http://localhost:8787/publish \
+  -H 'Content-Type: application/json' \
+  -d '{"markdown":"# 标题\n\n正文……","password":"1234","filename":"note.md"}'
 ```
 
 ## 运行 / 开发 VS Code 插件
@@ -105,7 +110,7 @@ npm install && npm run compile
 
 | 方法 | 路径 | 说明 | 鉴权 |
 |---|---|---|---|
-| POST | `/publish` | 发布,返回 `url`/`slug`/`editToken` | 可选 Bearer |
+| POST | `/publish` | 发布(`html` 或 `markdown` 二选一),返回 `url`/`slug`/`editToken` | 可选 Bearer |
 | PATCH | `/pages/:slug` | 改密码 / 改过期;覆盖内容仅限登录 | Bearer 或 `X-Edit-Token` |
 | DELETE | `/pages/:slug` | 删除(立即失效) | Bearer 或 `X-Edit-Token` |
 | GET | `/pages` | 列出本账户页面 | Bearer |
