@@ -58,6 +58,8 @@ interface PageRow {
   size_bytes: number;
   hits: number;
   status: string;
+  version: number;
+  updated_at: number | null;
 }
 
 const now = () => Math.floor(Date.now() / 1000);
@@ -116,6 +118,11 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   const statsMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/stats$/);
   if (statsMatch && request.method === "GET") return statsPage(statsMatch[1], request, env);
+
+  const versionsMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/versions$/);
+  if (versionsMatch && request.method === "GET") return listVersions(versionsMatch[1], request, env);
+  const restoreMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/versions\/(\d+)\/restore$/);
+  if (restoreMatch && request.method === "POST") return restoreVersion(restoreMatch[1], Number(restoreMatch[2]), request, env);
 
   const grantsMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/grants$/);
   if (grantsMatch) {
@@ -224,47 +231,32 @@ async function publish(request: Request, env: Env): Promise<Response> {
     passwordSalt = p.salt;
   }
 
-  // 生成唯一 slug 并写 R2（后缀即内容类型：单文件 pages/<slug>.<ext>；合集 pages/<slug>/…）
+  // 生成唯一 slug 并写 R2(v1 用现有 key 布局)
   const slug = await uniqueSlug(env);
-  const ct = (ext: string) => ext === "md" ? "text/markdown; charset=utf-8" : "text/html; charset=utf-8";
-  let objectKey: string;
-  let dbFilename: string | null;
-  let docsResp: { index: number; title: string }[] | undefined;
-
-  if (isCollection) {
-    const title = typeof body.title === "string" && body.title.trim()
-      ? body.title.slice(0, 200) : (prepared[0].title || "合集");
-    const index: CollectionIndex = {
-      title,
-      docs: prepared.map((p) => ({ name: p.name, title: p.title, ext: p.ext })),
-    };
-    await Promise.all(prepared.map((p, i) =>
-      env.BUCKET.put(`pages/${slug}/${i + 1}.${p.ext}`, p.content, { httpMetadata: { contentType: ct(p.ext) } })
-    ));
-    await env.BUCKET.put(`pages/${slug}/index.json`, JSON.stringify(index),
-      { httpMetadata: { contentType: "application/json; charset=utf-8" } });
-    objectKey = `pages/${slug}/index.json`;
-    dbFilename = title;
-    docsResp = prepared.map((p, i) => ({ index: i + 1, title: p.title }));
-  } else {
-    const p = prepared[0];
-    objectKey = `pages/${slug}.${p.ext}`;
-    await env.BUCKET.put(objectKey, p.content, { httpMetadata: { contentType: ct(p.ext) } });
-    dbFilename = typeof body.filename === "string" ? body.filename.slice(0, 200) : null;
-  }
+  const collectionTitle = isCollection
+    ? (typeof body.title === "string" && body.title.trim() ? body.title.slice(0, 200) : (prepared[0].title || "合集"))
+    : "";
+  const written = await writeContentVersion(env, slug, 1, isCollection, prepared, collectionTitle);
+  const objectKey = written.objectKey;
+  const docsResp = written.docsResp;
+  const dbFilename = isCollection ? collectionTitle : (typeof body.filename === "string" ? body.filename.slice(0, 200) : null);
 
   // 匿名编辑凭据
   const editToken = ownerId ? null : randomToken();
   const editTokenHash = editToken ? await sha256b64(editToken) : null;
 
+  const ts = now();
   await env.DB.prepare(
     `INSERT INTO pages (slug, owner_id, edit_token_hash, object_key, filename,
-       password_hash, password_salt, created_at, expires_at, size_bytes, hits, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'active')`
+       password_hash, password_salt, created_at, expires_at, size_bytes, hits, status, version, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'active', 1, ?)`
   ).bind(
     slug, ownerId, editTokenHash, objectKey, dbFilename,
-    passwordHash, passwordSalt, now(), expiresAt, totalSize
+    passwordHash, passwordSalt, ts, expiresAt, totalSize, ts
   ).run();
+  await env.DB.prepare(
+    "INSERT INTO versions (slug, version, object_key, size_bytes, created_at) VALUES (?, 1, ?, ?, ?)"
+  ).bind(slug, objectKey, totalSize, ts).run();
 
   return json({
     slug,
@@ -277,6 +269,31 @@ async function publish(request: Request, env: Env): Promise<Response> {
 }
 
 interface PreparedDoc { name: string; content: string; ext: "md" | "html"; title: string; size: number; }
+
+const ct = (ext: string) => ext === "md" ? "text/markdown; charset=utf-8" : "text/html; charset=utf-8";
+
+/** 把某一版内容写入 R2:v1 用现有布局,vN(>1)写到带版本的 key。返回 objectKey 与合集篇目清单 */
+async function writeContentVersion(
+  env: Env, slug: string, version: number, isCollection: boolean, prepared: PreparedDoc[], collectionTitle: string
+): Promise<{ objectKey: string; docsResp?: { index: number; title: string }[] }> {
+  if (isCollection) {
+    const base = version === 1 ? `pages/${slug}` : `pages/${slug}/v${version}`;
+    const index: CollectionIndex = {
+      title: collectionTitle,
+      docs: prepared.map((p) => ({ name: p.name, title: p.title, ext: p.ext })),
+    };
+    await Promise.all(prepared.map((p, i) =>
+      env.BUCKET.put(`${base}/${i + 1}.${p.ext}`, p.content, { httpMetadata: { contentType: ct(p.ext) } })
+    ));
+    await env.BUCKET.put(`${base}/index.json`, JSON.stringify(index),
+      { httpMetadata: { contentType: "application/json; charset=utf-8" } });
+    return { objectKey: `${base}/index.json`, docsResp: prepared.map((p, i) => ({ index: i + 1, title: p.title })) };
+  }
+  const p = prepared[0];
+  const key = version === 1 ? `pages/${slug}.${p.ext}` : `pages/${slug}.v${version}.${p.ext}`;
+  await env.BUCKET.put(key, p.content, { httpMetadata: { contentType: ct(p.ext) } });
+  return { objectKey: key };
+}
 
 /** 校验并准备单篇内容(体积在上层按单/合集分别判定,这里只做类型/扫描/取标题) */
 function prepareDoc(
@@ -311,21 +328,55 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
   const sets: string[] = [];
   const args: unknown[] = [];
 
-  const picked = pickContent(body);
-  if (picked) {
-    // 合集 MVP 不可变：增删改篇目并入"内容版本化"里程碑
-    if (page.object_key.endsWith("/index.json")) return json({ error: "collection_content_immutable" }, 400);
-    // 匿名不允许覆盖内容：防止先发正常页面过扫描、再整体换成钓鱼页
-    if (!isOwner) return json({ error: "content_update_requires_login" }, 403);
-    // 类型不可变：md 页面只能用 markdown 更新,html 页面只能用 html 更新
-    if (!page.object_key.endsWith("." + picked.ext)) return json({ error: "content_type_mismatch" }, 400);
-    if (isSuspicious(picked.content)) return json({ error: "content_blocked" }, 422);
-    const size = new TextEncoder().encode(picked.content).length;
-    if (size > Number(env.MAX_SIZE_BYTES)) return json({ error: "too_large" }, 413);
-    await env.BUCKET.put(page.object_key, picked.content, {
-      httpMetadata: { contentType: picked.ext === "md" ? "text/markdown; charset=utf-8" : "text/html; charset=utf-8" },
-    });
-    sets.push("size_bytes = ?"); args.push(size);
+  // 内容更新(版本化):html/markdown 单篇,或 files[] 合集;每次升一版,旧版保留
+  const pageIsCollection = page.object_key.endsWith("/index.json");
+  const wantCollectionUpdate = Array.isArray((body as any)?.files);
+  const picked = wantCollectionUpdate ? null : pickContent(body);
+
+  if (picked || wantCollectionUpdate) {
+    // 类型必须一致:单页↔单页、合集↔合集
+    if (pageIsCollection !== wantCollectionUpdate) return json({ error: "content_type_mismatch" }, 400);
+
+    // 准备并扫描新内容
+    const newDocs: PreparedDoc[] = [];
+    if (wantCollectionUpdate) {
+      const files = (body as any).files;
+      const maxDocs = Number(isOwner ? env.MAX_DOCS : env.ANON_MAX_DOCS);
+      if (files.length < 2) return json({ error: "collection_too_few" }, 400);
+      if (files.length > maxDocs) return json({ error: "too_many_docs", maxDocs }, 400);
+      for (const f of files) {
+        const p = prepareDoc(f, isOwner ? "owner" : null, newDocs.length + 1);
+        if ("error" in p) return json({ error: p.error, file: p.name }, p.status);
+        newDocs.push(p);
+      }
+    } else {
+      // 单页:md/html 类型需与原页面一致
+      const pageExt = page.object_key.endsWith(".md") ? "md" : "html";
+      if (picked!.ext !== pageExt) return json({ error: "content_type_mismatch" }, 400);
+      const p = prepareDoc(body, isOwner ? "owner" : null, 1);
+      if ("error" in p) return json({ error: p.error }, p.status);
+      newDocs.push(p);
+    }
+
+    const totalSize = newDocs.reduce((a, d) => a + d.size, 0);
+    const maxSize = Number(
+      wantCollectionUpdate
+        ? (isOwner ? env.COLLECTION_MAX_SIZE_BYTES : env.ANON_MAX_SIZE_BYTES)
+        : (isOwner ? env.MAX_SIZE_BYTES : env.ANON_MAX_SIZE_BYTES)
+    );
+    if (totalSize > maxSize) return json({ error: "too_large", maxBytes: maxSize }, 413);
+
+    const nextVersion = page.version + 1;
+    const collTitle = wantCollectionUpdate
+      ? (typeof body.title === "string" && body.title.trim() ? body.title.slice(0, 200) : (page.filename || "合集"))
+      : "";
+    const written = await writeContentVersion(env, slug, nextVersion, wantCollectionUpdate, newDocs, collTitle);
+    const ts = now();
+    await env.DB.prepare(
+      "INSERT INTO versions (slug, version, object_key, size_bytes, created_at) VALUES (?, ?, ?, ?, ?)"
+    ).bind(slug, nextVersion, written.objectKey, totalSize, ts).run();
+    sets.push("object_key = ?", "size_bytes = ?", "version = ?", "updated_at = ?");
+    args.push(written.objectKey, totalSize, nextVersion, ts);
   }
 
   if ("password" in body) {
@@ -362,12 +413,10 @@ async function deletePage(slug: string, request: Request, env: Env): Promise<Res
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
   if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
 
-  if (page.object_key.endsWith("/index.json")) {
-    // 合集：按前缀清空整本册子
-    const listed = await env.BUCKET.list({ prefix: `pages/${slug}/` });
+  // 清理所有版本对象:合集在 pages/<slug>/ 前缀下(含各 vN 目录);单页在 pages/<slug>. 前缀下(含 .vN.)
+  for (const prefix of [`pages/${slug}/`, `pages/${slug}.`]) {
+    const listed = await env.BUCKET.list({ prefix });
     await Promise.all(listed.objects.map((o) => env.BUCKET.delete(o.key)));
-  } else {
-    await env.BUCKET.delete(page.object_key);
   }
   await env.DB.prepare("UPDATE pages SET status = 'deleted' WHERE slug = ?").bind(slug).run();
   return json({ ok: true });
@@ -396,7 +445,41 @@ async function statsPage(slug: string, request: Request, env: Env): Promise<Resp
     expiresAt: page.expires_at ? new Date(page.expires_at * 1000).toISOString() : null,
     passwordProtected: !!page.password_hash,
     isCollection: page.object_key.endsWith("/index.json"),
+    version: page.version,
+    updatedAt: page.updated_at ? new Date(page.updated_at * 1000).toISOString() : null,
   });
+}
+
+// ---- GET /pages/:slug/versions ----（版本历史）
+async function listVersions(slug: string, request: Request, env: Env): Promise<Response> {
+  const page = await getPage(env, slug);
+  if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
+  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  const { results } = await env.DB.prepare(
+    "SELECT version, size_bytes, created_at FROM versions WHERE slug = ? ORDER BY version DESC"
+  ).bind(slug).all();
+  return json({ current: page.version, versions: results });
+}
+
+// ---- POST /pages/:slug/versions/:v/restore ----（回滚到某版:升为新版,复用旧对象）
+async function restoreVersion(slug: string, v: number, request: Request, env: Env): Promise<Response> {
+  const page = await getPage(env, slug);
+  if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
+  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  const row = await env.DB.prepare(
+    "SELECT object_key, size_bytes FROM versions WHERE slug = ? AND version = ?"
+  ).bind(slug, v).first<{ object_key: string; size_bytes: number }>();
+  if (!row) return json({ error: "version_not_found" }, 404);
+
+  const nextVersion = page.version + 1;
+  const ts = now();
+  await env.DB.prepare(
+    "INSERT INTO versions (slug, version, object_key, size_bytes, created_at) VALUES (?, ?, ?, ?, ?)"
+  ).bind(slug, nextVersion, row.object_key, row.size_bytes, ts).run();
+  await env.DB.prepare(
+    "UPDATE pages SET object_key = ?, size_bytes = ?, version = ?, updated_at = ? WHERE slug = ?"
+  ).bind(row.object_key, row.size_bytes, nextVersion, ts, slug).run();
+  return json({ ok: true, slug, version: nextVersion, restoredFrom: v });
 }
 
 // ============================ 访问人（每人一链 / 多口令） ============================
@@ -571,7 +654,8 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
   if (page.object_key.endsWith(".md")) {
     const md = await obj.text();
     const article = await marked.parse(md, { gfm: true, async: true });
-    return htmlResp(readingPage(mdTitle(md, page.filename), article), 200);
+    const updated = page.version > 1 && page.updated_at ? page.updated_at : null;
+    return htmlResp(readingPage(mdTitle(md, page.filename), article, undefined, updated), 200);
   }
 
   return new Response(obj.body, { status: 200, headers: securityHeaders() });
@@ -583,12 +667,15 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
   if (!idxObj) return htmlResp(notFoundPage(), 404);
   const index = JSON.parse(await idxObj.text()) as CollectionIndex;
   const navDocs = index.docs.map((d, i) => ({ index: i + 1, title: d.title }));
-  const slug = page.slug;
+  // 篇目与 index.json 同目录(v1: pages/<slug>/;vN: pages/<slug>/v<n>/)
+  const dir = page.object_key.replace(/index\.json$/, "");
+  const updated = page.version > 1 && page.updated_at ? page.updated_at : null;
 
   const path = docPath.replace(/\/+$/, "") || "/";
   if (path === "/") {
     const date = new Date(page.created_at * 1000).toISOString().slice(0, 10);
-    const meta = `${index.docs.length} 篇 · ${date} 分享`;
+    let meta = `${index.docs.length} 篇 · ${date} 分享`;
+    if (updated) meta += ` · 更新于 ${new Date(updated * 1000).toISOString().slice(0, 10)}`;
     return htmlResp(tocPage(index.title, navDocs, meta), 200);
   }
 
@@ -598,13 +685,13 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
   if (n < 1 || n > index.docs.length) return htmlResp(notFoundPage(), 404);
 
   const doc = index.docs[n - 1];
-  const obj = await env.BUCKET.get(`pages/${slug}/${n}.${doc.ext}`);
+  const obj = await env.BUCKET.get(`${dir}${n}.${doc.ext}`);
   if (!obj) return htmlResp(notFoundPage(), 404);
 
   if (doc.ext === "md") {
     const article = await marked.parse(await obj.text(), { gfm: true, async: true });
     const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
-    return htmlResp(readingPage(doc.title, article, nav), 200);
+    return htmlResp(readingPage(doc.title, article, nav, updated), 200);
   }
   // html 篇目:保留原样,仅注入一个悬浮「← 目录」按钮(不改动用户 DOM 结构)
   return new Response(injectBackButton(await obj.text()), { status: 200, headers: securityHeaders() });

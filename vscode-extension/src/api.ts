@@ -108,6 +108,32 @@ export class ApiClient {
     });
     await this.parse(res);
   }
+
+  /** 更新内容(升版):单页传 html/markdown,合集传 files */
+  async updateContent(slug: string, body: Partial<PublishOptions>, editToken?: string): Promise<void> {
+    await this.patch(slug, body as Record<string, unknown>, editToken);
+  }
+
+  async listVersions(slug: string, editToken?: string): Promise<{ current: number; versions: Version[] }> {
+    const res = await fetch(`${this.baseUrl}/pages/${slug}/versions`, {
+      headers: this.headers(editToken ? { "X-Edit-Token": editToken } : {}),
+    });
+    return this.parse(res);
+  }
+
+  async restoreVersion(slug: string, v: number, editToken?: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/pages/${slug}/versions/${v}/restore`, {
+      method: "POST",
+      headers: this.headers(editToken ? { "X-Edit-Token": editToken } : {}),
+    });
+    await this.parse(res);
+  }
+}
+
+export interface Version {
+  version: number;
+  size_bytes: number;
+  created_at: number;
 }
 
 export interface CreatedGrant {
@@ -133,6 +159,8 @@ export interface PageStats {
   expiresAt: string | null;
   passwordProtected: boolean;
   isCollection: boolean;
+  version: number;
+  updatedAt: string | null;
 }
 
 export function errorMessage(e: unknown): string {

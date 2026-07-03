@@ -2,7 +2,7 @@
   "name": "hspace",
   "displayName": "HSpace",
   "description": "私密分享 AI 生成的内容：一键把 HTML 发布成链接+密码，只给该看的人。Private sharing for AI-generated content.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",
@@ -22,6 +22,8 @@
       { "command": "hspace.signOut", "title": "HSpace: 退出登录（清除 API Key）" },
       { "command": "hspace.setPassword", "title": "HSpace: 设置/修改密码" },
       { "command": "hspace.manageGrants", "title": "HSpace: 管理访问人（每人一链）", "icon": "$(organization)" },
+      { "command": "hspace.updateContent", "title": "HSpace: 更新内容（升版）", "icon": "$(cloud-upload)" },
+      { "command": "hspace.versions", "title": "HSpace: 版本历史 / 回滚", "icon": "$(history)" },
       { "command": "hspace.copyLink", "title": "HSpace: 复制链接" },
       { "command": "hspace.openInBrowser", "title": "HSpace: 浏览器打开" },
       { "command": "hspace.delete", "title": "HSpace: 删除页面", "icon": "$(trash)" },
@@ -43,6 +45,8 @@
         { "command": "hspace.manageGrants", "when": "view == hspace.recent && viewItem == hspacePage", "group": "inline" },
         { "command": "hspace.copyLink", "when": "view == hspace.recent", "group": "1_actions" },
         { "command": "hspace.manageGrants", "when": "view == hspace.recent && viewItem == hspacePage", "group": "1_actions" },
+        { "command": "hspace.updateContent", "when": "view == hspace.recent && viewItem == hspacePage", "group": "1_actions" },
+        { "command": "hspace.versions", "when": "view == hspace.recent && viewItem == hspacePage", "group": "1_actions" },
         { "command": "hspace.setPassword", "when": "view == hspace.recent", "group": "1_actions" },
         { "command": "hspace.delete", "when": "view == hspace.recent", "group": "2_danger" }
       ]

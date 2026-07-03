@@ -168,12 +168,13 @@ function prevNext(nav: CollectionNav): string {
   return `<nav class="pn">${left}${right}</nav>`;
 }
 
-/** Markdown 阅读页；传入 nav 时渲染合集导航(面包屑 + 宽屏侧栏 + 上/下篇) */
-export function readingPage(title: string, articleHtml: string, nav?: CollectionNav): string {
+/** Markdown 阅读页；传入 nav 时渲染合集导航;updatedAt(epoch 秒)非空时页脚显示"更新于" */
+export function readingPage(title: string, articleHtml: string, nav?: CollectionNav, updatedAt?: number | null): string {
   const pageTitle = nav ? `${title} · ${nav.collectionTitle}` : title;
   const crumb = nav
     ? `<div class="crumb"><a href="/">← 目录</a><span class="sep">·</span>${esc(nav.collectionTitle)}</div>`
     : "";
+  const upd = updatedAt ? ` · 更新于 ${new Date(updatedAt * 1000).toISOString().slice(0, 10)}` : "";
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -183,7 +184,7 @@ export function readingPage(title: string, articleHtml: string, nav?: Collection
   ${nav ? sidebar(nav) : ""}
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
-    <footer><span class="dot"></span>HSpace · 私密分享</footer>
+    <footer><span class="dot"></span>HSpace · 私密分享${upd}</footer>
   </div>
 </body></html>`;
 }

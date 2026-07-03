@@ -72,10 +72,11 @@ export function openapiSpec(origin: string): Record<string, unknown> {
         ],
         patch: {
           operationId: "updatePage",
-          summary: "修改密码 / 有效期(内容覆盖仅限登录、非合集)",
+          summary: "更新内容(升版)/ 改密码 / 改有效期",
           description:
-            "改密码或有效期。匿名不可移除密码、不可改为永久、不可覆盖内容;合集不支持改内容。" +
-            "鉴权用 Bearer(登录)或 `X-Edit-Token`(匿名发布时返回的凭据)。",
+            "带 `html`/`markdown`(单页)或 `files`(合集)即更新内容并升一个版本,旧版保留可回滚,类型需与原页面一致。" +
+            "也可改密码或有效期。匿名可更新自己页面的内容(每次重新扫描),但仍不可移除密码、不可改为永久。" +
+            "鉴权用 Bearer(登录)或 `X-Edit-Token`。",
           parameters: [{ $ref: "#/components/parameters/EditToken" }],
           requestBody: {
             required: true,
@@ -133,6 +134,73 @@ export function openapiSpec(origin: string): Record<string, unknown> {
             },
             "403": { description: "无权限", content: errContent() },
             "404": { description: "页面不存在", content: errContent() },
+          },
+        },
+      },
+      "/pages/{slug}/versions": {
+        get: {
+          operationId: "listVersions",
+          summary: "内容版本历史",
+          description: "列出该页面/合集的所有内容版本。鉴权:Bearer 或 X-Edit-Token。",
+          parameters: [
+            { name: "slug", in: "path", required: true, schema: { type: "string" } },
+            { $ref: "#/components/parameters/EditToken" },
+          ],
+          responses: {
+            "200": {
+              description: "版本列表",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      current: { type: "integer" },
+                      versions: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            version: { type: "integer" }, size_bytes: { type: "integer" }, created_at: { type: "integer" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            "403": { description: "无权限", content: errContent() },
+            "404": { description: "页面不存在", content: errContent() },
+          },
+        },
+      },
+      "/pages/{slug}/versions/{v}/restore": {
+        post: {
+          operationId: "restoreVersion",
+          summary: "回滚到某个内容版本",
+          description: "把当前内容指回指定版本(会升为一个新版本)。鉴权:Bearer 或 X-Edit-Token。",
+          parameters: [
+            { name: "slug", in: "path", required: true, schema: { type: "string" } },
+            { name: "v", in: "path", required: true, schema: { type: "integer" } },
+            { $ref: "#/components/parameters/EditToken" },
+          ],
+          responses: {
+            "200": {
+              description: "已回滚",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      ok: { type: "boolean" }, slug: { type: "string" },
+                      version: { type: "integer" }, restoredFrom: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+            "403": { description: "无权限", content: errContent() },
+            "404": { description: "页面或版本不存在", content: errContent() },
           },
         },
       },

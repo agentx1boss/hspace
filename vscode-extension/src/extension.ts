@@ -15,6 +15,9 @@ interface Record {
   docs?: { index: number; title: string }[]; // 合集篇目
   hits?: number;         // 访问回执:累计访问量
   statsAt?: string;      // 上次拉取访问量的时间
+  contentType?: "md" | "html"; // 单页内容类型(用于更新校验)
+  version?: number;      // 当前内容版本
+  updatedAt?: string | null; // 最近更新时间(ISO)
 }
 
 // ─────────────────────────── activate ───────────────────────────
@@ -32,6 +35,8 @@ export function activate(context: vscode.ExtensionContext) {
   reg("hspace.signOut", () => signOut(context));
   reg("hspace.setPassword", (node?: RecentNode) => setPassword(context, provider, node));
   reg("hspace.manageGrants", (node?: RecentNode) => node && manageGrants(context, node.record));
+  reg("hspace.updateContent", (node?: RecentNode) => node && updateContent(context, provider, node.record));
+  reg("hspace.versions", (node?: RecentNode) => node && showVersions(context, node.record));
   reg("hspace.copyLink", (node?: RecentNode) => node && copyLink(node.record.url));
   reg("hspace.openInBrowser", (node?: RecentNode) => node && vscode.env.openExternal(vscode.Uri.parse(node.record.url)));
   reg("hspace.delete", (node?: RecentNode) => node && deletePage(context, provider, node.record));
@@ -88,6 +93,9 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
           createdAt: new Date().toISOString(),
           editToken: result.editToken,
           passwordProtected: result.passwordProtected,
+          kind: "single",
+          contentType: isMd ? "md" : "html",
+          version: 1,
         });
         provider.refresh();
 
@@ -253,6 +261,110 @@ function extractTitle(text: string, name: string, isMd: boolean): string {
   return name.replace(/\.(html?|md|markdown)$/i, "");
 }
 
+// ---- 内容版本化:更新内容 ----
+async function updateContent(context: vscode.ExtensionContext, provider: RecentProvider, rec: Record) {
+  const client = await getClient(context);
+  if (rec.kind === "collection") {
+    // 合集:重新选文件夹整组替换
+    const folder = await vscode.window.showOpenDialog({
+      canSelectFolders: true, canSelectFiles: false, openLabel: "选择文件夹更新此合集",
+    });
+    if (!folder || folder.length === 0) return;
+    let candidates: Candidate[];
+    try {
+      const entries = await vscode.workspace.fs.readDirectory(folder[0]);
+      const files = entries.filter(([n, t]) => t === vscode.FileType.File && isPublishable(n))
+        .map(([n]) => vscode.Uri.joinPath(folder[0], n));
+      candidates = await collectFiles(files);
+    } catch (e) { vscode.window.showErrorMessage(`读取失败：${errorMessage(e)}`); return; }
+    if (candidates.length < 2) { vscode.window.showWarningMessage("合集至少需要 2 个 .md / .html 文件。"); return; }
+    candidates.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const ok = await vscode.window.showWarningMessage(
+      `用「${folder[0].path.split("/").pop()}」里的 ${candidates.length} 个文件替换合集「${rec.filename}」的全部内容？链接与密码不变,升为新版本。`,
+      { modal: true }, "更新"
+    );
+    if (ok !== "更新") return;
+    const files: CollectionFile[] = candidates.map((c) =>
+      c.isMd ? { name: c.name, markdown: c.text } : { name: c.name, html: c.text });
+    await runUpdate(client, rec, { files, title: rec.filename }, provider, context);
+    return;
+  }
+
+  // 单页:用当前编辑器文件更新(类型需一致)
+  const uri = vscode.window.activeTextEditor?.document.uri;
+  if (!uri) { vscode.window.showWarningMessage("请先打开要用作新内容的文件。"); return; }
+  const p = uri.path.toLowerCase();
+  const isMd = p.endsWith(".md") || p.endsWith(".markdown");
+  const isHtml = p.endsWith(".html") || p.endsWith(".htm");
+  if (!isMd && !isHtml) { vscode.window.showWarningMessage("当前文件不是 .html / .md。"); return; }
+  const type = isMd ? "md" : "html";
+  if (rec.contentType && rec.contentType !== type) {
+    vscode.window.showWarningMessage(`类型不符:该页面是 ${rec.contentType},不能用 ${type} 文件更新。`);
+    return;
+  }
+  const ok = await vscode.window.showWarningMessage(
+    `用当前文件「${uri.path.split("/").pop()}」更新「${rec.filename}」?链接与密码不变,升为新版本。`,
+    { modal: true }, "更新"
+  );
+  if (ok !== "更新") return;
+  const text = await readHtml(uri);
+  await runUpdate(client, rec, isMd ? { markdown: text } : { html: text }, provider, context);
+}
+
+async function runUpdate(
+  client: ApiClient, rec: Record, body: any, provider: RecentProvider, context: vscode.ExtensionContext
+) {
+  await vscode.window.withProgress(
+    { location: { viewId: "hspace.recent" } },
+    async () => {
+      try {
+        await client.updateContent(rec.slug, body, rec.editToken || undefined);
+        const v = await client.listVersions(rec.slug, rec.editToken || undefined);
+        rec.version = v.current;
+        rec.updatedAt = new Date().toISOString();
+        await replaceRecord(context, rec);
+        provider.refresh();
+        vscode.window.showInformationMessage(`已更新「${rec.filename}」到 v${v.current}(链接与密码不变)。`);
+      } catch (e) {
+        vscode.window.showErrorMessage(`更新失败：${errorMessage(e)}`);
+      }
+    }
+  );
+}
+
+// ---- 内容版本化:版本历史与回滚 ----
+async function showVersions(context: vscode.ExtensionContext, rec: Record) {
+  const client = await getClient(context);
+  let data: { current: number; versions: { version: number; size_bytes: number; created_at: number }[] };
+  try {
+    data = await client.listVersions(rec.slug, rec.editToken || undefined);
+  } catch (e) { vscode.window.showErrorMessage(`读取版本失败：${errorMessage(e)}`); return; }
+  if (data.versions.length <= 1) { vscode.window.showInformationMessage("该页面暂无历史版本(仅初版)。"); return; }
+
+  const pick = await vscode.window.showQuickPick(
+    data.versions.map((v) => ({
+      label: `v${v.version}${v.version === data.current ? "（当前）" : ""}`,
+      description: `${new Date(v.created_at * 1000).toLocaleString()} · ${(v.size_bytes / 1024).toFixed(1)} KB`,
+      v,
+    })),
+    { placeHolder: `「${rec.filename}」版本历史 — 选择要回滚到的版本`, ignoreFocusOut: true }
+  );
+  if (!pick || pick.v.version === data.current) return;
+  const ok = await vscode.window.showWarningMessage(
+    `回滚到 v${pick.v.version}?当前内容会被替换为该版本(并记为新版本),链接与密码不变。`,
+    { modal: true }, "回滚"
+  );
+  if (ok !== "回滚") return;
+  try {
+    await client.restoreVersion(rec.slug, pick.v.version, rec.editToken || undefined);
+    rec.updatedAt = new Date().toISOString();
+    await replaceRecord(context, rec);
+    vscode.window.showInformationMessage(`已回滚到 v${pick.v.version} 的内容。`);
+  } catch (e) {
+    vscode.window.showErrorMessage(`回滚失败：${errorMessage(e)}`);
+  }
+}
+
 async function setApiKey(context: vscode.ExtensionContext) {
   const key = await vscode.window.showInputBox({
     prompt: "粘贴你的 API Key（在网站账户页生成）",
@@ -413,6 +525,8 @@ async function refreshStats(context: vscode.ExtensionContext, provider: RecentPr
           try {
             const s = await client.stats(rec.slug, rec.editToken || undefined);
             rec.hits = s.hits;
+            rec.version = s.version;
+            rec.updatedAt = s.updatedAt;
             rec.statsAt = new Date().toISOString();
           } catch {
             // 页面可能已过期/删除;保留原值,不打断整体刷新
@@ -470,12 +584,16 @@ class RecentNode extends vscode.TreeItem {
       isColl ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None
     );
     const views = record.hits === undefined ? "" : `👁 ${record.hits}`;
+    const ver = record.version && record.version > 1 ? `v${record.version}` : "";
     const base = isColl ? `合集 · ${record.docs?.length ?? 0} 篇` : new URL(record.url).hostname;
-    this.description = views ? `${base} · ${views}` : base;
+    this.description = [base, views, ver].filter(Boolean).join(" · ");
     const viewLine = record.hits === undefined
       ? "访问量:点刷新查看"
-      : `访问量:${record.hits}${isColl ? "(目录+各篇)" : ""}${record.statsAt ? `  ·  更新于 ${new Date(record.statsAt).toLocaleString()}` : ""}`;
-    this.tooltip = `${record.url}\n发布于 ${new Date(record.createdAt).toLocaleString()}\n${viewLine}`;
+      : `访问量:${record.hits}${isColl ? "(目录+各篇)" : ""}`;
+    const verLine = record.version && record.version > 1
+      ? `\n版本:v${record.version}${record.updatedAt ? ` · 更新于 ${new Date(record.updatedAt).toLocaleDateString()}` : ""}`
+      : "";
+    this.tooltip = `${record.url}\n发布于 ${new Date(record.createdAt).toLocaleString()}\n${viewLine}${verLine}`;
     this.iconPath = new vscode.ThemeIcon(isColl ? "book" : record.passwordProtected ? "lock" : "globe");
     this.contextValue = "hspacePage";
     // 合集节点展开看篇目,不整体跳转;单页点击直接打开
