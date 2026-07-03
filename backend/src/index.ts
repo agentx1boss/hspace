@@ -17,6 +17,7 @@ import {
 } from "./crypto";
 import { marked } from "marked";
 import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectBackButton, CollectionNav } from "./html";
+import { openapiSpec } from "./openapi";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -116,6 +117,11 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
   if (path === "/pages" && request.method === "GET") return listPages(request, env);
 
   if (path === "/" || path === "/health") return json({ ok: true, service: "hspace" });
+
+  // AI 工具就绪:OpenAPI 规范(GPT Actions / agent 框架可直接消费),servers 按当前 origin 填充
+  if (path === "/openapi.json" && request.method === "GET") {
+    return json(openapiSpec(url.origin));
+  }
 
   return json({ error: "not_found" }, 404);
 }

@@ -113,6 +113,9 @@ npm install && npm run compile
 
 ## API 契约
 
+机器可读的 **OpenAPI 3 规范**在 [`/openapi.json`](https://html-share.kzhan.workers.dev/openapi.json)(`servers.url` 按访问 origin 自动填充,自建实例同样适用)。可直接喂给 GPT Actions、agent 框架或函数调用。
+
+
 | 方法 | 路径 | 说明 | 鉴权 |
 |---|---|---|---|
 | POST | `/publish` | 发布(`html` 或 `markdown` 二选一),返回 `url`/`slug`/`editToken` | 可选 Bearer |
