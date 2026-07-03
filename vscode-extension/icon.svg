@@ -1,27 +1,29 @@
 <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="0" stop-color="#4338ca"/>
       <stop offset="1" stop-color="#9333ea"/>
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="28" fill="url(#bg)"/>
-  <!-- 云朵 -->
+  <!-- 星星点缀 -->
+  <circle cx="32" cy="26" r="2.2" fill="#fff" opacity=".6"/>
+  <circle cx="100" cy="30" r="1.6" fill="#fff" opacity=".45"/>
+  <circle cx="96" cy="104" r="2" fill="#fff" opacity=".4"/>
+  <circle cx="24" cy="86" r="1.5" fill="#fff" opacity=".5"/>
+  <!-- 轨道后半段(H 后面,细且淡) -->
+  <g transform="rotate(-18 64 64)">
+    <path d="M 12 64 A 52 19 0 0 1 116 64" fill="none" stroke="#c4b5fd" stroke-width="4.5" stroke-linecap="round" opacity=".45"/>
+  </g>
+  <!-- H 字标:更粗更稳 -->
   <g fill="#ffffff">
-    <circle cx="46" cy="66" r="17"/>
-    <circle cx="72" cy="58" r="21"/>
-    <circle cx="88" cy="72" r="14"/>
-    <rect x="46" y="66" width="42" height="20" rx="10"/>
+    <rect x="34" y="32" width="15" height="64" rx="6"/>
+    <rect x="79" y="32" width="15" height="64" rx="6"/>
+    <rect x="44" y="57" width="40" height="14" rx="6"/>
   </g>
-  <!-- 上传箭头 -->
-  <g fill="#5b21b6">
-    <polygon points="64,52 49,70 79,70"/>
-    <rect x="59" y="68" width="10" height="18" rx="2"/>
-  </g>
-  <!-- 链接符号:表示"分享链接" -->
-  <g stroke="#ffffff" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.95">
-    <path d="M 42 103 a 8 8 0 0 1 0 -14 h 12"/>
-    <path d="M 66 89 a 8 8 0 0 1 0 14 h -12"/>
-    <line x1="46" y1="96" x2="62" y2="96"/>
+  <!-- 轨道前半段(H 前面,亮) + 卫星 -->
+  <g transform="rotate(-18 64 64)">
+    <path d="M 12 64 A 52 19 0 0 0 116 64" fill="none" stroke="#f3e8ff" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="27" cy="76.5" r="6.5" fill="#fbbf24"/>
   </g>
 </svg>
