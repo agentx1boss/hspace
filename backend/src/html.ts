@@ -24,6 +24,13 @@ export function passwordPage(slug: string, error = false): string {
 </body></html>`;
 }
 
+export function lockedPage(): string {
+  return `<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>尝试次数过多</title>
+<style>body{font-family:sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#0f1115;color:#888;text-align:center}</style>
+</head><body><div><h1>⏳ 尝试次数过多</h1><p>密码错误次数过多，请 15 分钟后再试。</p></div></body></html>`;
+}
+
 export function notFoundPage(): string {
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8"><title>页面不存在</title>

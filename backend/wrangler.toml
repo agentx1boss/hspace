@@ -21,8 +21,10 @@ USERCONTENT_DOMAIN = "zhanjian.space"
 MAX_SIZE_BYTES = "2097152"        # 2 MB
 # 匿名链接默认过期(秒)
 ANON_DEFAULT_TTL = "604800"       # 7 天
-# 频率限制:每个 IP 每小时最大发布次数
+# 频率限制:每个 IP 每小时最大发布次数(匿名+登录)
 RATE_LIMIT_PER_HOUR = "20"
+# 频率限制:每个 IP 每天最大发布次数(仅匿名)
+RATE_LIMIT_PER_DAY = "50"
 
 # ── 密钥(用 `wrangler secret put` 设置,勿写进本文件)──
 # COOKIE_SIGNING_SECRET  用于给密码通过后的 Cookie 签名(随机长字符串)

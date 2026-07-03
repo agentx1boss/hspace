@@ -15,7 +15,7 @@ import {
   signCookie,
   verifyCookie,
 } from "./crypto";
-import { passwordPage, notFoundPage } from "./html";
+import { passwordPage, notFoundPage, lockedPage } from "./html";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -27,6 +27,7 @@ export interface Env {
   MAX_SIZE_BYTES: string;
   ANON_DEFAULT_TTL: string;
   RATE_LIMIT_PER_HOUR: string;
+  RATE_LIMIT_PER_DAY: string;
 }
 
 interface PageRow {
@@ -120,9 +121,9 @@ async function publish(request: Request, env: Env): Promise<Response> {
   const ownerId = await authOwner(request, env);
   if (hasAuthHeader && !ownerId) return json({ error: "invalid_api_key" }, 401);
 
-  // 频率限制（按 IP，匿名与登录都限）
+  // 频率限制（按 IP）：小时窗口对所有人生效，日窗口只限匿名
   const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
-  if (!(await allowRate(ip, env))) return json({ error: "rate_limited" }, 429);
+  if (!(await allowRate(ip, env, !ownerId))) return json({ error: "rate_limited" }, 429);
 
   let body: any;
   try {
@@ -141,8 +142,9 @@ async function publish(request: Request, env: Env): Promise<Response> {
 
   if (isSuspicious(html)) return json({ error: "content_blocked" }, 422);
 
-  // 过期
-  const ttl = typeof body.expiresIn === "number" ? body.expiresIn : Number(env.ANON_DEFAULT_TTL);
+  // 过期：匿名的 TTL 钳制在 [60 秒, ANON_DEFAULT_TTL] 内，防止传超长 expiresIn 变相拿永久链接
+  let ttl = typeof body.expiresIn === "number" ? body.expiresIn : Number(env.ANON_DEFAULT_TTL);
+  if (!ownerId) ttl = Math.min(Math.max(ttl, 60), Number(env.ANON_DEFAULT_TTL));
   const expiresAt = ownerId && body.expiresIn === null ? null : now() + ttl;
 
   // 密码
@@ -186,7 +188,9 @@ async function publish(request: Request, env: Env): Promise<Response> {
 async function patchPage(slug: string, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
-  if (!(await canMutate(page, request, env))) return json({ error: "forbidden" }, 403);
+  const who = await mutateRole(page, request, env);
+  if (who === "none") return json({ error: "forbidden" }, 403);
+  const isOwner = who === "owner";
 
   let body: any;
   try { body = await request.json(); } catch { return json({ error: "invalid_json" }, 400); }
@@ -195,6 +199,8 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
   const args: unknown[] = [];
 
   if (typeof body.html === "string" && body.html !== "") {
+    // 匿名不允许覆盖内容：防止先发正常页面过扫描、再整体换成钓鱼页
+    if (!isOwner) return json({ error: "content_update_requires_login" }, 403);
     if (isSuspicious(body.html)) return json({ error: "content_blocked" }, 422);
     const size = new TextEncoder().encode(body.html).length;
     if (size > Number(env.MAX_SIZE_BYTES)) return json({ error: "too_large" }, 413);
@@ -204,6 +210,8 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
 
   if ("password" in body) {
     if (body.password === null || body.password === "") {
+      // 匿名页面必须保持密码保护
+      if (!isOwner) return json({ error: "password_removal_requires_login" }, 403);
       sets.push("password_hash = NULL", "password_salt = NULL");
     } else if (typeof body.password === "string") {
       const p = await hashPassword(body.password);
@@ -211,8 +219,15 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
     }
   }
 
-  if (typeof body.expiresIn === "number") { sets.push("expires_at = ?"); args.push(now() + body.expiresIn); }
-  if (body.expiresIn === null) { sets.push("expires_at = NULL"); }
+  if (typeof body.expiresIn === "number") {
+    // 匿名改过期同样钳制上限
+    const ttl = isOwner ? body.expiresIn : Math.min(Math.max(body.expiresIn, 60), Number(env.ANON_DEFAULT_TTL));
+    sets.push("expires_at = ?"); args.push(now() + ttl);
+  }
+  if (body.expiresIn === null) {
+    if (!isOwner) return json({ error: "permanent_requires_login" }, 403);
+    sets.push("expires_at = NULL");
+  }
 
   if (sets.length === 0) return json({ error: "nothing_to_update" }, 400);
 
@@ -225,7 +240,7 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
 async function deletePage(slug: string, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
-  if (!(await canMutate(page, request, env))) return json({ error: "forbidden" }, 403);
+  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
 
   await env.BUCKET.delete(page.object_key);
   await env.DB.prepare("UPDATE pages SET status = 'deleted' WHERE slug = ?").bind(slug).run();
@@ -243,15 +258,15 @@ async function listPages(request: Request, env: Env): Promise<Response> {
   return json({ pages: results });
 }
 
-/** 校验是否有权修改：登录用户匹配 owner，或匿名 editToken 匹配 */
-async function canMutate(page: PageRow, request: Request, env: Env): Promise<boolean> {
+/** 校验修改权限并区分角色：owner（登录且匹配）/ anon（editToken 匹配）/ none */
+async function mutateRole(page: PageRow, request: Request, env: Env): Promise<"owner" | "anon" | "none"> {
   const ownerId = await authOwner(request, env);
-  if (page.owner_id && ownerId && page.owner_id === ownerId) return true;
+  if (page.owner_id && ownerId && page.owner_id === ownerId) return "owner";
   const token = request.headers.get("X-Edit-Token");
-  if (token && page.edit_token_hash) {
-    return (await sha256b64(token)) === page.edit_token_hash;
+  if (token && page.edit_token_hash && (await sha256b64(token)) === page.edit_token_hash) {
+    return "anon";
   }
-  return false;
+  return "none";
 }
 
 // ============================ 提供页面 ============================
@@ -272,6 +287,12 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
     if (cookie && (await verifyCookie(env.COOKIE_SIGNING_SECRET, slug, cookie))) {
       // 已通过，放行
     } else if (request.method === "POST") {
+      // 防暴力破解：同一 IP 对同一页面 15 分钟内最多失败 10 次
+      const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
+      const attemptKey = `pw:${ip}:${slug}`;
+      const failed = Number((await env.RATELIMIT.get(attemptKey)) ?? "0");
+      if (failed >= 10) return htmlResp(lockedPage(), 429);
+
       const form = await request.formData();
       const pw = String(form.get("password") ?? "");
       if (await verifyPassword(pw, page.password_hash, page.password_salt)) {
@@ -284,6 +305,7 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
         );
         return new Response(null, { status: 303, headers });
       }
+      await env.RATELIMIT.put(attemptKey, String(failed + 1), { expirationTtl: 900 });
       return htmlResp(passwordPage(slug, true), 401);
     } else {
       return htmlResp(passwordPage(slug, false), 401);
@@ -343,12 +365,20 @@ function readCookie(request: Request, name: string): string | null {
   return null;
 }
 
-async function allowRate(ip: string, env: Env): Promise<boolean> {
-  const limit = Number(env.RATE_LIMIT_PER_HOUR);
-  const bucket = `rl:${ip}:${Math.floor(Date.now() / 3_600_000)}`;
-  const current = Number((await env.RATELIMIT.get(bucket)) ?? "0");
-  if (current >= limit) return false;
-  await env.RATELIMIT.put(bucket, String(current + 1), { expirationTtl: 3600 });
+async function allowRate(ip: string, env: Env, anonymous: boolean): Promise<boolean> {
+  const hourBucket = `rl:${ip}:${Math.floor(Date.now() / 3_600_000)}`;
+  const hourCount = Number((await env.RATELIMIT.get(hourBucket)) ?? "0");
+  if (hourCount >= Number(env.RATE_LIMIT_PER_HOUR)) return false;
+
+  // 匿名再加一道日配额，拦住"每小时不超但全天挂机刷"的滥用
+  const dayBucket = `rl:d:${ip}:${Math.floor(Date.now() / 86_400_000)}`;
+  if (anonymous) {
+    const dayCount = Number((await env.RATELIMIT.get(dayBucket)) ?? "0");
+    if (dayCount >= Number(env.RATE_LIMIT_PER_DAY)) return false;
+    await env.RATELIMIT.put(dayBucket, String(dayCount + 1), { expirationTtl: 86_400 });
+  }
+
+  await env.RATELIMIT.put(hourBucket, String(hourCount + 1), { expirationTtl: 3600 });
   return true;
 }
 

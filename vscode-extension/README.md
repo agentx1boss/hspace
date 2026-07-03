@@ -41,8 +41,10 @@ Submitting an empty input removes the password.
 ## Limits (default hosted instance)
 
 - Single HTML file only, ≤ 2 MB
-- Anonymous pages expire after 7 days by default
-- Max 20 publishes per IP per hour
+- Anonymous pages expire after 7 days at most (sign in for permanent links)
+- Max 20 publishes per IP per hour; anonymous publishes also capped at 50 per day
+- Anonymous pages always keep a password, and their content cannot be replaced after publishing (sign in to unlock both)
+- Wrong password attempts are limited to 10 per 15 minutes
 - Phishing, malicious scripts, and other abusive content are prohibited and will be taken down
 
 ## Self-Hosting
