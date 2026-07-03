@@ -18,13 +18,18 @@ routes = [
 API_DOMAIN = "html-share.kzhan.workers.dev"
 USERCONTENT_DOMAIN = "zhanjian.space"
 # 单文件大小上限(字节)
-MAX_SIZE_BYTES = "2097152"        # 2 MB
+MAX_SIZE_BYTES = "2097152"        # 2 MB(登录)
+ANON_MAX_SIZE_BYTES = "1048576"   # 1 MB(匿名)
 # 匿名链接默认过期(秒)
 ANON_DEFAULT_TTL = "604800"       # 7 天
 # 频率限制:每个 IP 每小时最大发布次数(匿名+登录)
 RATE_LIMIT_PER_HOUR = "20"
 # 频率限制:每个 IP 每天最大发布次数(仅匿名)
 RATE_LIMIT_PER_DAY = "50"
+# 匿名单页访问量上限,超过后页面下线
+ANON_MAX_HITS = "10000"
+# 全局匿名日上传总量(字节),超过后当天匿名发布 503 熔断
+ANON_DAILY_GLOBAL_BYTES = "524288000"   # 500 MB
 
 # ── 密钥(用 `wrangler secret put` 设置,勿写进本文件)──
 # COOKIE_SIGNING_SECRET  用于给密码通过后的 Cookie 签名(随机长字符串)

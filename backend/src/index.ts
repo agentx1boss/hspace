@@ -28,6 +28,9 @@ export interface Env {
   ANON_DEFAULT_TTL: string;
   RATE_LIMIT_PER_HOUR: string;
   RATE_LIMIT_PER_DAY: string;
+  ANON_MAX_SIZE_BYTES: string;
+  ANON_MAX_HITS: string;
+  ANON_DAILY_GLOBAL_BYTES: string;
 }
 
 interface PageRow {
@@ -137,10 +140,19 @@ async function publish(request: Request, env: Env): Promise<Response> {
     return json({ error: "missing_html" }, 400);
   }
 
+  // 体积上限：匿名比登录更小
+  const maxSize = Number(ownerId ? env.MAX_SIZE_BYTES : env.ANON_MAX_SIZE_BYTES);
   const size = new TextEncoder().encode(html).length;
-  if (size > Number(env.MAX_SIZE_BYTES)) return json({ error: "too_large", maxBytes: Number(env.MAX_SIZE_BYTES) }, 413);
+  if (size > maxSize) return json({ error: "too_large", maxBytes: maxSize }, 413);
 
   if (isSuspicious(html)) return json({ error: "content_blocked" }, 422);
+  // 匿名内容从严：命中钓鱼特征直接拒绝
+  if (!ownerId && isPhishy(html)) return json({ error: "content_blocked" }, 422);
+
+  // 全局匿名日配额熔断：兜住 R2/D1 成本
+  if (!ownerId && !(await allowGlobalBudget(size, env))) {
+    return json({ error: "service_busy" }, 503);
+  }
 
   // 过期：匿名的 TTL 钳制在 [60 秒, ANON_DEFAULT_TTL] 内，防止传超长 expiresIn 变相拿永久链接
   let ttl = typeof body.expiresIn === "number" ? body.expiresIn : Number(env.ANON_DEFAULT_TTL);
@@ -278,6 +290,8 @@ async function servePage(slug: string, request: Request, env: Env, ctx: Executio
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return htmlResp(notFoundPage(), 404);
   if (page.expires_at && page.expires_at < now()) return htmlResp(notFoundPage(), 404);
+  // 匿名页面访问量封顶,防止被当成免费 CDN / 钓鱼分发渠道
+  if (!page.owner_id && page.hits >= Number(env.ANON_MAX_HITS)) return htmlResp(notFoundPage(), 404);
 
   // 密码网关
   if (page.password_hash && page.password_salt) {
@@ -379,6 +393,24 @@ async function allowRate(ip: string, env: Env, anonymous: boolean): Promise<bool
   }
 
   await env.RATELIMIT.put(hourBucket, String(hourCount + 1), { expirationTtl: 3600 });
+  return true;
+}
+
+/** 匿名内容加严：钓鱼页最强特征——密码输入框、提交到外部域的表单 */
+function isPhishy(html: string): boolean {
+  const patterns = [
+    /<input[^>]+type\s*=\s*["']?password/i,
+    /<form[^>]+action\s*=\s*["']?https?:\/\//i,
+  ];
+  return patterns.some((re) => re.test(html));
+}
+
+/** 全局匿名日配额（字节）：超过后当天匿名发布一律 503 */
+async function allowGlobalBudget(size: number, env: Env): Promise<boolean> {
+  const key = `gb:${Math.floor(Date.now() / 86_400_000)}`;
+  const used = Number((await env.RATELIMIT.get(key)) ?? "0");
+  if (used + size > Number(env.ANON_DAILY_GLOBAL_BYTES)) return false;
+  await env.RATELIMIT.put(key, String(used + size), { expirationTtl: 86_400 });
   return true;
 }
 
