@@ -47,8 +47,12 @@ export function deactivate() {}
 
 // ─────────────────────────── 命令 ───────────────────────────
 
+const DEFAULT_API_BASE = "https://html-share.kzhan.workers.dev";
+
 async function getClient(context: vscode.ExtensionContext): Promise<ApiClient> {
-  const base = vscode.workspace.getConfiguration("hspace").get<string>("apiBaseUrl", "").replace(/\/$/, "");
+  // 兜底:配置为空(如旧 htmlshare.* 迁移后遗留空值)时回退到官方实例,避免 fetch 相对 URL 失败
+  let base = vscode.workspace.getConfiguration("hspace").get<string>("apiBaseUrl", "").trim().replace(/\/+$/, "");
+  if (!/^https?:\/\//i.test(base)) base = DEFAULT_API_BASE;
   const key = await context.secrets.get(SECRET_KEY);
   return new ApiClient(base, key || undefined);
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 — 2026-07-04
+
+- 修复:当 `hspace.apiBaseUrl` 为空(常见于旧版本设置迁移后)时发布报错「Failed to parse URL from /publish」;现自动回退到官方实例
+
 ## 0.4.0 — 2026-07-04
 
 - **内容版本化**:链接不变,内容随迭代更新
