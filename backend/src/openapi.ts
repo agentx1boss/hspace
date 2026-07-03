@@ -136,6 +136,96 @@ export function openapiSpec(origin: string): Record<string, unknown> {
           },
         },
       },
+      "/pages/{slug}/grants": {
+        parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string" } }],
+        post: {
+          operationId: "createGrant",
+          summary: "创建访问人(每人一链):返回一次性密码",
+          description: "为页面新增一个独立密码的访问人,可按人统计与单独撤销。密码仅在创建时返回一次。鉴权:Bearer 或 X-Edit-Token。",
+          parameters: [{ $ref: "#/components/parameters/EditToken" }],
+          requestBody: {
+            required: false,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    label: { type: "string", description: "访问人标签,如“张三”" },
+                    password: { type: "string", description: "可选;省略则自动生成 4 位数字" },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "已创建",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string" }, label: { type: "string", nullable: true },
+                      password: { type: "string", description: "一次性返回,请连同 url 转达该访问人" },
+                      url: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+            "403": { description: "无权限", content: errContent() },
+            "404": { description: "页面不存在", content: errContent() },
+          },
+        },
+        get: {
+          operationId: "listGrants",
+          summary: "列出访问人(不含密码)",
+          parameters: [{ $ref: "#/components/parameters/EditToken" }],
+          responses: {
+            "200": {
+              description: "访问人列表",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      grants: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "string" }, label: { type: "string", nullable: true },
+                            created_at: { type: "integer" }, revoked: { type: "integer" },
+                            hits: { type: "integer" }, last_seen_at: { type: "integer", nullable: true },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            "403": { description: "无权限", content: errContent() },
+            "404": { description: "页面不存在", content: errContent() },
+          },
+        },
+      },
+      "/pages/{slug}/grants/{id}": {
+        delete: {
+          operationId: "revokeGrant",
+          summary: "撤销访问人(软删,统计保留)",
+          parameters: [
+            { name: "slug", in: "path", required: true, schema: { type: "string" } },
+            { name: "id", in: "path", required: true, schema: { type: "string" } },
+            { $ref: "#/components/parameters/EditToken" },
+          ],
+          responses: {
+            "200": { description: "已撤销", content: { "application/json": { schema: okSchema() } } },
+            "403": { description: "无权限", content: errContent() },
+            "404": { description: "页面不存在", content: errContent() },
+          },
+        },
+      },
       "/pages": {
         get: {
           operationId: "listPages",

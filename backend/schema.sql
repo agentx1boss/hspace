@@ -19,6 +19,20 @@ CREATE TABLE IF NOT EXISTS pages (
 CREATE INDEX IF NOT EXISTS idx_pages_owner   ON pages(owner_id);
 CREATE INDEX IF NOT EXISTS idx_pages_expires ON pages(expires_at);
 
+-- 访问人（每人一链 / 多口令）：一个页面可发多个独立密码，各自计数、可单独撤销
+CREATE TABLE IF NOT EXISTS grants (
+  id             TEXT PRIMARY KEY,     -- 随机 id
+  slug           TEXT NOT NULL,        -- 所属页面
+  label          TEXT,                 -- 访问人标签（如"张三"）
+  password_hash  TEXT NOT NULL,        -- PBKDF2 派生（base64）
+  password_salt  TEXT NOT NULL,        -- base64
+  created_at     INTEGER NOT NULL,     -- epoch 秒
+  revoked        INTEGER NOT NULL DEFAULT 0,
+  hits           INTEGER NOT NULL DEFAULT 0,   -- 该访问人的浏览次数
+  last_seen_at   INTEGER                        -- 最近访问 epoch 秒
+);
+CREATE INDEX IF NOT EXISTS idx_grants_slug ON grants(slug);
+
 -- 简单的 API Key 表（MVP：注册后在网站生成）
 CREATE TABLE IF NOT EXISTS api_keys (
   key_hash    TEXT PRIMARY KEY,   -- key 的 SHA-256（base64）

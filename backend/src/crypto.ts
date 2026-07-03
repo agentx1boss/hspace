@@ -87,27 +87,34 @@ async function hmacKey(secret: string): Promise<CryptoKey> {
   );
 }
 
-/** 生成密码通过后的签名 Cookie 值： "<slug>.<exp>.<sig>" */
-export async function signCookie(secret: string, slug: string, expEpoch: number): Promise<string> {
-  const payload = `${slug}.${expEpoch}`;
+/** 生成密码通过后的签名 Cookie 值： "<slug>.<grantId>.<exp>.<sig>"（grantId="" 表示共享密码） */
+export async function signCookie(secret: string, slug: string, grantId: string, expEpoch: number): Promise<string> {
+  const payload = `${slug}.${grantId}.${expEpoch}`;
   const key = await hmacKey(secret);
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
   return `${payload}.${bufToB64(sig)}`;
 }
 
-/** 校验 Cookie：签名有效且未过期且 slug 匹配 */
-export async function verifyCookie(secret: string, slug: string, cookie: string): Promise<boolean> {
+/**
+ * 校验 Cookie：签名有效且未过期且 slug 匹配。
+ * 返回归因的 grantId（共享密码为 ""），无效返回 null。
+ * 兼容旧的三段格式 "<slug>.<exp>.<sig>"（视为 grantId=""）。
+ */
+export async function verifyCookie(secret: string, slug: string, cookie: string): Promise<string | null> {
   const parts = cookie.split(".");
-  if (parts.length !== 3) return false;
-  const [cSlug, cExp, cSig] = parts;
-  if (cSlug !== slug) return false;
-  if (Number(cExp) < Math.floor(Date.now() / 1000)) return false;
+  let cSlug: string, grantId: string, cExp: string, cSig: string;
+  if (parts.length === 4) {
+    [cSlug, grantId, cExp, cSig] = parts;
+  } else if (parts.length === 3) {
+    [cSlug, cExp, cSig] = parts;
+    grantId = "";
+  } else {
+    return null;
+  }
+  if (cSlug !== slug) return null;
+  if (Number(cExp) < Math.floor(Date.now() / 1000)) return null;
   const key = await hmacKey(secret);
-  const ok = await crypto.subtle.verify(
-    "HMAC",
-    key,
-    b64ToBytes(cSig),
-    enc.encode(`${cSlug}.${cExp}`)
-  );
-  return ok;
+  const payload = parts.length === 4 ? `${cSlug}.${grantId}.${cExp}` : `${cSlug}.${cExp}`;
+  const ok = await crypto.subtle.verify("HMAC", key, b64ToBytes(cSig), enc.encode(payload));
+  return ok ? grantId : null;
 }

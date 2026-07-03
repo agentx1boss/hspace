@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { ApiClient, PublishResult, CollectionFile, errorMessage } from "./api";
+import { ApiClient, PublishResult, CollectionFile, Grant, errorMessage } from "./api";
 
 const SECRET_KEY = "hspace.apiKey";
 const STATE_KEY = "hspace.recent";
@@ -31,6 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
   reg("hspace.setApiKey", () => setApiKey(context));
   reg("hspace.signOut", () => signOut(context));
   reg("hspace.setPassword", (node?: RecentNode) => setPassword(context, provider, node));
+  reg("hspace.manageGrants", (node?: RecentNode) => node && manageGrants(context, node.record));
   reg("hspace.copyLink", (node?: RecentNode) => node && copyLink(node.record.url));
   reg("hspace.openInBrowser", (node?: RecentNode) => node && vscode.env.openExternal(vscode.Uri.parse(node.record.url)));
   reg("hspace.delete", (node?: RecentNode) => node && deletePage(context, provider, node.record));
@@ -329,6 +330,70 @@ async function deletePage(context: vscode.ExtensionContext, provider: RecentProv
 async function copyLink(url: string) {
   await vscode.env.clipboard.writeText(url);
   vscode.window.showInformationMessage("链接已复制。");
+}
+
+// ---- 每人一链:管理访问人 ----
+async function manageGrants(context: vscode.ExtensionContext, rec: Record) {
+  const client = await getClient(context);
+  let grants: Grant[];
+  try {
+    grants = await client.listGrants(rec.slug, rec.editToken || undefined);
+  } catch (e) {
+    vscode.window.showErrorMessage(`读取访问人失败：${errorMessage(e)}`);
+    return;
+  }
+
+  const fmtSeen = (t: number | null) => (t ? new Date(t * 1000).toLocaleDateString() : "未访问");
+  const active = grants.filter((g) => !g.revoked);
+  const items: (vscode.QuickPickItem & { grant?: Grant; add?: boolean })[] = [
+    { label: "$(add) 添加访问人", detail: "生成一个独立密码,单独统计、可随时撤销", add: true },
+    ...active.map((g) => ({
+      label: `$(person) ${g.label || "(未命名)"}`,
+      description: `👁 ${g.hits} · 最近 ${fmtSeen(g.last_seen_at)}`,
+      detail: "选择以撤销此人的访问",
+      grant: g,
+    })),
+  ];
+
+  const pick = await vscode.window.showQuickPick(items, {
+    placeHolder: `「${rec.filename}」的访问人（共 ${active.length} 人）`,
+    ignoreFocusOut: true,
+  });
+  if (!pick) return;
+
+  if (pick.add) {
+    const label = await vscode.window.showInputBox({
+      prompt: "访问人标签（如“张三”“客户A”，仅你可见）",
+      ignoreFocusOut: true,
+    });
+    if (label === undefined) return;
+    try {
+      const g = await client.createGrant(rec.slug, label.trim(), rec.editToken || undefined);
+      await vscode.env.clipboard.writeText(`${g.url} 密码：${g.password}`);
+      vscode.window.showInformationMessage(
+        `已为「${label || "访问人"}」创建专属密码 ${g.password}（链接+密码已复制,发给 TA 即可）`
+      );
+    } catch (e) {
+      vscode.window.showErrorMessage(`创建失败：${errorMessage(e)}`);
+    }
+    return;
+  }
+
+  if (pick.grant) {
+    const g = pick.grant;
+    const ok = await vscode.window.showWarningMessage(
+      `撤销「${g.label || "该访问人"}」的访问？TA 的密码将立即失效,其他人不受影响。`,
+      { modal: true },
+      "撤销"
+    );
+    if (ok !== "撤销") return;
+    try {
+      await client.revokeGrant(rec.slug, g.id, rec.editToken || undefined);
+      vscode.window.showInformationMessage(`已撤销「${g.label || "该访问人"}」的访问。`);
+    } catch (e) {
+      vscode.window.showErrorMessage(`撤销失败：${errorMessage(e)}`);
+    }
+  }
 }
 
 // ---- 访问回执:刷新时拉取各页面访问量 ----

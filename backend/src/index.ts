@@ -114,6 +114,14 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
   const statsMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/stats$/);
   if (statsMatch && request.method === "GET") return statsPage(statsMatch[1], request, env);
 
+  const grantsMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/grants$/);
+  if (grantsMatch) {
+    if (request.method === "POST") return createGrant(grantsMatch[1], request, env);
+    if (request.method === "GET") return listGrants(grantsMatch[1], request, env);
+  }
+  const grantMatch = path.match(/^\/pages\/([A-Za-z0-9]+)\/grants\/([A-Za-z0-9]+)$/);
+  if (grantMatch && request.method === "DELETE") return revokeGrant(grantMatch[1], grantMatch[2], request, env);
+
   const pageMatch = path.match(/^\/pages\/([A-Za-z0-9]+)$/);
   if (pageMatch) {
     const slug = pageMatch[1];
@@ -386,6 +394,80 @@ async function statsPage(slug: string, request: Request, env: Env): Promise<Resp
   });
 }
 
+// ============================ 访问人（每人一链 / 多口令） ============================
+
+interface GrantRow {
+  id: string; slug: string; label: string | null;
+  password_hash: string; password_salt: string;
+  created_at: number; revoked: number; hits: number; last_seen_at: number | null;
+}
+
+/** 4 位随机数字密码 */
+function randomPin(len = 4): string {
+  const b = crypto.getRandomValues(new Uint8Array(len));
+  let s = ""; for (const x of b) s += x % 10; return s;
+}
+
+async function hasActiveGrants(env: Env, slug: string): Promise<boolean> {
+  const r = await env.DB.prepare("SELECT 1 FROM grants WHERE slug = ? AND revoked = 0 LIMIT 1").bind(slug).first();
+  return !!r;
+}
+function getGrant(env: Env, id: string): Promise<GrantRow | null> {
+  return env.DB.prepare("SELECT * FROM grants WHERE id = ?").bind(id).first<GrantRow>();
+}
+/** 逐个比对未撤销访问人的密码,命中返回其 id */
+async function matchGrant(env: Env, slug: string, pw: string): Promise<string | null> {
+  const { results } = await env.DB.prepare(
+    "SELECT id, password_hash, password_salt FROM grants WHERE slug = ? AND revoked = 0"
+  ).bind(slug).all<{ id: string; password_hash: string; password_salt: string }>();
+  for (const g of results) {
+    if (await verifyPassword(pw, g.password_hash, g.password_salt)) return g.id;
+  }
+  return null;
+}
+
+// ---- POST /pages/:slug/grants ----（创建访问人,返回一次性密码）
+async function createGrant(slug: string, request: Request, env: Env): Promise<Response> {
+  const page = await getPage(env, slug);
+  if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
+  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+
+  let body: any = {};
+  try { body = await request.json(); } catch { /* 允许空 body */ }
+  const label = typeof body.label === "string" ? body.label.slice(0, 100) : null;
+  const password = typeof body.password === "string" && body.password !== "" ? body.password : randomPin();
+  const { hash, salt } = await hashPassword(password);
+  const id = randomToken(9);
+
+  await env.DB.prepare(
+    `INSERT INTO grants (id, slug, label, password_hash, password_salt, created_at, revoked, hits)
+     VALUES (?, ?, ?, ?, ?, ?, 0, 0)`
+  ).bind(id, slug, label, hash, salt, now()).run();
+
+  return json({ id, label, password, url: `https://${slug}.${env.USERCONTENT_DOMAIN}` });
+}
+
+// ---- GET /pages/:slug/grants ----（列出访问人,不含密码）
+async function listGrants(slug: string, request: Request, env: Env): Promise<Response> {
+  const page = await getPage(env, slug);
+  if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
+  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  const { results } = await env.DB.prepare(
+    `SELECT id, label, created_at, revoked, hits, last_seen_at
+     FROM grants WHERE slug = ? ORDER BY created_at`
+  ).bind(slug).all();
+  return json({ grants: results });
+}
+
+// ---- DELETE /pages/:slug/grants/:id ----（撤销,软删保留统计）
+async function revokeGrant(slug: string, id: string, request: Request, env: Env): Promise<Response> {
+  const page = await getPage(env, slug);
+  if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
+  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  await env.DB.prepare("UPDATE grants SET revoked = 1 WHERE id = ? AND slug = ?").bind(id, slug).run();
+  return json({ ok: true });
+}
+
 /** 校验修改权限并区分角色：owner（登录且匹配）/ anon（editToken 匹配）/ none */
 async function mutateRole(page: PageRow, request: Request, env: Env): Promise<"owner" | "anon" | "none"> {
   const ownerId = await authOwner(request, env);
@@ -409,14 +491,27 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
   // 匿名页面访问量封顶,防止被当成免费 CDN / 钓鱼分发渠道
   if (!page.owner_id && page.hits >= Number(env.ANON_MAX_HITS)) return htmlResp(notFoundPage(), 404);
 
-  // 密码网关
-  if (page.password_hash && page.password_salt) {
+  // 密码网关：共享密码 + 多个"访问人"独立密码
+  const hasPagePw = !!(page.password_hash && page.password_salt);
+  const gated = hasPagePw || (await hasActiveGrants(env, slug));
+  let attributedGrantId = ""; // "" = 共享密码/无归因;非空 = 某访问人
+  if (gated) {
     const cookieName = `hs_${slug}`;
     const cookie = readCookie(request, cookieName);
+    let authed = false;
 
-    if (cookie && (await verifyCookie(env.COOKIE_SIGNING_SECRET, slug, cookie))) {
-      // 已通过，放行
-    } else if (request.method === "POST") {
+    if (cookie) {
+      const gid = await verifyCookie(env.COOKIE_SIGNING_SECRET, slug, cookie);
+      if (gid === "") {
+        authed = true;
+      } else if (gid) {
+        // 访问人 Cookie:确认该访问人仍有效(撤销后即使持旧 Cookie 也被挡)
+        const g = await getGrant(env, gid);
+        if (g && g.slug === slug && g.revoked === 0) { authed = true; attributedGrantId = gid; }
+      }
+    }
+
+    if (!authed && request.method === "POST") {
       // 防暴力破解：同一 IP 对同一页面 15 分钟内最多失败 10 次
       const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
       const attemptKey = `pw:${ip}:${slug}`;
@@ -425,11 +520,16 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
 
       const form = await request.formData();
       const pw = String(form.get("password") ?? "");
-      if (await verifyPassword(pw, page.password_hash, page.password_salt)) {
+      let matched: string | null = null;
+      if (hasPagePw && (await verifyPassword(pw, page.password_hash!, page.password_salt!))) {
+        matched = ""; // 共享密码
+      } else {
+        matched = await matchGrant(env, slug, pw); // 访问人密码 → 其 id
+      }
+      if (matched !== null) {
         const exp = now() + 24 * 3600; // Cookie 24h 有效
-        const value = await signCookie(env.COOKIE_SIGNING_SECRET, slug, exp);
-        // 跳回原请求路径,合集深链(/3)验密后直达该篇,而非被扔回目录
-        const back = new URL(request.url).pathname || "/";
+        const value = await signCookie(env.COOKIE_SIGNING_SECRET, slug, matched, exp);
+        const back = new URL(request.url).pathname || "/"; // 深链验密后直达原路径
         const headers = new Headers({ Location: back });
         headers.append(
           "Set-Cookie",
@@ -439,15 +539,20 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
       }
       await env.RATELIMIT.put(attemptKey, String(failed + 1), { expirationTtl: 900 });
       return htmlResp(passwordPage(true), 401);
-    } else {
-      return htmlResp(passwordPage(false), 401);
     }
+    if (!authed) return htmlResp(passwordPage(false), 401);
   }
 
-  // 计数（异步，不阻塞响应）
+  // 计数（异步，不阻塞响应）:总量 + 按访问人归因
   ctx.waitUntil(
     env.DB.prepare("UPDATE pages SET hits = hits + 1 WHERE slug = ?").bind(slug).run()
   );
+  if (attributedGrantId) {
+    ctx.waitUntil(
+      env.DB.prepare("UPDATE grants SET hits = hits + 1, last_seen_at = ? WHERE id = ? AND slug = ?")
+        .bind(now(), attributedGrantId, slug).run()
+    );
+  }
 
   // 合集：目录页 / 篇目页
   if (page.object_key.endsWith("/index.json")) {

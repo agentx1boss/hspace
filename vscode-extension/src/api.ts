@@ -83,6 +83,47 @@ export class ApiClient {
     });
     return this.parse(res);
   }
+
+  async createGrant(slug: string, label: string, editToken?: string): Promise<CreatedGrant> {
+    const res = await fetch(`${this.baseUrl}/pages/${slug}/grants`, {
+      method: "POST",
+      headers: this.headers(editToken ? { "X-Edit-Token": editToken } : {}),
+      body: JSON.stringify({ label }),
+    });
+    return this.parse(res);
+  }
+
+  async listGrants(slug: string, editToken?: string): Promise<Grant[]> {
+    const res = await fetch(`${this.baseUrl}/pages/${slug}/grants`, {
+      headers: this.headers(editToken ? { "X-Edit-Token": editToken } : {}),
+    });
+    const data = await this.parse(res);
+    return data.grants as Grant[];
+  }
+
+  async revokeGrant(slug: string, id: string, editToken?: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/pages/${slug}/grants/${id}`, {
+      method: "DELETE",
+      headers: this.headers(editToken ? { "X-Edit-Token": editToken } : {}),
+    });
+    await this.parse(res);
+  }
+}
+
+export interface CreatedGrant {
+  id: string;
+  label: string | null;
+  password: string;
+  url: string;
+}
+
+export interface Grant {
+  id: string;
+  label: string | null;
+  created_at: number;
+  revoked: number;
+  hits: number;
+  last_seen_at: number | null;
 }
 
 export interface PageStats {

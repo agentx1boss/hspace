@@ -12,6 +12,7 @@ AI-generated demos, reports, data visualizations — you want to send them to a 
 - 📚 **Folders become booklets** — right-click a folder or multi-select files → "Publish as collection": a batch of md/html becomes one link + one password + a table of contents with cross-doc navigation
 - 🔐 **Private by default** — every publish gets a random 4-digit password; without it, nobody gets in. Viewers enter it once and stay signed in for 24 hours
 - 📋 **One paste and it's sent** — link and password land on your clipboard together; paste straight into Slack, email, or WeChat
+- 👥 **Per-recipient links** — give each person their own password; see who viewed, revoke one without changing everyone else's
 - 👁 **View receipts** — refresh the panel to see how many times each link was opened
 - 🎯 **Controlled and revocable** — change the password anytime (old one dies instantly), delete the page and the link goes dark; expired pages clean themselves up
 - 🗂 **Publish = manage** — the "HSpace · 最近发布" (recent publishes) sidebar panel: open, copy, change password, delete
