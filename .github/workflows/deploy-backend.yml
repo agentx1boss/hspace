@@ -1,0 +1,48 @@
+# backend/ 有改动推到 main 时自动部署 Cloudflare Worker,也可在 Actions 页手动触发。
+# 需要仓库 secret:CLOUDFLARE_API_TOKEN(用 "Edit Cloudflare Workers" 模板创建)
+
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      - name: 类型检查
+        run: npx tsc --noEmit
+
+      - name: 部署 Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: backend
+
+      - name: 部署后冒烟测试
+        run: |
+          sleep 5
+          curl -sf https://html-share.kzhan.workers.dev/health | grep -q '"ok":true'
+          echo "health check passed"
