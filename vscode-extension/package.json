@@ -1,7 +1,7 @@
 {
   "name": "hspace",
   "displayName": "HSpace",
-  "description": "一键把 HTML 文件发布成可分享的公网链接，支持共享密码。适合分享 AI 生成的单页。",
+  "description": "私密分享 AI 生成的内容：一键把 HTML 发布成链接+密码，只给该看的人。Private sharing for AI-generated content.",
   "version": "0.1.2",
   "publisher": "agentx1boss",
   "license": "MIT",

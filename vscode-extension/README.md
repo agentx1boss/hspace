@@ -2,50 +2,48 @@
 
 English | [简体中文](https://github.com/agentx1boss/hspace/blob/main/vscode-extension/README.zh-CN.md)
 
-Publish any HTML file as a shareable public link in one click, with optional password protection. Built for sharing AI-generated single-page HTML.
+**Private sharing for AI-generated content.** Turn the HTML your AI just wrote into a link + password, and hand it only to the people who should see it.
 
-## Features
+AI-generated demos, reports, data visualizations — you want to send them to a client, a teammate, a small circle, not to the whole internet. HSpace is not hosting; it's **private distribution**: every link is password-gated, never indexed by search engines, safe against accidental forwarding, and revocable at any time.
 
-- ☁️ **One-click publish** — open an `.html` file, click the cloud icon in the editor title bar (or use the context menu); the link and password are copied to your clipboard automatically
-- 🔒 **Password protected by default** — every publish gets a random 4-digit password automatically; visitors must enter it before viewing (remembered for 24 hours). You can change the password anytime
-- 🗂 **Manage published pages** — the "HSpace · 最近发布" (recent publishes) panel in the Explorer sidebar lets you open, copy link, set password, or delete
-- ⏳ **Auto expiry** — anonymous pages expire after 7 days by default, so nothing piles up
-- 🛡 **Content isolation** — every page gets its own subdomain (`<slug>.zhanjian.space`), isolated from each other and from the API domain
+## Why it's different
+
+- 🔐 **Private by default** — every publish gets a random 4-digit password; without it, nobody gets in. Viewers enter it once and stay signed in for 24 hours
+- 📋 **One paste and it's sent** — link and password land on your clipboard together; paste straight into Slack, email, or WeChat
+- 🎯 **Controlled and revocable** — change the password anytime (old one dies instantly), delete the page and the link goes dark; expired pages clean themselves up
+- 🗂 **Publish = manage** — the "HSpace · 最近发布" (recent publishes) sidebar panel: open, copy, change password, delete
+- 🛡 **Isolated content** — every page lives on its own subdomain; brute-force attempts get locked out
 
 ## Quick Start
 
 1. Install the extension
 2. Open any `.html` file
 3. Click the ☁️ icon in the editor title bar
-4. The link and its password are on your clipboard — paste them anywhere 🎉
+4. The link and its password are on your clipboard — send them to whoever should see it 🎉
 
 No sign-up, no configuration. It just works.
 
-## Changing the Password
-
-Every page is published with a random 4-digit password. To change it:
+## Changing the password / revoking access
 
 - Click "修改密码" (Change password) on the publish-success notification
 - Right-click a page in the recent-publishes sidebar panel → "设置/修改密码" (Set/Change password)
-- Command Palette → `HSpace: 设置/修改密码` (Set/Change password)
-
-Submitting an empty input removes the password.
+- To revoke access: change the password (the old one stops working immediately), or just delete the page
 
 ## Settings
 
 | Setting | Default | Description |
 |---|---|---|
 | `hspace.apiBaseUrl` | official hosted instance | Backend API base URL; point it at your own deployment if you self-host |
-| `hspace.defaultExpiryDays` | `7` | Default expiry (in days) for published links |
+| `hspace.defaultExpiryDays` | `7` | Default validity (in days) for shared links |
 
 ## Limits (default hosted instance)
 
 - Single HTML file only; ≤ 1 MB anonymous, ≤ 2 MB signed in
-- Anonymous pages expire after 7 days at most (sign in for permanent links)
+- Anonymous shares expire after 7 days at most (sign in for permanent links)
 - Max 20 publishes per IP per hour; anonymous publishes also capped at 50 per day
-- Anonymous pages go offline after 10,000 views
 - Anonymous pages always keep a password, and their content cannot be replaced after publishing (sign in to unlock both)
 - Wrong password attempts are limited to 10 per 15 minutes
+- Anonymous pages go offline after 10,000 views
 - Phishing, malicious scripts, and other abusive content are prohibited and will be taken down
 
 ## Self-Hosting
@@ -54,7 +52,11 @@ The backend is an open-source Cloudflare Worker (R2 + D1 + KV). Deploy your own 
 
 ## Privacy
 
-Publishing uploads the current HTML file to the backend and creates a public link; nothing else is collected. Deleted pages become inaccessible immediately.
+Publishing uploads the current HTML file to the backend and creates a password-gated link; nothing else is collected. Deleted pages become inaccessible immediately, and expired pages go dark on their own.
+
+## Roadmap
+
+Private Markdown sharing with a beautiful reading theme, publish-from-chat (MCP), view receipts, per-recipient links.
 
 ## License
 
