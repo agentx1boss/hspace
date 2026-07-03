@@ -106,7 +106,36 @@ export function landingPage(): string {
   footer a{color:var(--muted)}footer a:hover{color:var(--fg)}
   footer .links{display:flex;gap:18px}
 
-  @media(max-width:720px){.grid3,.steps,.feats{grid-template-columns:1fr}.hero{padding:52px 0 44px}}
+  /* 产品截图(浏览器窗口 mock) */
+  .shots{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:8px}
+  .shot{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card);box-shadow:0 16px 44px rgba(0,0,0,.12)}
+  .shot .bar{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--soft);border-bottom:1px solid var(--border)}
+  .shot .dots{display:flex;gap:6px}
+  .shot .dots i{width:10px;height:10px;border-radius:50%;background:var(--border);display:block}
+  .shot .addr{flex:1;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:5px 10px;
+              font:12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap}
+  .shot .cap{text-align:center;font-size:13.5px;color:var(--muted);margin-top:12px}
+  /* TOC mock */
+  .toc{padding:26px 24px 22px}
+  .toc h4{margin:0 0 4px;font-size:19px;letter-spacing:-.01em}
+  .toc .m{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+  .toc .r{display:flex;align-items:center;gap:13px;padding:11px 4px;border-top:1px solid var(--border);font-size:14.5px}
+  .toc .r .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+  .toc .r .a{margin-left:auto;color:var(--accent);opacity:.7}
+  /* reading mock with sidebar */
+  .read{display:flex;min-height:230px}
+  .read .side{width:38%;background:var(--soft);border-right:1px solid var(--border);padding:16px 12px}
+  .read .side .t{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:0 8px 8px}
+  .read .side .i{display:flex;gap:8px;padding:7px 8px;border-radius:6px;font-size:12.5px;color:var(--muted);border-left:2px solid transparent}
+  .read .side .i.on{background:var(--card);color:var(--fg);border-left-color:var(--accent);font-weight:600}
+  .read .main{flex:1;padding:20px 20px}
+  .read .main h5{margin:0 0 10px;font-size:16px}
+  .read .main .p{height:8px;border-radius:4px;background:var(--soft);margin:8px 0}
+  .read .main .tb{margin-top:14px;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+  .read .main .tb .tr{display:flex;font-size:11px}
+  .read .main .tb .tr>div{flex:1;padding:6px 9px;border-right:1px solid var(--border)}
+  .read .main .tb .th{background:var(--soft);font-weight:600}
+  @media(max-width:720px){.grid3,.steps,.feats,.shots{grid-template-columns:1fr}.hero{padding:52px 0 44px}}
 </style></head>
 <body>
   <header><div class="wrap">
@@ -135,6 +164,53 @@ export function landingPage(): string {
       </div>
       <div class="pw"><span class="k">访问密码</span><span class="v">4831</span></div>
       <div class="copied"><span class="d"></span>链接和密码已复制,粘贴发走即可</div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <h2>接收方看到的样子</h2>
+    <p class="sec-sub">输一次密码,通览整本册子——目录、逐篇阅读、篇间导航,全在一个链接里。</p>
+    <div class="shots">
+      <div>
+        <div class="shot">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="addr">🔒 q3plan.zhanjian.space</div></div>
+          <div class="toc">
+            <h4>Q3 增长方案</h4>
+            <div class="m">5 篇 · 2026-07 分享</div>
+            <div class="r"><span class="n">1</span><span>总览与目标</span><span class="a">→</span></div>
+            <div class="r"><span class="n">2</span><span>数据分析</span><span class="a">→</span></div>
+            <div class="r"><span class="n">3</span><span>渠道策略</span><span class="a">→</span></div>
+            <div class="r"><span class="n">4</span><span>预算与排期</span><span class="a">→</span></div>
+            <div class="r"><span class="n">5</span><span>附录:竞品对比</span><span class="a">→</span></div>
+          </div>
+        </div>
+        <div class="cap">合集目录页</div>
+      </div>
+      <div>
+        <div class="shot">
+          <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="addr">🔒 q3plan.zhanjian.space/2</div></div>
+          <div class="read">
+            <div class="side">
+              <div class="t">Q3 增长方案</div>
+              <div class="i"><span>1</span><span>总览与目标</span></div>
+              <div class="i on"><span>2</span><span>数据分析</span></div>
+              <div class="i"><span>3</span><span>渠道策略</span></div>
+              <div class="i"><span>4</span><span>预算与排期</span></div>
+            </div>
+            <div class="main">
+              <h5>数据分析</h5>
+              <div class="p" style="width:96%"></div>
+              <div class="p" style="width:88%"></div>
+              <div class="p" style="width:70%"></div>
+              <div class="tb">
+                <div class="tr th"><div>指标</div><div>Q1</div><div>Q2</div></div>
+                <div class="tr"><div>GMV</div><div>1.2M</div><div>1.5M</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cap">Markdown 篇目 · 侧栏导航</div>
+      </div>
     </div>
   </div></section>
 
