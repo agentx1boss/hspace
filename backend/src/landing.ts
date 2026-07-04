@@ -73,7 +73,7 @@ const L: Record<Lang, Record<string, string>> = {
     desc: "The HTML demo or Markdown doc your AI just wrote — turn it into a link + password: see who opened it, revoke anytime, iterate without changing the link. Targeted sharing for Cursor / Claude Code developers.",
     ogTitle: "HSpace — Ship to one, not to all.",
     ogDesc: "One link + password: see who opened it, revoke anytime, iterate without changing the link.",
-    navHow: "How it works", navFeat: "Features", navCompare: "Compare", navFaq: "FAQ", install: "Install",
+    navHow: "How it works", navFeat: "Features", navCompare: "Compare", navFaq: "FAQ", navConsole: "Console", install: "Install",
     heroTag: "Built for AI coding · Targeted sharing, not public hosting",
     heroH1: `Ship <span class="hl">to one</span>, not to all.`,
     heroLead: "The HTML demo or Markdown doc Cursor / Claude Code just wrote — turn it into a link + password for teammates and clients: see who opened it, revoke anytime, iterate without changing the link.",
@@ -140,7 +140,7 @@ const L: Record<Lang, Record<string, string>> = {
     desc: "稿出即递,点开即读,心里有数——AI 写完的 demo/文档,一键变成「链接 + 密码」只给该看的人。为 Cursor / Claude Code 开发者而生的定向分享。",
     ogTitle: "HSpace — 稿出即递,点开即读,心里有数",
     ogDesc: "一键变成「链接 + 密码」:谁看了有回执,发错了随时撤回,链接不变可迭代。",
-    navHow: "如何使用", navFeat: "功能", navCompare: "对比", navFaq: "FAQ", install: "安装插件",
+    navHow: "如何使用", navFeat: "功能", navCompare: "对比", navFaq: "FAQ", navConsole: "控制台", install: "安装插件",
     heroTag: "为 AI 编程而生 · 定向分享,不是公开托管",
     heroH1: `<span class="hl">稿出即递</span>,点开即读,心里有数`,
     heroLead: "Cursor / Claude Code 刚出的稿——HTML demo、Markdown 方案,一键变成「链接 + 密码」发给同事和客户。Markdown 自动排成阅读页、HTML 原样能跑,对方点开就能看;谁看了有回执,发错了随时撤回,链接不变可迭代。",
@@ -418,6 +418,7 @@ ${FAVICON_LINK}
       <a class="ghost" href="#features">${s.navFeat}</a>
       <a class="ghost" href="#compare">${s.navCompare}</a>
       <a class="ghost" href="#faq">FAQ</a>
+      <a class="ghost" href="/console">${s.navConsole}</a>
       <a class="ghost" href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">${s.install}</a>
       <a class="ghost" href="${other}">${s.switchLabel}</a>
