@@ -13,9 +13,12 @@
 
 ## 2. Slogan
 
-**主 slogan(中)**:AI 写完的 demo,只发给该看的人
+**主 slogan(中)**:**稿出即递,点开即读,心里有数。**
+> 定稿理由(2026-07-04 二轮):三拍时间线——你递出去(速度)→ TA 点开读(接收方零门槛,md 排成阅读页/html 原样能跑)→ 你心里有数(回执)。钩子+钩子+钩子,无人称(产品自己说话),"稿"为品牌词。前后两拍正好是"你这边/对方那边"双视角。
+**极简版(T 恤/水印/页脚)**:稿出即递。
+
 **主 slogan(英)**:**Ship to one, not to all.**
-> 定稿理由:保留开发者的词 "ship",但用 "to one" 当场重定义——发给一个人,不是发给全世界;"to one, not to all" 对比结构节奏强,单行可印。中文承载信息(场景+人群),英文承载钩子(对比),互补不重复。
+> 定稿理由:保留开发者的词 "ship",但用 "to one" 当场重定义;对比结构节奏强,单行可印。中文承载流程闭环,英文承载定向对比,互补不重复。
 
 **极简备选(视觉主导场景,如海报/OG 卡)**:Only the right eyes.
 
@@ -26,7 +29,8 @@
 | 强调私密 | 链接 + 密码,一次粘贴 | One link, one password, one paste |
 | 强调回执 | 发出去的东西,看没看你知道 | Know who actually opened it |
 | 强调撤回 | 发错了?收得回 | Sent wrong? Take it back |
-| 强调迭代 | 链接是活的 | The link stays, the content evolves |
+| 强调迭代 | 稿在改,链接不变 | The link stays, the content evolves |
+| 八字短版 | 稿出即递,心里有数 | — |
 | 张力句 | 发布侧匿名,分发侧有回执 | Publish anonymously, share accountably |
 
 ## 3. 电梯稿(三个长度)
@@ -45,7 +49,11 @@
 | 🎯 **发错了?收得回** | 改密码即撤回;每人一链,踢一个人不换全员密码;有回执 | grants、stats、撤回 |
 | 🔁 **链接是活的** | 内容随 AI 迭代,链接不变;历史可回滚 | 版本化 |
 
-写文案的规则:**卖结果不卖手段**(说"收得回",不说"边缘密码网关");私密是手段,可控才是结果。
+写文案的规则:
+- **卖结果不卖手段**(说"收得回",不说"边缘密码网关");私密是手段,可控才是结果。
+- **钩子+钩子,不要钩子+说明**:slogan 的每一拍都要勾人;"给谁/怎么做"这类说明交给副位。
+- **"派活型的你"禁用**:第二人称只可用于赞美/赋权("你说了算"),不可用于分工指令("你来递")——后者是客服腔。
+- **无人称优先**:让产品自己说话(稿出即递),而非对用户喊话。
 
 ## 5. 用语表
 
@@ -56,21 +64,24 @@
 | AI 生成的内容 / AI 写完的 | AI 产物 | "产物"含贬义 |
 | 成品内容分享,不是协作编辑 | 内容为主,站点为主 | 后者是内部架构语言 |
 | 访问回执 / 谁看了 | 追踪、监控 | 对接收方语境避免监控感 |
+| 稿(营销/产品语境的托管物代名;技术文档与 API 用 page) | 页面/文件(营销语境) | "稿"自带工作语境与动词生态:递稿、看稿、改稿、撤稿、一稿二稿(版本化);英文对 Draft |
 | 合集(术语;"册子"仅限叙事文案中作比喻) | 多文件站点 | 守"不做托管"红线 |
 
 **品牌名写法**:HSpace(H 大写 S 大写,不写 hspace/HSPACE/H-Space;包名、域名等技术标识除外)。
 
+**品牌注脚(H 字形故事,用于 About/介绍文/hero 小字)**:H 的两竖,一边是你,一边是该看的人;中间那一横,就是你递过去的那份稿。
+
 ## 6. 各渠道 boilerplate(直接复制)
 
 **Marketplace 描述(≤200 字符,中英)**
-AI 写完的 demo,只发给该看的人:链接+密码、访问回执、随时撤回、链接不变可迭代。Ship to one, not to all.
+稿出即递,点开即读,心里有数——AI 写完的 demo/文档,变成「链接+密码」只给该看的人。Ship to one, not to all.
 
 **GitHub About(英文优先,面向全球开发者)**
 Targeted sharing for AI-built HTML/Markdown: one link + password, view receipts, instant revoke, per-recipient passwords, versioned. Edge-native on Cloudflare, open source & self-hostable.
 中文备用:定向分享 AI 生成的 HTML/Markdown:一键"链接+密码",回执、撤回、每人一链、版本化。Cloudflare 边缘,开源可自建。
 
 **社媒 bio(X/即刻)**
-AI 写完的 demo,只发给该看的人 🔒 hspace.zhanjian.space
+稿出即递,点开即读,心里有数 🔒 hspace.zhanjian.space
 
 **接收方页脚署名(勿改,信任触点)**
 由 HSpace 私密分享 / HSpace · 私密分享

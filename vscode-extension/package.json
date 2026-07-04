@@ -1,8 +1,8 @@
 {
   "name": "hspace",
   "displayName": "HSpace",
-  "description": "Ship your AI-built demo to exactly the right people — link + password, view receipts, revoke anytime, iterate without changing the link. AI 写完的 demo,只发给该看的人。",
-  "version": "0.5.0",
+  "description": "Ship your AI-built demo to exactly the right people — link + password, view receipts, revoke anytime. 稿出即递,点开即读,心里有数。",
+  "version": "0.5.1",
   "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",
