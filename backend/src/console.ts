@@ -230,21 +230,21 @@ function consolePage(d: ConsoleData): string {
   }
   bindKey();
 
-  // ---- 通用:同源 API 调用(会话 Cookie 认证;401 = 会话过期 → 回登录态)----
+  // ---- 通用:同源 API 调用(会话 Cookie 认证;401 会话过期 / 410 页面已过期 → 刷新回真实状态)----
   function api(method, path, body) {
     return fetch(path, {
       method: method,
       headers: body ? { "Content-Type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
     }).then(function (r) {
-      if (r.status === 401) { location.reload(); throw new Error("unauthorized"); }
-      return r.json().then(function (data) {
+      if (r.status === 401 || r.status === 410) { location.reload(); throw new Error("stale"); }
+      return r.json().catch(function () { return {}; }).then(function (data) {
         if (!r.ok) throw new Error(data.error || String(r.status));
         return data;
       });
     });
   }
-  function alertErr(err) { if (err.message !== "unauthorized") alert("Request failed: " + err.message); }
+  function alertErr(err) { if (err.message !== "stale") alert("Request failed: " + err.message); }
   function el(tag, cls, text) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -277,15 +277,21 @@ function consolePage(d: ConsoleData): string {
     if (!exp.hidden && exp.getAttribute("data-kind") === kind) { exp.hidden = true; return; }
     exp.hidden = false;
     exp.setAttribute("data-kind", kind);
-    exp.textContent = "Loading…";
-    (kind === "grants" ? loadGrants(exp, slug) : loadVersions(exp, slug)).catch(alertErr);
+    exp.textContent = "";
+    // box 是唯一被重渲染的区域;一次性密码横幅插在 box 之外,撤销/新增他人不会冲掉它
+    var box = el("div", null, "Loading…");
+    exp.appendChild(box);
+    (kind === "grants" ? loadGrants(exp, box, slug) : loadVersions(box, slug)).catch(function (err) {
+      box.textContent = "Failed to load.";
+      alertErr(err);
+    });
   }
 
   // 访问人:列出/新建/撤销;新建返回的密码只显示这一次(DOM 全走 textContent,label 是用户输入)
-  function loadGrants(exp, slug) {
+  function loadGrants(exp, box, slug) {
     return api("GET", "/pages/" + slug + "/grants").then(function (data) {
-      exp.textContent = "";
-      exp.appendChild(el("p", "note", "Each person gets their own password — revoke one without affecting the rest."));
+      box.textContent = "";
+      box.appendChild(el("p", "note", "Each person gets their own password — revoke one without affecting the rest."));
       data.grants.forEach(function (g) {
         var row = el("div", "grow" + (g.revoked ? " revoked" : ""));
         row.appendChild(el("span", "glabel", g.label || "(unnamed)"));
@@ -294,33 +300,38 @@ function consolePage(d: ConsoleData): string {
           var rb = el("button", "btn sm danger", "Revoke");
           rb.onclick = function () {
             if (!confirm('Revoke access for "' + (g.label || "unnamed") + '"?')) return;
-            api("DELETE", "/pages/" + slug + "/grants/" + g.id).then(function () { loadGrants(exp, slug); }).catch(alertErr);
+            api("DELETE", "/pages/" + slug + "/grants/" + g.id).then(function () { return loadGrants(exp, box, slug); }).catch(alertErr);
           };
           row.appendChild(rb);
         }
-        exp.appendChild(row);
+        box.appendChild(row);
       });
       var form = el("div", "grow");
       var input = el("input", "gin");
       input.placeholder = "Name or label, e.g. Alice";
       input.maxLength = 100;
       var add = el("button", "btn sm", "Add person");
-      add.onclick = function () {
+      var submit = function () {
+        if (add.disabled) return;
+        add.disabled = true;
         api("POST", "/pages/" + slug + "/grants", input.value ? { label: input.value } : {}).then(function (g) {
-          return loadGrants(exp, slug).then(function () {
-            exp.insertBefore(el("p", "fresh", 'Password for "' + (g.label || "unnamed") + '": ' + g.password + " — share it now, it won't be shown again."), exp.firstChild);
+          return loadGrants(exp, box, slug).then(function () {
+            // 横幅在 box 外,后续列表重渲染不会销毁它;多次新增依次叠加
+            exp.insertBefore(el("p", "fresh", 'Password for "' + (g.label || "unnamed") + '": ' + g.password + " — share it now, it won't be shown again."), box);
           });
-        }).catch(alertErr);
+        }).catch(function (err) { add.disabled = false; alertErr(err); });
       };
+      add.onclick = submit;
+      input.onkeydown = function (e) { if (e.key === "Enter") submit(); };
       form.appendChild(input); form.appendChild(add);
-      exp.appendChild(form);
+      box.appendChild(form);
     });
   }
 
   // 版本历史:列出 + 回滚(回滚 = 升新版,链接不变)
-  function loadVersions(exp, slug) {
+  function loadVersions(box, slug) {
     return api("GET", "/pages/" + slug + "/versions").then(function (data) {
-      exp.textContent = "";
+      box.textContent = "";
       data.versions.forEach(function (v) {
         var row = el("div", "grow");
         row.appendChild(el("span", "glabel", "v" + v.version + (v.version === data.current ? " · current" : "")));
@@ -333,7 +344,7 @@ function consolePage(d: ConsoleData): string {
           };
           row.appendChild(rb);
         }
-        exp.appendChild(row);
+        box.appendChild(row);
       });
     });
   }
