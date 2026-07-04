@@ -9,6 +9,8 @@
 
 对外压缩版(给媒体/介绍用):**"AI 编程时代的定向分享:demo 写完,只发给该看的人。"**
 
+**反定位**(帮团队做功能取舍):我们不是网盘、不是协作编辑工具、不是建站平台、不是公开画廊。
+
 ## 2. Slogan
 
 **主 slogan(中)**:AI 写完的 demo,只发给该看的人
@@ -30,7 +32,7 @@
 
 **30 秒**:用 Cursor、Claude Code 写完一个 demo 或方案,想发给客户 review?公开托管会把它发到全世界。HSpace 反着来:在编辑器或 AI 对话里一键发布,拿到"链接 + 密码",一次粘贴发走。每个接收者可以有自己的密码,谁看了几次你都知道;发错了改个密码就收回;内容改了链接不变。无需注册,开源可自建。
 
-**60 秒**:在 30 秒版基础上追加——"背后是跑在 Cloudflare 边缘的开源 Worker(R2+D1+KV),密码在边缘校验、防爆破,页面不被搜索引擎收录。除了编辑器插件,还有 MCP server 让 Claude/Cursor 在对话里直接发布,OpenAPI 让任何 agent 接入。核心能力全部免费。"
+**60 秒**:在 30 秒版基础上追加——"背后是跑在 Cloudflare 边缘的开源 Worker(R2+D1+KV),密码在边缘校验、防爆破,页面不被搜索引擎收录。除了编辑器插件,还有 MCP server 让 Claude/Cursor 在对话里直接发布,OpenAPI 让任何 agent 接入。核心能力免费。"
 
 ## 4. 关键信息三支柱(所有文案围绕这三件事)
 
@@ -51,7 +53,7 @@
 | AI 生成的内容 / AI 写完的 | AI 产物 | "产物"含贬义 |
 | 成品内容分享,不是协作编辑 | 内容为主,站点为主 | 后者是内部架构语言 |
 | 访问回执 / 谁看了 | 追踪、监控 | 对接收方语境避免监控感 |
-| 册子 / 合集 | 多文件站点 | 守"不做托管"红线 |
+| 合集(术语;"册子"仅限叙事文案中作比喻) | 多文件站点 | 守"不做托管"红线 |
 
 **品牌名写法**:HSpace(H 大写 S 大写,不写 hspace/HSPACE/H-Space;包名、域名等技术标识除外)。
 
@@ -60,8 +62,9 @@
 **Marketplace 描述(≤200 字符,中英)**
 AI 写完的 demo,只发给该看的人:链接+密码、访问回执、随时撤回、链接不变可迭代。Ship your AI-built demo to exactly the right people.
 
-**GitHub About**
-定向分享 AI 生成的 HTML/Markdown:一键"链接+密码",回执、撤回、每人一链、版本化。Cloudflare 边缘,开源可自建。
+**GitHub About(英文优先,面向全球开发者)**
+Targeted sharing for AI-built HTML/Markdown: one link + password, view receipts, instant revoke, per-recipient passwords, versioned. Edge-native on Cloudflare, open source & self-hostable.
+中文备用:定向分享 AI 生成的 HTML/Markdown:一键"链接+密码",回执、撤回、每人一链、版本化。Cloudflare 边缘,开源可自建。
 
 **社媒 bio(X/即刻)**
 AI 写完的 demo,只发给该看的人 🔒 hspace.zhanjian.space
@@ -73,7 +76,7 @@ AI 写完的 demo,只发给该看的人 🔒 hspace.zhanjian.space
 
 **主画像**:用 AI 编程工具(Cursor / Claude Code / Copilot / v0 / bolt)高频产出 HTML/MD 的开发者。
 **核心场景**:① demo 发客户 review;② 技术方案发同事圈阅;③ AI 对话里生成的报告直接发出去。
-**外扩顺序**(打透主画像后):技术型 PM → 设计师 → 咨询/交付型顾问。
+**外扩顺序**:技术型 PM → 设计师 → 咨询/交付型顾问。**外扩触发条件**(呼应商业假设探针):主画像周活发布者 > 200 且 7 日留存 > 25%,才启动下一环人群的测试;此前所有文案与功能只对主画像负责。
 **不服务**:要建站的人、要协作编辑的人、要公开传播涨粉的人。
 
 ## 8. 边界承诺(对外可复述)
