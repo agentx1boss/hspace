@@ -119,6 +119,7 @@ const L: Record<Lang, Record<string, string>> = {
     mcpSub: "Add the MCP server to Claude Desktop / Cursor / Claude Code — then just say “publish this as a password link”.",
     mcpNote: "No install needed — npx pulls the latest. Full setup in the",
     mcpReadme: "MCP README",
+    mcpCodex: "Using Codex CLI? Run",
     faqH: "You might ask",
     faqQ1: "Will it get indexed by search engines?", faqA1: "No. Every shared page is noindex and requires a password — even if the link is forwarded, without the password it's a wall.",
     faqQ2: "Where is content stored, and for how long?", faqA2: "Content is sent over HTTPS and stored at Cloudflare's edge (R2); passwords are stored only as one-way hashes, never plaintext. Every link expires — by design: anonymous links last up to 3 days (one-shot, no renewal), signed-in links up to 30 and can be renewed before they lapse. There are no permanent links, and you can delete anytime — the link goes dark immediately.",
@@ -184,6 +185,7 @@ const L: Record<Lang, Record<string, string>> = {
     mcpSub: "把 MCP server 加进 Claude Desktop / Cursor / Claude Code,然后对 AI 说「把这个发成带密码的链接」即可。",
     mcpNote: "无需安装,npx 自动拉取最新版。完整配置见",
     mcpReadme: "MCP 说明",
+    mcpCodex: "用 Codex CLI?运行",
     f6t: "边缘密码网关", f6b: "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。",
     faqH: "你可能想问",
     faqQ1: "内容会被搜索引擎收录吗?", faqA1: "不会。所有分享页面都带 noindex,且必须输入密码才能看到内容——链接被转发也没关系,没有密码就是一堵墙。",
@@ -380,6 +382,7 @@ ${FAVICON_LINK}
        border-radius:12px;padding:18px 20px;overflow-x:auto;
        font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:0 12px 32px rgba(0,0,0,.14)}
   .mcp code{background:none;color:inherit;padding:0}
+  .mcp-cap{color:var(--muted);font-size:12px;letter-spacing:.03em;margin:0 0 8px}
   .mcp-note{color:var(--muted);font-size:13px;margin:16px 0 0}
   .mcp-note a{color:var(--accent)}
   .mcp-note code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
@@ -554,7 +557,9 @@ ${FAVICON_LINK}
   <section class="band"><div class="wrap" style="text-align:center">
     <h2>${s.mcpH}</h2>
     <p class="sec-sub">${s.mcpSub}</p>
+    <p class="mcp-cap">Claude Desktop · Cursor · Claude Code</p>
     <pre class="mcp"><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
+    <p class="mcp-note">${s.mcpCodex} <code>codex mcp add hspace -- npx -y hspace-mcp</code></p>
     <p class="mcp-note">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
   </div></section>
 

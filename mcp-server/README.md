@@ -32,9 +32,20 @@
 }
 ```
 
-- **Claude Desktop**:编辑 `claude_desktop_config.json`(设置 → Developer → Edit Config)。
+- **Claude Desktop**:编辑 `claude_desktop_config.json`(设置 → Developer → Edit Config),用上面的 JSON 格式。
 - **Cursor**:设置 → MCP → Add,填入上面的 command/args。
 - **Claude Code**:`claude mcp add hspace -- npx -y hspace-mcp`。
+- **Codex CLI**:`codex mcp add hspace -- npx -y hspace-mcp`,或在 `~/.codex/config.toml` 里用 **TOML** 格式(不是 JSON):
+
+  ```toml
+  [mcp_servers.hspace]
+  command = "npx"
+  args = ["-y", "hspace-mcp"]
+
+  # 可选
+  # [mcp_servers.hspace.env]
+  # HSPACE_API_KEY = "your-api-key"
+  ```
 
 配置后重启客户端,即可对 AI 说「把这份内容发布成带密码的链接」。
 
