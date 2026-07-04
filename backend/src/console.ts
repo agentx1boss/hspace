@@ -26,9 +26,10 @@ export async function serveConsole(url: URL, request: Request, env: Env): Promis
     "Referrer-Policy": "strict-origin-when-cross-origin",
   };
 
+  const fromVscode = url.searchParams.get("from") === "vscode";
   const ownerId = await sessionOwner(request, env);
   if (!ownerId) {
-    return new Response(signedOutPage(url.searchParams.get("error")), { status: 200, headers });
+    return new Response(signedOutPage(url.searchParams.get("error"), fromVscode), { status: 200, headers });
   }
 
   const user = await env.DB.prepare(
@@ -59,7 +60,7 @@ export async function serveConsole(url: URL, request: Request, env: Env): Promis
     githubLogin: user?.github_login ?? ownerId,
     freshKey,
     keyCreatedAt: keyRow.created_at,
-    fromVscode: url.searchParams.get("from") === "vscode",
+    fromVscode,
     pages: pages ?? [],
     domain: env.USERCONTENT_DOMAIN,
   });
@@ -128,13 +129,13 @@ ${inner}
 </body>
 </html>`;
 
-function signedOutPage(error: string | null): string {
+function signedOutPage(error: string | null, fromVscode: boolean): string {
   return shell(`<main class="center">
   <div class="card login">
     <h1>HSpace Console</h1>
     <p class="sub">Manage your API key and shared pages.</p>
     ${error ? `<p class="err">Sign-in failed. Please try again.</p>` : ""}
-    <a class="btn gh" href="/auth/github">${GH_ICON} Sign in with GitHub</a>
+    <a class="btn gh" href="/auth/github${fromVscode ? "?from=vscode" : ""}">${GH_ICON} Sign in with GitHub</a>
   </div>
 </main>`);
 }

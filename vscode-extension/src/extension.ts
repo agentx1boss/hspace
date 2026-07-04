@@ -413,7 +413,7 @@ async function renew(context: vscode.ExtensionContext, provider: RecentProvider,
 
 async function signIn(context: vscode.ExtensionContext) {
   // 浏览器登录 GitHub → console 一键复制 API key → 回编辑器粘贴(粘贴框已提前打开)
-  await vscode.env.openExternal(vscode.Uri.parse(CONSOLE_URL + "?from=vscode"));
+  if (!(await vscode.env.openExternal(vscode.Uri.parse(CONSOLE_URL + "?from=vscode")))) return;
   await setApiKey(context);
 }
 
