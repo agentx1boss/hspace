@@ -31,7 +31,8 @@ const clearState = `${STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Ma
 
 // GET /auth/github —— 生成防 CSRF 的 state 存短时 Cookie,跳 GitHub 授权页(scope 为空,只取公开身份)
 function startOAuth(url: URL, env: Env): Response {
-  const state = randomToken(16);
+  // state 随机值防 CSRF;插件入口(?from=vscode)加 ".v" 后缀,登录成功后把提示条参数带回 console
+  const state = randomToken(16) + (url.searchParams.get("from") === "vscode" ? ".v" : "");
   const auth = new URL("https://github.com/login/oauth/authorize");
   auth.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
   auth.searchParams.set("redirect_uri", callbackUrl(url));
@@ -83,7 +84,8 @@ async function oauthCallback(url: URL, request: Request, env: Env): Promise<Resp
   ).bind(ownerId, ghUser.login, ts, ts).run();
 
   const session = await signSession(env.SESSION_SECRET, ownerId, ts + SESSION_TTL);
-  return redirect("/console", [
+  const dest = state.endsWith(".v") ? "/console?from=vscode" : "/console";
+  return redirect(dest, [
     `${SESSION_COOKIE}=${session}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL}`,
     clearState,
   ]);
