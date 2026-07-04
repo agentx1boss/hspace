@@ -3,6 +3,9 @@
 // 站点 favicon(32px PNG 内联,所有模板共用)
 export const FAVICON_LINK = '<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAByklEQVR4AexWvU4CQRCevcJYWKiFBQIac4mNUFCZQOIRa30BY0KIlS+hFL6CFYkk8gRqayCRwooCCpuLUf5ipQ2Vhjt3Vvay7t0eF+MFQm7Dx87Mfjvz5QMuaDDlFQmYTQficd1YT+i1WEK3Y0n93O9r4vACcL36eDpgEajZAAbgsuEMh2AoA8U5PDykXBSPYVC4BGBT+fKvIeIhHSimGFsa/AiHYMslINi1/2NFAiIH5tuB10LuoFPItShsihbm8u/H14HMygJwdAs5QwY/E/f9tcU9xitmjwjADR2YosBXCvN+MbuNCYdSwMnWElxmVh3YwJ6O+IR0IJ7z+GJn2WBci1T5EHG3LO1QzJUCmh+fIi+02FfA7v0bnDbfGah9eRn8TNzLz8MS4xFy7KV6NPq6E+tKAZyETiASlUZdBtZllF+GwHhXD1X6UaDd7XGvNuab149P45xtEwUw1h/fNiqN22SlkaYgFGnM5VahCpCHeeWRgMiB2XNAs6AO8iJQkkuY0weOizvomL7/ovGeCJcDvZ5ZB2EgDlE17XfNPOciT7MhLzYPErsE4CUcOOiaBMGGYFEBzkUeE6/gqcqeAlTkMOrzL2CSa98AAAD//6djUEEAAAAGSURBVAMASMzLQVmiCxsAAAAASUVORK5CYII=">';
 
+// 落地页:分享页页脚的"由 HSpace 私密分享"署名指向这里(增长闭环,新标签打开)
+const LANDING = "https://hspace.zhanjian.space";
+
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -69,6 +72,8 @@ export function passwordPage(error = false): string {
   .err{color:var(--accent);font-size:13px;margin:12px 0 0;text-align:center;font-weight:550}
   .foot{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:6px}
   .foot .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block}
+  .foot a{color:var(--muted);text-decoration:none}
+  .foot a:hover{color:var(--accent)}
   .shake{animation:shake .4s}
   @keyframes shake{10%,90%{transform:translateX(-1px)}30%,70%{transform:translateX(-4px)}50%{transform:translateX(4px)}}
   @media(prefers-reduced-motion:reduce){.card,.shake{animation:none}}
@@ -87,7 +92,7 @@ export function passwordPage(error = false): string {
     <button type="submit">查看内容</button>
     ${error ? '<p class="err" role="alert">密码不正确，请重试</p>' : ""}
   </form>
-  <div class="foot"><span class="dot"></span>由 HSpace 私密分享 · 仅凭密码可见</div>
+  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">由 HSpace 私密分享</a> · 仅凭密码可见</div>
 </body></html>`;
 }
 
@@ -122,6 +127,8 @@ const BASE_CSS = `
   hr{border:0;border-top:1px solid var(--border);margin:2.5em 0}
   footer{max-width:42rem;margin:0 auto;padding:8px 24px 48px;color:var(--muted);font-size:12.5px}
   footer .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:7px;vertical-align:1px}
+  footer a{color:var(--muted);border-bottom:none}
+  footer a:hover{color:var(--accent)}
   /* 合集侧栏与导航 */
   .side{display:none}
   .crumb{font-size:13.5px;color:var(--muted);margin:-24px 0 32px;padding-bottom:16px;border-bottom:1px solid var(--border)}
@@ -184,7 +191,7 @@ export function readingPage(title: string, articleHtml: string, nav?: Collection
   ${nav ? sidebar(nav) : ""}
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
-    <footer><span class="dot"></span>HSpace · 私密分享${upd}</footer>
+    <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">HSpace · 私密分享</a>${upd}</footer>
   </div>
 </body></html>`;
 }
@@ -215,7 +222,7 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): 
     <div class="meta">${esc(meta)}</div>
     <div class="list">${rows}</div>
   </main>
-  <footer><span class="dot"></span>HSpace · 私密分享</footer>
+  <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">HSpace · 私密分享</a></footer>
 </body></html>`;
 }
 
@@ -264,6 +271,9 @@ function collectionNavWidget(nav: CollectionNav): string {
       .pn a:hover{background:#e7e4df}
       .pn .nx{text-align:center}
       .pn .dis{color:#c4c0b8}
+      .brand{display:block;text-align:center;padding:8px;font-size:11.5px;color:#8b8b90;text-decoration:none;border-top:1px solid #e5e2dd}
+      .brand:hover{color:#E2603C}
+      @media(prefers-color-scheme:dark){.brand{border-color:#2e3036}}
       @media(prefers-color-scheme:dark){
         .panel{background:#22242a;color:#e8e6e3;border-color:#2e3036}
         .hd{border-color:#2e3036}.hd .x{color:#8b8b90}
@@ -277,6 +287,7 @@ function collectionNavWidget(nav: CollectionNav): string {
       <div class="hd"><span class="t">${esc(nav.collectionTitle)}</span><span class="x" id="x" aria-label="关闭">×</span></div>
       <div class="list">${items}</div>
       ${pn}
+      <a class="brand" href="${LANDING}" target="_blank" rel="noopener">由 HSpace 私密分享</a>
     </div>`;
   const json = JSON.stringify(markup).replace(/</g, "\\u003c");
   return `<div id="hspace-nav-host"></div><script>(function(){try{` +
@@ -305,7 +316,9 @@ export function lockedPage(): string {
 
 export function notFoundPage(): string {
   return `<!doctype html>
-<html lang="zh"><head><meta charset="utf-8"><title>页面不存在</title>
-<style>body{font-family:sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#17181c;color:#888}</style>
-</head><body><div><h1>404</h1><p>该页面不存在、已删除或已过期。</p></div></body></html>`;
+<html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}<title>页面不存在</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;display:flex;flex-direction:column;gap:14px;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#17181c;color:#888;text-align:center}
+a{color:#8b8b90;text-decoration:none;font-size:13px}a:hover{color:#F0784F}</style>
+</head><body><div><h1>404</h1><p>该页面不存在、已删除或已过期。</p></div>
+<a href="${LANDING}" target="_blank" rel="noopener">· 由 HSpace 私密分享 ·</a></body></html>`;
 }
