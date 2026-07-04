@@ -34,7 +34,7 @@
 
 - **Claude Desktop**:编辑 `claude_desktop_config.json`(设置 → Developer → Edit Config),用上面的 JSON 格式。
 - **Cursor**:设置 → MCP → Add,填入上面的 command/args。
-- **Claude Code**:`claude mcp add hspace -- npx -y hspace-mcp`。
+- **Claude Code**:`claude mcp add hspace -- npx -y hspace-mcp`;可再装 [`/share` 斜杠命令](../clients/claude-code)一键分享当前产物。
 - **Codex CLI**:`codex mcp add hspace -- npx -y hspace-mcp`,或在 `~/.codex/config.toml` 里用 **TOML** 格式(不是 JSON):
 
   ```toml
