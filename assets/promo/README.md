@@ -28,3 +28,22 @@ curl -s -X PATCH https://html-share.kzhan.workers.dev/pages/q0i7otn \
 ```
 
 > 定位/slogan 变更时,记得同步这里(见 docs/operations.md 的发布 checklist)。
+
+## 社媒 copy 模板(引流到册子;统一带密码 1024)
+
+**X / Twitter(英文,≤280)**
+> I hid the actual point of this post behind a password 👇
+> q0i7otn.zhanjian.space · pass 1024
+> (you'll get it once you're in — that's the product)
+> Ship to one, not to all. — HSpace, targeted sharing for AI-built demos.
+
+**即刻(中文,口语)**
+> 做了个东西一句话说不清,给你一份"稿"自己翻 👇
+> q0i7otn.zhanjian.space,密码 1024
+> 翻到第 3 页有个真·demo。进去你就懂了——这套"输密码才看得到"的体验,就是我做的工具。
+
+**小红书(中文,标题党 + emoji)**
+> 🔒 我把这篇笔记的"正文"锁起来了,密码 1024
+> 👉 q0i7otn.zhanjian.space
+> AI 写完的 demo/方案,只想发给该看的人?点开这份"稿",你就体验了一遍 ✨
+> #AI编程 #Cursor #开发者工具 #私密分享

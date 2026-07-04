@@ -1,34 +1,63 @@
 <!doctype html>
 <html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI 生成的一页</title>
+<title>示例:AI 生成的定价页</title>
 <style>
   *{box-sizing:border-box;margin:0}
-  body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
-       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;
-       background:radial-gradient(120% 120% at 50% 0%,#2a1d3a,#0f1015);color:#f5f3ff}
-  .card{max-width:400px;width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);
-        border-radius:22px;padding:34px;text-align:center;backdrop-filter:blur(8px);box-shadow:0 30px 80px rgba(0,0,0,.5)}
-  .badge{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-         color:#f0784f;background:rgba(240,120,79,.14);padding:5px 12px;border-radius:999px;margin-bottom:18px}
-  h1{font-size:26px;line-height:1.25;margin-bottom:12px}
-  p{color:#b9b4c9;font-size:15px;line-height:1.7;margin-bottom:22px}
-  .orb{width:90px;height:90px;margin:0 auto 22px;border-radius:50%;
-       background:conic-gradient(from 0deg,#f0784f,#9333ea,#4f7cff,#f0784f);animation:spin 6s linear infinite;filter:blur(2px)}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  button{border:0;border-radius:12px;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;
-         background:#f0784f;color:#fff;transition:transform .08s}
-  button:active{transform:scale(.96)}
-  .count{margin-top:16px;font-size:13px;color:#8b8b9a}
-  @media(prefers-reduced-motion:reduce){.orb{animation:none}}
+  body{min-height:100vh;background:#0f1117;color:#e8eaf0;padding:40px 20px 64px;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif}
+  .wrap{max-width:920px;margin:0 auto}
+  .kicker{text-align:center;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#7c83ff;margin-bottom:10px}
+  h1{text-align:center;font-size:32px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .sub{text-align:center;color:#9aa0b4;margin-bottom:26px}
+  .toggle{display:flex;justify-content:center;gap:8px;margin-bottom:34px}
+  .toggle button{border:1px solid #2b2f3a;background:#171a22;color:#9aa0b4;padding:8px 18px;border-radius:999px;cursor:pointer;font-size:14px}
+  .toggle button.on{background:#7c83ff;border-color:#7c83ff;color:#fff;font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .plan{background:#151824;border:1px solid #262b38;border-radius:16px;padding:26px 22px}
+  .plan.pop{border-color:#7c83ff;box-shadow:0 0 0 1px #7c83ff, 0 20px 50px rgba(124,131,255,.18);position:relative}
+  .plan.pop::before{content:"最受欢迎";position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+       background:#7c83ff;color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:999px}
+  .pn{font-size:15px;font-weight:700;margin-bottom:6px}
+  .price{font-size:36px;font-weight:800;letter-spacing:-.02em}
+  .price small{font-size:14px;font-weight:500;color:#9aa0b4}
+  .plan ul{list-style:none;margin:18px 0 0;padding:0}
+  .plan li{padding:7px 0;font-size:14px;color:#c3c8d6;border-top:1px solid #20242f}
+  .plan li::before{content:"✓ ";color:#7c83ff;font-weight:700}
+  .cta{margin-top:20px;display:block;text-align:center;padding:11px;border-radius:10px;background:#232734;color:#fff;text-decoration:none;font-weight:600;font-size:14px}
+  .plan.pop .cta{background:#7c83ff}
+  .foot{margin-top:40px;text-align:center;color:#9aa0b4;font-size:14px;line-height:1.8}
+  .foot a{color:#7c83ff;text-decoration:none;font-weight:600}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
 </style></head>
 <body>
-  <div class="card">
-    <div class="orb"></div>
-    <div class="badge">这是一个自包含 HTML 篇目</div>
-    <h1>AI 生成的网页,<br>点开即读</h1>
-    <p>动画、交互、样式全在——HSpace 原样呈现,不改你一行代码,对方什么都不用装。左下角有个「目录」可以翻回册子。</p>
-    <button onclick="var c=document.getElementById('c');c.textContent='被点了 '+(++window._n||(window._n=1))+' 次 · 交互也照常工作 ✨'">点我试试</button>
-    <div class="count" id="c">按钮、脚本、样式,全部生效</div>
+  <div class="wrap">
+    <div class="kicker">示例 · AI 生成的定价页</div>
+    <h1>选一个适合你的方案</h1>
+    <p class="sub">这是一个用 AI 几分钟写出来的 demo——现在它正被 HSpace 私密地递给你。</p>
+    <div class="toggle">
+      <button id="m" class="on" onclick="setCycle('m')">按月</button>
+      <button id="y" onclick="setCycle('y')">按年 省 20%</button>
+    </div>
+    <div class="grid">
+      <div class="plan"><div class="pn">Starter</div><div class="price"><span class="a" data-m="0" data-y="0">¥0</span></div>
+        <ul><li>1 个项目</li><li>社区支持</li><li>基础分析</li></ul><a class="cta" href="#">开始使用</a></div>
+      <div class="plan pop"><div class="pn">Pro</div><div class="price"><span class="a" data-m="¥39/月" data-y="¥31/月">¥39/月</span></div>
+        <ul><li>无限项目</li><li>优先支持</li><li>高级分析</li><li>团队协作</li></ul><a class="cta" href="#">升级 Pro</a></div>
+      <div class="plan"><div class="pn">Business</div><div class="price"><span class="a" data-m="¥99/月" data-y="¥79/月">¥99/月</span></div>
+        <ul><li>Pro 全部</li><li>SSO / 审计</li><li>专属支持</li></ul><a class="cta" href="#">联系销售</a></div>
+    </div>
+    <div class="foot">
+      ↑ 动画、切换、样式全在——HSpace 原样呈现,不改你一行代码,对方点开就能看。<br>
+      你的下一个 demo,也该这样递出去。 <a href="https://marketplace.visualstudio.com/items?itemName=agentx1boss.hspace" target="_blank" rel="noopener">安装 HSpace →</a><br>
+      <span style="font-size:12.5px;color:#6a7080">(左下角有「目录」可以翻回册子)</span>
+    </div>
   </div>
+  <script>
+    function setCycle(c){
+      document.getElementById('m').classList.toggle('on',c==='m');
+      document.getElementById('y').classList.toggle('on',c==='y');
+      document.querySelectorAll('.a').forEach(function(s){s.textContent=s.getAttribute('data-'+c)});
+    }
+  </script>
 </body></html>
