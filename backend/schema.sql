@@ -73,3 +73,11 @@ CREATE TABLE IF NOT EXISTS api_keys (
   created_at  INTEGER NOT NULL,
   revoked     INTEGER NOT NULL DEFAULT 0
 );
+
+-- 登录用户(GitHub OAuth):owner_id = 'gh:<github_numeric_id>'
+CREATE TABLE IF NOT EXISTS users (
+  owner_id      TEXT PRIMARY KEY,
+  github_login  TEXT NOT NULL,      -- 展示用,每次登录刷新
+  created_at    INTEGER NOT NULL,   -- epoch 秒
+  last_login_at INTEGER NOT NULL
+);
