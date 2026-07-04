@@ -17,7 +17,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
         "- Markdown 会被渲染成排版精良的阅读页;合集(`files`)会生成一个目录页与逐篇导航。",
     },
     servers: [{ url: origin, description: "HSpace API" }],
-    // 匿名可用({} 表示无需鉴权);登录用户用 Bearer API Key 解锁更长有效期(30 天/期,可续)与更高配额
+    // 匿名可用({} 表示无需鉴权,发单页/小合集);登录用 Bearer API Key 解锁:30 天可续、更大体积/合集、每人一链、版本历史/回滚、续期
     security: [{}, { bearerAuth: [] }],
     paths: {
       "/publish": {
@@ -76,7 +76,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
           description:
             "带 `html`/`markdown`(单页)或 `files`(合集)即更新内容并升一个版本,旧版保留可回滚,类型需与原页面一致。" +
             "也可改密码或续期(把有效期从现在往后推,最长 30 天/期;没有永久链接)。已过期的链接不可再更新/续期,需重新发布。" +
-            "匿名可更新自己页面的内容(每次重新扫描),但仍不可移除密码。" +
+            "匿名可更新自己页面的内容(每次重新扫描),但不可移除密码、不可续期,也不能用每人一链 / 版本历史(这些需登录)。" +
             "鉴权用 Bearer(登录)或 `X-Edit-Token`。",
           parameters: [{ $ref: "#/components/parameters/EditToken" }],
           requestBody: {
@@ -374,7 +374,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
             expiresIn: {
               type: "integer",
               nullable: true,
-              description: "有效期(秒),从现在起算。钳制在 [60, 该档上限]:匿名 7 天、登录 30 天。没有永久链接;null 或省略都取该档上限。",
+              description: "有效期(秒),从现在起算。钳制在 [60, 该档上限]:匿名 3 天、登录 30 天。没有永久链接;null 或省略都取该档上限。",
             },
           },
         },

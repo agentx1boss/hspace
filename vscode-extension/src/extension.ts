@@ -341,6 +341,12 @@ async function runUpdate(
 
 // ---- 内容版本化:版本历史与回滚 ----
 async function showVersions(context: vscode.ExtensionContext, rec: Record) {
+  if (rec.editToken) {
+    vscode.window.showInformationMessage(
+      "Version history & rollback are a signed-in feature. Anonymous pages can still be updated in place, but there's no history to browse. Sign in (free) and republish to keep versions."
+    );
+    return;
+  }
   const client = await getClient(context);
   let data: { current: number; versions: { version: number; size_bytes: number; created_at: number }[] };
   try {
@@ -372,13 +378,18 @@ async function showVersions(context: vscode.ExtensionContext, rec: Record) {
   }
 }
 
-// ---- 续期:把有效期从现在往后推(没有永久链接;弃置即自动过期)----
+// ---- 续期:把有效期从现在往后推(登录专属;匿名链接一次性、到期即消失)----
 async function renew(context: vscode.ExtensionContext, provider: RecentProvider, rec: Record) {
-  const hasKey = !!(await context.secrets.get(SECRET_KEY));
-  const max = hasKey ? 30 : 7; // 匿名 7 天、登录 30 天(后端会再次钳制)
-  const opts = [7, 14, 30].filter((d) => d <= max).map((d) => ({ label: `${d} days`, days: d }));
+  // 匿名页面(有 editToken)不可续:后端会拒,这里提前给出引导
+  if (rec.editToken) {
+    vscode.window.showInformationMessage(
+      "Anonymous links are one-shot (up to 3 days) and can't be renewed. Sign in (free) and republish to get renewable 30-day links."
+    );
+    return;
+  }
+  const opts = [7, 14, 30].map((d) => ({ label: `${d} days`, days: d }));
   const pick = await vscode.window.showQuickPick(opts, {
-    placeHolder: `Renew "${rec.filename}" — new term from now (max ${max} days${hasKey ? "" : ", sign in for 30"})`,
+    placeHolder: `Renew "${rec.filename}" — new term from now (max 30 days)`,
     ignoreFocusOut: true,
   });
   if (!pick) return;
@@ -475,6 +486,12 @@ async function copyLink(url: string) {
 
 // ---- 每人一链:管理访问人 ----
 async function manageGrants(context: vscode.ExtensionContext, rec: Record) {
+  if (rec.editToken) {
+    vscode.window.showInformationMessage(
+      "Per-recipient links are a signed-in feature. Sign in (free) and republish to give each recipient their own password and receipt."
+    );
+    return;
+  }
   const client = await getClient(context);
   let grants: Grant[];
   try {

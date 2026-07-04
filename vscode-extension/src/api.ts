@@ -166,20 +166,23 @@ export interface PageStats {
 export function errorMessage(e: unknown): string {
   if (e instanceof ApiError) {
     const map: Record<string, string> = {
-      missing_html: "文件内容为空。",
-      missing_content: "文件内容为空。",
-      content_type_mismatch: "内容类型与原页面不一致（md 页面只能用 md 更新）。",
-      collection_too_few: "合集至少需要 2 个文件。",
-      too_many_docs: "文件数量超过合集上限。",
-      collection_content_immutable: "合集暂不支持修改内容，请删除后重新发布。",
-      too_large: "文件超过大小上限（默认 2MB）。",
-      content_blocked: "内容被安全扫描拦截。",
-      rate_limited: "发布过于频繁，请稍后再试。",
-      invalid_api_key: "API Key 无效，请重新设置。",
-      forbidden: "没有权限操作此页面。",
-      not_found: "页面不存在或已删除。",
+      missing_html: "File is empty.",
+      missing_content: "File is empty.",
+      content_type_mismatch: "Content type doesn't match the original page (a Markdown page can only be updated with Markdown).",
+      collection_too_few: "A collection needs at least 2 files.",
+      too_many_docs: "Too many docs for a collection (anonymous: 3, signed in: 50). Sign in for bigger collections.",
+      collection_content_immutable: "Collections can't be edited in place yet — delete and republish.",
+      too_large: "File exceeds the size limit (anonymous 512KB, signed in 2MB). Sign in for larger files.",
+      content_blocked: "Blocked by the safety scan.",
+      rate_limited: "Publishing too often — try again shortly.",
+      invalid_api_key: "API key is invalid — set it again.",
+      login_required: "That's a signed-in feature — per-recipient links and version history need a (free) sign-in. Set an API key, then republish.",
+      renew_requires_login: "Renewal needs a (free) sign-in. Anonymous links are one-shot (up to 3 days); sign in and republish for renewable 30-day links.",
+      expired: "This link has expired and can't be changed — republish to share again.",
+      forbidden: "You don't have permission to modify this page.",
+      not_found: "Page doesn't exist or was deleted.",
     };
-    return map[e.code] ?? `请求失败（${e.status} ${e.code}）。`;
+    return map[e.code] ?? `Request failed (${e.status} ${e.code}).`;
   }
   return e instanceof Error ? e.message : String(e);
 }

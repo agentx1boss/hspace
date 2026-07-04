@@ -404,9 +404,10 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
     }
   }
 
-  // 续期:expiresIn 为秒则续到 now+ttl;null 或缺省的续期语义 = 续到该档上限。都从"现在"起算,钳制在档内上限。
+  // 续期是登录专属:匿名链接一次性、到期即消失(想保命→登录)。匿名传 expiresIn 直接拒。
   if (typeof body.expiresIn === "number" || body.expiresIn === null) {
-    const maxTtl = Number(isOwner ? env.OWNER_MAX_TTL : env.ANON_DEFAULT_TTL);
+    if (!isOwner) return json({ error: "renew_requires_login" }, 403);
+    const maxTtl = Number(env.OWNER_MAX_TTL);
     const reqTtl = typeof body.expiresIn === "number" ? body.expiresIn : maxTtl;
     const ttl = Math.min(Math.max(reqTtl, 60), maxTtl);
     sets.push("expires_at = ?"); args.push(now() + ttl);
@@ -466,7 +467,8 @@ async function statsPage(slug: string, request: Request, env: Env): Promise<Resp
 async function listVersions(slug: string, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
-  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  // 版本历史/回滚是登录专属;匿名仍可覆盖更新内容(见 patchPage),只是不能翻历史/回滚
+  if ((await mutateRole(page, request, env)) !== "owner") return json({ error: "login_required" }, 403);
   const { results } = await env.DB.prepare(
     "SELECT version, size_bytes, created_at FROM versions WHERE slug = ? ORDER BY version DESC"
   ).bind(slug).all();
@@ -477,7 +479,7 @@ async function listVersions(slug: string, request: Request, env: Env): Promise<R
 async function restoreVersion(slug: string, v: number, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
-  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  if ((await mutateRole(page, request, env)) !== "owner") return json({ error: "login_required" }, 403);
   const row = await env.DB.prepare(
     "SELECT object_key, size_bytes FROM versions WHERE slug = ? AND version = ?"
   ).bind(slug, v).first<{ object_key: string; size_bytes: number }>();
@@ -530,7 +532,8 @@ async function matchGrant(env: Env, slug: string, pw: string): Promise<string | 
 async function createGrant(slug: string, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
-  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  // 每人一链是登录专属:匿名页面无 owner,拿不到这个能力(鼓励登录)
+  if ((await mutateRole(page, request, env)) !== "owner") return json({ error: "login_required" }, 403);
 
   let body: any = {};
   try { body = await request.json(); } catch { /* 允许空 body */ }
@@ -551,7 +554,7 @@ async function createGrant(slug: string, request: Request, env: Env): Promise<Re
 async function listGrants(slug: string, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
-  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  if ((await mutateRole(page, request, env)) !== "owner") return json({ error: "login_required" }, 403);
   const { results } = await env.DB.prepare(
     `SELECT id, label, created_at, revoked, hits, last_seen_at
      FROM grants WHERE slug = ? ORDER BY created_at`
@@ -563,7 +566,7 @@ async function listGrants(slug: string, request: Request, env: Env): Promise<Res
 async function revokeGrant(slug: string, id: string, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
-  if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
+  if ((await mutateRole(page, request, env)) !== "owner") return json({ error: "login_required" }, 403);
   await env.DB.prepare("UPDATE grants SET revoked = 1 WHERE id = ? AND slug = ?").bind(id, slug).run();
   return json({ ok: true });
 }
