@@ -458,9 +458,16 @@ async function deletePage(slug: string, request: Request, env: Env): Promise<Res
   if ((await mutateRole(page, request, env)) === "none") return json({ error: "forbidden" }, 403);
 
   // 清理所有版本对象:合集在 pages/<slug>/ 前缀下(含各 vN 目录);单页在 pages/<slug>. 前缀下(含 .vN.)
+  // list 单次最多 1000 个对象,大合集需按 cursor 翻页,否则残留孤儿对象
   for (const prefix of [`pages/${slug}/`, `pages/${slug}.`]) {
-    const listed = await env.BUCKET.list({ prefix });
-    await Promise.all(listed.objects.map((o) => env.BUCKET.delete(o.key)));
+    let cursor: string | undefined;
+    do {
+      const listed = await env.BUCKET.list({ prefix, cursor });
+      if (listed.objects.length > 0) {
+        await env.BUCKET.delete(listed.objects.map((o) => o.key));
+      }
+      cursor = listed.truncated ? listed.cursor : undefined;
+    } while (cursor);
   }
   await env.DB.prepare("UPDATE pages SET status = 'deleted' WHERE slug = ?").bind(slug).run();
   return json({ ok: true });
