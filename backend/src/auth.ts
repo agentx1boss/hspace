@@ -1,11 +1,12 @@
 // GitHub OAuth 登录 + 会话 —— 路由仅挂在 hspace. 落地域
 // 流程:/auth/github 跳 GitHub → /auth/github/callback 换 token、upsert users、
 // 签发 30 天 HMAC 签名 Cookie(无 session 表;登出即删 Cookie,无服务端吊销,已知取舍)
+// Cookie 用 __Host- 前缀:用户内容子域与登录域同注册域,防其种 domain cookie 冒充会话
 import { randomToken, signSession, verifySession } from "./crypto";
 import type { Env } from "./index";
 
-const SESSION_COOKIE = "hs_sess";
-const STATE_COOKIE = "hs_oauth_state";
+const SESSION_COOKIE = "__Host-hs_sess";
+const STATE_COOKIE = "__Host-hs_oauth_state";
 const SESSION_TTL = 30 * 24 * 3600; // 30 天
 
 const now = () => Math.floor(Date.now() / 1000);
@@ -26,7 +27,7 @@ function redirect(location: string, cookies: string[] = []): Response {
   return new Response(null, { status: 302, headers });
 }
 
-const clearState = `${STATE_COOKIE}=; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+const clearState = `${STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
 // GET /auth/github —— 生成防 CSRF 的 state 存短时 Cookie,跳 GitHub 授权页(scope 为空,只取公开身份)
 function startOAuth(url: URL, env: Env): Response {
@@ -36,7 +37,7 @@ function startOAuth(url: URL, env: Env): Response {
   auth.searchParams.set("redirect_uri", callbackUrl(url));
   auth.searchParams.set("state", state);
   return redirect(auth.toString(), [
-    `${STATE_COOKIE}=${state}; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+    `${STATE_COOKIE}=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
   ]);
 }
 
@@ -91,6 +92,11 @@ async function oauthCallback(url: URL, request: Request, env: Env): Promise<Resp
 // POST /auth/logout —— 删 Cookie 回落地页
 function logout(): Response {
   return redirect("/", [`${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`]);
+}
+
+/** 请求是否带会话 Cookie(不校验签名;用于区分"未登录"与"会话无效/过期") */
+export function hasSessionCookie(request: Request): boolean {
+  return readCookie(request, SESSION_COOKIE) !== null;
 }
 
 /** 从请求读取并校验登录会话,返回 owner_id 或 null */

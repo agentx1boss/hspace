@@ -48,14 +48,14 @@ CREATE TABLE IF NOT EXISTS users (
 | `GET /auth/github/callback` | 校验 state → 换 token → `GET api.github.com/user` 取 id/login → upsert `users` → 签发 session cookie → 302 `/console` |
 | `POST /auth/logout` | 清 cookie,302 落地页 |
 
-**Session:无状态签名 cookie**(不建 session 表):`hs_sess = base64(payload).hmac`,payload 含 `{owner_id, exp}`,HMAC-SHA256(SESSION_SECRET),有效期 30 天。属性:`HttpOnly; Secure; SameSite=Lax; Domain=hspace.zhanjian.space; Path=/`。登出即删 cookie(无服务端吊销;30 天上限可接受,属已知取舍)。
+**Session:无状态签名 cookie**(不建 session 表):`__Host-hs_sess = base64(payload).hmac`,payload 含 `{owner_id, exp}`,HMAC-SHA256(SESSION_SECRET),有效期 30 天。属性:`HttpOnly; Secure; SameSite=Lax; Path=/`(host-only,`__Host-` 前缀禁止 Domain 属性)。__Host- 前缀防用户内容子域种 domain cookie 冒充。登出即删 cookie(无服务端吊销;30 天上限可接受,属已知取舍)。
 
 ## 4. 认证扩展(关键架构决策)
 
 `authOwner()`(backend/src/index.ts:168)扩展为双凭据:
 
 1. `Authorization: Bearer <key>` —— 现状,不变(插件 / MCP / API 用户)。
-2. 无 Bearer 时,读 `hs_sess` cookie 验签 —— console 前端用。
+2. 无 Bearer 时,读 `__Host-hs_sess` cookie 验签 —— console 前端用。
 
 **理由**:API key 只存 SHA-256 哈希,console 无法拿到明文去调 API;复用 cookie 认证后,console 的页面列表 / 删除 / 续期 / grants / versions **全部直接复用现有端点**,零新增业务逻辑。
 
