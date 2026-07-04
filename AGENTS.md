@@ -34,6 +34,7 @@ npx wrangler deploy       # 部署(或推 backend/** 到 main 自动部署)
 npm run compile && npx @vscode/vsce package
 # 发版 = 改 package.json version → git tag v<x> → push tag(CI 自动发双市场)
 # MCP(cd mcp-server):npm run build
+# MCP 发布 = npm version patch → npm publish --access public --otp=<码>(手动,非 CI;详见 mcp-server/README「发布到 npm」)
 ```
 
 ## CI/CD
