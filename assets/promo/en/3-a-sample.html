@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample: an AI-generated pricing page</title>
+<style>
+  *{box-sizing:border-box;margin:0}
+  body{min-height:100vh;background:#0f1117;color:#e8eaf0;padding:40px 20px 64px;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .wrap{max-width:920px;margin:0 auto}
+  .kicker{text-align:center;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#7c83ff;margin-bottom:10px}
+  h1{text-align:center;font-size:32px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .sub{text-align:center;color:#9aa0b4;margin-bottom:26px}
+  .toggle{display:flex;justify-content:center;gap:8px;margin-bottom:34px}
+  .toggle button{border:1px solid #2b2f3a;background:#171a22;color:#9aa0b4;padding:8px 18px;border-radius:999px;cursor:pointer;font-size:14px}
+  .toggle button.on{background:#7c83ff;border-color:#7c83ff;color:#fff;font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .plan{background:#151824;border:1px solid #262b38;border-radius:16px;padding:26px 22px}
+  .plan.pop{border-color:#7c83ff;box-shadow:0 0 0 1px #7c83ff, 0 20px 50px rgba(124,131,255,.18);position:relative}
+  .plan.pop::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+       background:#7c83ff;color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:999px}
+  .pn{font-size:15px;font-weight:700;margin-bottom:6px}
+  .price{font-size:36px;font-weight:800;letter-spacing:-.02em}
+  .plan ul{list-style:none;margin:18px 0 0;padding:0}
+  .plan li{padding:7px 0;font-size:14px;color:#c3c8d6;border-top:1px solid #20242f}
+  .plan li::before{content:"✓ ";color:#7c83ff;font-weight:700}
+  .cta{margin-top:20px;display:block;text-align:center;padding:11px;border-radius:10px;background:#232734;color:#fff;text-decoration:none;font-weight:600;font-size:14px}
+  .plan.pop .cta{background:#7c83ff}
+  .foot{margin-top:40px;text-align:center;color:#9aa0b4;font-size:14px;line-height:1.8}
+  .foot a{color:#7c83ff;text-decoration:none;font-weight:600}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+</style></head>
+<body>
+  <div class="wrap">
+    <div class="kicker">Sample · AI-generated pricing page</div>
+    <h1>Pick a plan that fits</h1>
+    <p class="sub">A demo written with AI in minutes — and right now it's being shipped to you, privately, by HSpace.</p>
+    <div class="toggle">
+      <button id="m" class="on" onclick="setCycle('m')">Monthly</button>
+      <button id="y" onclick="setCycle('y')">Yearly · save 20%</button>
+    </div>
+    <div class="grid">
+      <div class="plan"><div class="pn">Starter</div><div class="price"><span class="a" data-m="$0" data-y="$0">$0</span></div>
+        <ul><li>1 project</li><li>Community support</li><li>Basic analytics</li></ul><a class="cta" href="#">Get started</a></div>
+      <div class="plan pop"><div class="pn">Pro</div><div class="price"><span class="a" data-m="$6/mo" data-y="$5/mo">$6/mo</span></div>
+        <ul><li>Unlimited projects</li><li>Priority support</li><li>Advanced analytics</li><li>Team collaboration</li></ul><a class="cta" href="#">Upgrade to Pro</a></div>
+      <div class="plan"><div class="pn">Business</div><div class="price"><span class="a" data-m="$15/mo" data-y="$12/mo">$15/mo</span></div>
+        <ul><li>Everything in Pro</li><li>SSO / audit log</li><li>Dedicated support</li></ul><a class="cta" href="#">Contact sales</a></div>
+    </div>
+    <div class="foot">
+      ↑ Animation, toggle, styling — all here. HSpace serves it as-is, doesn't touch a line of your code, and the recipient installs nothing.<br>
+      Your next demo should ship like this. <a href="https://marketplace.visualstudio.com/items?itemName=agentx1boss.hspace" target="_blank" rel="noopener">Install HSpace →</a><br>
+      <span style="font-size:12.5px;color:#6a7080">(the "Contents" button, bottom-left, flips back to the collection)</span>
+    </div>
+  </div>
+  <script>
+    function setCycle(c){
+      document.getElementById('m').classList.toggle('on',c==='m');
+      document.getElementById('y').classList.toggle('on',c==='y');
+      document.querySelectorAll('.a').forEach(function(s){s.textContent=s.getAttribute('data-'+c)});
+    }
+  </script>
+</body></html>

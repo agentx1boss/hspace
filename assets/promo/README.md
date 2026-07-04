@@ -2,8 +2,9 @@
 
 这三篇是**线上推广合集的源文件**,用于社媒引流与落地页「亲自体验」入口:
 
-- 线上地址:https://q0i7otn.zhanjian.space · 访问密码 **1024**
-- 落地页 `亲自体验` 区块与社媒帖子都指向它
+- **中文册子**:https://q0i7otn.zhanjian.space · 密码 **1024**(源文件在本目录根)
+- **英文册子**:https://aqm3anv.zhanjian.space · 密码 **1024**(源文件在 `en/`)
+- 落地页 `亲自体验` 入口按语言分流:中文版指向 q0i7otn,英文版指向 aqm3anv(`landing.ts` 的 `trySlug`)
 - 它本身就是用 HSpace 发布的(dogfooding);含 2 篇 Markdown + 1 篇自包含 HTML,演示合集、目录导航、html 篇目悬浮目录
 
 ## 更新(改文案不换链接)
@@ -23,6 +24,7 @@ files=[
 ]
 json.dump({"title":"HSpace 邀请函","files":files}, open("/tmp/promo.json","w"), ensure_ascii=False)
 PY
+# 中文册子 q0i7otn / 英文册子 aqm3anv(改对应目录后各 PATCH 一次)
 curl -s -X PATCH https://html-share.kzhan.workers.dev/pages/q0i7otn \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' -d @/tmp/promo.json
 ```
