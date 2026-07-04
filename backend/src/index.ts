@@ -157,6 +157,9 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   if (path === "/pages" && request.method === "GET") return listPages(request, env);
 
+  if (path === "/me" && request.method === "GET") return me(request, env);
+  if (path === "/me/api-key" && request.method === "POST") return regenerateApiKey(request, env);
+
   if (path === "/health") return json({ ok: true, service: "hspace" });
   if (path === "/") return landingResp(request);
   const asset = await serveBrandAsset(path, env);
@@ -462,6 +465,36 @@ async function listPages(request: Request, env: Env): Promise<Response> {
      FROM pages WHERE owner_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 200`
   ).bind(ownerId).all();
   return json({ pages: results });
+}
+
+// ---- GET /me ----(console:当前登录用户信息 + key 状态,不含 key 明文)
+async function me(request: Request, env: Env): Promise<Response> {
+  const ownerId = await authOwner(request, env);
+  if (!ownerId) return json({ error: "unauthorized" }, 401);
+  const user = await env.DB.prepare(
+    "SELECT github_login FROM users WHERE owner_id = ?"
+  ).bind(ownerId).first<{ github_login: string }>();
+  const key = await env.DB.prepare(
+    "SELECT created_at FROM api_keys WHERE owner_id = ? AND revoked = 0 ORDER BY created_at DESC LIMIT 1"
+  ).bind(ownerId).first<{ created_at: number }>();
+  return json({
+    ownerId,
+    githubLogin: user?.github_login ?? null,
+    apiKey: key ? { createdAt: key.created_at } : null,
+  });
+}
+
+// ---- POST /me/api-key ----(吊销旧 key、生成新 key;明文仅本次响应返回)
+async function regenerateApiKey(request: Request, env: Env): Promise<Response> {
+  const ownerId = await authOwner(request, env);
+  if (!ownerId) return json({ error: "unauthorized" }, 401);
+  const key = randomToken(24);
+  const ts = now();
+  await env.DB.prepare("UPDATE api_keys SET revoked = 1 WHERE owner_id = ?").bind(ownerId).run();
+  await env.DB.prepare(
+    "INSERT INTO api_keys (key_hash, owner_id, created_at) VALUES (?, ?, ?)"
+  ).bind(await sha256b64(key), ownerId, ts).run();
+  return json({ apiKey: key, createdAt: ts });
 }
 
 // ---- GET /pages/:slug/stats ----（访问回执：凭 owner 或 editToken 查访问量）
