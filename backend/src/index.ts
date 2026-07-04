@@ -484,16 +484,18 @@ async function me(request: Request, env: Env): Promise<Response> {
   });
 }
 
-// ---- POST /me/api-key ----(吊销旧 key、生成新 key;明文仅本次响应返回)
+// ---- POST /me/api-key ----(删旧 key、生成新 key;明文仅本次响应返回)
 async function regenerateApiKey(request: Request, env: Env): Promise<Response> {
   const ownerId = await authOwner(request, env);
   if (!ownerId) return json({ error: "unauthorized" }, 401);
   const key = randomToken(24);
   const ts = now();
-  await env.DB.prepare("UPDATE api_keys SET revoked = 1 WHERE owner_id = ?").bind(ownerId).run();
-  await env.DB.prepare(
-    "INSERT INTO api_keys (key_hash, owner_id, created_at) VALUES (?, ?, ?)"
-  ).bind(await sha256b64(key), ownerId, ts).run();
+  // 删旧插新,batch 单事务原子执行;revoked 行无消费方,直接删除以免表无界增长
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM api_keys WHERE owner_id = ?").bind(ownerId),
+    env.DB.prepare("INSERT INTO api_keys (key_hash, owner_id, created_at) VALUES (?, ?, ?)")
+      .bind(await sha256b64(key), ownerId, ts),
+  ]);
   return json({ apiKey: key, createdAt: ts });
 }
 
