@@ -27,6 +27,9 @@ export interface Env {
   DB: D1Database;
   RATELIMIT: KVNamespace;
   COOKIE_SIGNING_SECRET: string;
+  SESSION_SECRET: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
   API_DOMAIN: string;
   USERCONTENT_DOMAIN: string;
   MAX_SIZE_BYTES: string;
@@ -77,11 +80,15 @@ export default {
 
     // 落地页 + 法务/举报页:内容域的 hspace 子域(通配路由已覆盖;www/apex 已被其他服务占用)
     if (host === "hspace." + env.USERCONTENT_DOMAIN) {
+      const auth = await handleAuth(url, request, env);
+      if (auth) return auth;
       const asset = await serveBrandAsset(url.pathname, env);
       if (asset) return asset;
       const site = await serveSitePage(url.pathname, request, env);
       if (site) return site;
-      return landingResp(request);
+      if (url.pathname === "/") return landingResp(request);
+      // console 前端同源调用 /me、/pages 等 API;未知路径由 handleApi 返回 JSON 404
+      return handleApi(url, request, env, ctx);
     }
 
     // ── 路由：用户内容子域 → 提供页面 ──
@@ -165,15 +172,23 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
   return json({ error: "not_found" }, 404);
 }
 
-/** 解析 Authorization: Bearer <key> → owner_id | null */
+/** 解析凭据 → owner_id:优先 Bearer key;无 Bearer 时接受同源请求的登录会话 Cookie(console 前端) */
 async function authOwner(request: Request, env: Env): Promise<string | null> {
   const h = request.headers.get("Authorization");
-  if (!h?.startsWith("Bearer ")) return null;
-  const keyHash = await sha256b64(h.slice(7).trim());
-  const row = await env.DB.prepare(
-    "SELECT owner_id FROM api_keys WHERE key_hash = ? AND revoked = 0"
-  ).bind(keyHash).first<{ owner_id: string }>();
-  return row?.owner_id ?? null;
+  if (h?.startsWith("Bearer ")) {
+    const keyHash = await sha256b64(h.slice(7).trim());
+    const row = await env.DB.prepare(
+      "SELECT owner_id FROM api_keys WHERE key_hash = ? AND revoked = 0"
+    ).bind(keyHash).first<{ owner_id: string }>();
+    return row?.owner_id ?? null;
+  }
+  // CSRF 防护:Cookie 凭据仅在请求来源为 hspace 落地域(或本地 dev)时被接受,配合 SameSite=Lax
+  const src = request.headers.get("Origin") || request.headers.get("Referer") || "";
+  const allowed = [`https://hspace.${env.USERCONTENT_DOMAIN}`, "http://localhost:8787"];
+  if (allowed.some((a) => src === a || src.startsWith(a + "/"))) {
+    return sessionOwner(request, env);
+  }
+  return null;
 }
 
 // ---- POST /publish ----
