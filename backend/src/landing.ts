@@ -21,6 +21,43 @@ function step(n: string, title: string, body: string): string {
   return `<div class="step"><div class="sn">${n}</div><div><h3>${title}</h3><p>${body}</p></div></div>`;
 }
 
+// 能力对比矩阵(匿名 vs 登录)。✓/— 会被着色;其余按文本渲染。
+type MxRow = { label: string; anon: string; user: string };
+const MATRIX: Record<Lang, MxRow[]> = {
+  en: [
+    { label: "Publish in ~30s · password · receipts", anon: "✓", user: "✓" },
+    { label: "Update content in place", anon: "✓", user: "✓" },
+    { label: "Link lifetime", anon: "3 days · one-shot", user: "up to 30 days" },
+    { label: "Renew before expiry", anon: "—", user: "✓" },
+    { label: "File size", anon: "512 KB", user: "2 MB" },
+    { label: "Docs per collection", anon: "up to 3", user: "up to 50" },
+    { label: "Per-recipient links", anon: "—", user: "✓" },
+    { label: "Version history / rollback", anon: "—", user: "✓" },
+    { label: "Daily publish cap", anon: "50 / day", user: "none" },
+  ],
+  zh: [
+    { label: "零注册 ~30 秒发布 · 密码 · 回执", anon: "✓", user: "✓" },
+    { label: "覆盖更新内容", anon: "✓", user: "✓" },
+    { label: "链接有效期", anon: "3 天 · 一次性", user: "最长 30 天" },
+    { label: "到期前续期", anon: "—", user: "✓" },
+    { label: "文件体积", anon: "512 KB", user: "2 MB" },
+    { label: "合集篇数", anon: "最多 3", user: "最多 50" },
+    { label: "每人一链", anon: "—", user: "✓" },
+    { label: "版本历史 / 回滚", anon: "—", user: "✓" },
+    { label: "每日发布上限", anon: "50 / 天", user: "无" },
+  ],
+};
+function mxCell(v: string): string {
+  if (v === "✓") return `<span class="y">✓</span>`;
+  if (v === "—") return `<span class="n">—</span>`;
+  return v;
+}
+function matrixRows(lang: Lang): string {
+  return MATRIX[lang]
+    .map((r) => `<div class="mxr"><div class="mxl">${r.label}</div><div class="mxc">${mxCell(r.anon)}</div><div class="mxc mxu">${mxCell(r.user)}</div></div>`)
+    .join("");
+}
+
 
 type Lang = "en" | "zh";
 const L: Record<Lang, Record<string, string>> = {
@@ -78,6 +115,9 @@ const L: Record<Lang, Record<string, string>> = {
     faqQ3: "Sent to the wrong person / want to cut access?", faqA3: "Change the password (the old one dies instantly) or delete it. With per-recipient links, you can revoke just one person without affecting the others.",
     faqQ4: "Is it free? Any limits?", faqA4: "Core capabilities are free right now — password sharing, collections, receipts, per-recipient links, versioning, all un-gated. Anonymous & instant, no signup: single file ≤ 512KB, up to 3 days, ≤ 3 docs per collection, 50/day. Sign in (free) to unlock more — up to 30-day renewable links, 2MB, per-recipient links, version history, bigger collections. Phishing and malicious content are prohibited and taken down; core stays free and open source.",
     faqQ5: "Can I self-host?", faqA5_pre: "Yes. Front and back end are fully open source (MIT); the backend is a Cloudflare Worker — follow the ", faqA5_link: "README", faqA5_post: " and you have your own instance in ten minutes; the extension and MCP can point at it.",
+    mxH: "Anonymous vs. signed in",
+    mxSub: "Publishing a single draft is always signup-free. Signing in — also free — unlocks the heavier features.",
+    mxAnon: "Anonymous", mxUser: "Signed in · free",
     ctaBandH: "Next demo you build, try sharing it this way",
     ctaVsx: "Cursor / Open VSX",
     flinkPrivacy: "Privacy", flinkTerms: "Terms", flinkReport: "Report",
@@ -137,6 +177,9 @@ const L: Record<Lang, Record<string, string>> = {
     faqQ3: "发错了 / 不想给某人看了怎么办?", faqA3: "随时改密码(旧密码立即失效)或直接删除。用「每人一链」时,可以只撤销某一个人的密码,其他人不受影响。",
     faqQ4: "免费吗?有什么限制?", faqA4: "核心能力现在全部免费——密码分享、合集、访问回执、每人一链、版本化,都不阉割。匿名即用、零注册:单文件 ≤ 512KB、最长 3 天、合集 ≤ 3 篇、每天 50 次。登录(免费)解锁更多——30 天可续链接、2MB、每人一链、版本历史、更大合集。禁止钓鱼与恶意内容,违规会被下架;核心能力永远免费、开源可自建。",
     faqQ5: "可以自己部署吗?", faqA5_pre: "可以。前后端完全开源(MIT),后端是一个 Cloudflare Worker,照 ", faqA5_link: "README", faqA5_post: " 十分钟即可拥有自己的实例,插件与 MCP 均可指向自建地址。",
+    mxH: "匿名 vs 登录",
+    mxSub: "发一稿永远零注册;登录(同样免费)才解锁那些更重的功能。",
+    mxAnon: "匿名", mxUser: "登录 · 免费",
     ctaBandH: "下一份稿写完,试试这样发",
     ctaVsx: "Cursor / Open VSX",
     flinkPrivacy: "隐私", flinkTerms: "条款", flinkReport: "举报",
@@ -327,6 +370,20 @@ ${FAVICON_LINK}
   .faqs summary::-webkit-details-marker{display:none}
   .faqs p{margin:0 0 15px;color:var(--muted);font-size:14.5px}
   .faqs a{color:var(--accent)}
+  /* 能力对比矩阵 */
+  .mx{max-width:620px;margin:0 auto;border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,.06)}
+  .mxr{display:grid;grid-template-columns:1.7fr 1fr 1.1fr;align-items:center}
+  .mxr+.mxr{border-top:1px solid var(--border)}
+  .mxr.mxhead{background:var(--soft);font-weight:700}
+  .mxl{padding:12px 16px;font-size:14px}
+  .mxc{padding:12px 10px;text-align:center;font-size:13.5px;color:var(--muted)}
+  .mxc.mxu{background:var(--ring)}
+  .mxhead .mxc,.mxhead .mxl{color:var(--fg);font-size:13px}
+  .mxhead .mxu{color:var(--accent)}
+  .mxc .y{color:var(--accent);font-weight:700;font-size:15px}
+  .mxc .n{opacity:.35}
+  @media(max-width:720px){.mxl{padding:11px 12px;font-size:13px}.mxc{font-size:12.5px;padding:11px 6px}}
   @media(max-width:720px){.grid3,.steps,.feats,.shots{grid-template-columns:1fr}.hero{padding:52px 0 44px}}
 </style></head>
 <body>
@@ -481,6 +538,15 @@ ${FAVICON_LINK}
       <details><summary>${s.faqQ3}</summary><p>${s.faqA3}</p></details>
       <details><summary>${s.faqQ4}</summary><p>${s.faqA4}</p></details>
       <details><summary>${s.faqQ5}</summary><p>${s.faqA5_pre}<a href="${GITHUB}" target="_blank" rel="noopener">${s.faqA5_link}</a>${s.faqA5_post}</p></details>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <h2>${s.mxH}</h2>
+    <p class="sec-sub">${s.mxSub}</p>
+    <div class="mx">
+      <div class="mxr mxhead"><div class="mxl"></div><div class="mxc">${s.mxAnon}</div><div class="mxc mxu">${s.mxUser}</div></div>
+      ${matrixRows(lang)}
     </div>
   </div></section>
 
