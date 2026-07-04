@@ -293,7 +293,9 @@ ${FAVICON_LINK}
     <div class="links">
       <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
       <a href="${MARKETPLACE}" target="_blank" rel="noopener">Marketplace</a>
-      <a href="${OPENVSX}" target="_blank" rel="noopener">Open VSX</a>
+      <a href="/privacy">隐私</a>
+      <a href="/terms">条款</a>
+      <a href="/report">举报</a>
     </div>
   </div></footer>
 </body></html>`;

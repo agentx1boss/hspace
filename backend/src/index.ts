@@ -19,6 +19,7 @@ import { marked } from "marked";
 import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectBackButton, CollectionNav } from "./html";
 import { openapiSpec } from "./openapi";
 import { landingPage } from "./landing";
+import { privacyPage, termsPage, reportPage } from "./pages";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -69,10 +70,13 @@ export default {
     const url = new URL(request.url);
     const host = url.hostname;
 
-    // 落地页:内容域的 hspace 子域(通配路由已覆盖;www/apex 已被其他服务占用)
+    // 落地页 + 法务/举报页:内容域的 hspace 子域(通配路由已覆盖;www/apex 已被其他服务占用)
     if (host === "hspace." + env.USERCONTENT_DOMAIN) {
       const asset = await serveBrandAsset(url.pathname, env);
-      return asset ?? landingResp();
+      if (asset) return asset;
+      const site = await serveSitePage(url.pathname, request, env);
+      if (site) return site;
+      return landingResp();
     }
 
     // ── 路由：用户内容子域 → 提供页面 ──
@@ -145,6 +149,8 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
   if (path === "/") return landingResp();
   const asset = await serveBrandAsset(path, env);
   if (asset) return asset;
+  const site = await serveSitePage(path, request, env);
+  if (site) return site;
 
   // AI 工具就绪:OpenAPI 规范(GPT Actions / agent 框架可直接消费),servers 按当前 origin 填充
   if (path === "/openapi.json" && request.method === "GET") {
@@ -730,6 +736,38 @@ function landingResp(): Response {
       "Cache-Control": "public, max-age=300",
     },
   });
+}
+
+const siteHtml = (body: string, status = 200) =>
+  new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8", "X-Content-Type-Options": "nosniff" } });
+
+/** 法务/举报页(隐私、条款、举报)。命中返回响应,否则 null */
+async function serveSitePage(path: string, request: Request, env: Env): Promise<Response | null> {
+  if (path === "/privacy") return siteHtml(privacyPage());
+  if (path === "/terms") return siteHtml(termsPage());
+  if (path === "/report") {
+    if (request.method === "GET") {
+      const pre = new URL(request.url).searchParams.get("slug") || "";
+      return siteHtml(reportPage(pre));
+    }
+    if (request.method === "POST") {
+      const form = await request.formData();
+      const raw = String(form.get("slug") ?? "").trim();
+      // 从链接或短码中抽出 slug
+      const m = raw.match(/([a-z0-9]{4,})(?:\.[a-z0-9.-]+)?\/?$/i) || raw.match(/^([a-z0-9]+)$/i);
+      const slug = m ? m[1].toLowerCase() : (raw ? raw.slice(0, 200) : null);
+      const reason = String(form.get("reason") ?? "other").slice(0, 40);
+      const detail = String(form.get("detail") ?? "").slice(0, 2000);
+      const reporter = String(form.get("reporter") ?? "").slice(0, 200);
+      const ipHash = await sha256b64(request.headers.get("CF-Connecting-IP") || "0.0.0.0");
+      await env.DB.prepare(
+        `INSERT INTO reports (id, slug, reason, detail, reporter, ip_hash, created_at, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`
+      ).bind(randomToken(9), slug, reason, detail, reporter || null, ipHash, now()).run();
+      return siteHtml(reportPage("", true));
+    }
+  }
+  return null;
 }
 
 /** 隔离域名上的安全响应头 */

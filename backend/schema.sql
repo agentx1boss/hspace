@@ -31,6 +31,18 @@ CREATE TABLE IF NOT EXISTS versions (
   PRIMARY KEY (slug, version)
 );
 
+-- 举报：违规内容举报,后台人工处理/下架
+CREATE TABLE IF NOT EXISTS reports (
+  id          TEXT PRIMARY KEY,
+  slug        TEXT,                 -- 被举报页面(可空,允许只填链接)
+  reason      TEXT,                 -- 分类:phishing/malware/copyright/other
+  detail      TEXT,                 -- 补充说明
+  reporter    TEXT,                 -- 举报人联系方式(可选)
+  ip_hash     TEXT,                 -- 举报者 IP 哈希(防刷)
+  created_at  INTEGER NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'open'  -- open | actioned | dismissed
+);
+
 -- 访问人（每人一链 / 多口令）：一个页面可发多个独立密码，各自计数、可单独撤销
 CREATE TABLE IF NOT EXISTS grants (
   id             TEXT PRIMARY KEY,     -- 随机 id

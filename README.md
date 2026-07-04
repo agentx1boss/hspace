@@ -141,9 +141,14 @@ npm install && npm run compile
 | 频率 | 20/时 且 50/天 | 20/时 |
 | 单页访问量 | 1 万次封顶 | 不限 |
 
+## 法务与运营
+
+- 隐私政策 `/privacy`、服务条款 `/terms`、举报入口 `/report`(落地页/API 域均可访问)。
+- 举报写入 D1 `reports` 表;处理与下架命令见 [运营手册](docs/operations.md)。下架 = 把 `pages.status` 置为 `blocked`,页面立即 404。
+
 ## 安全注意
 
-`isSuspicious` / `isPhishy` 为规则式扫描(混淆执行、密码输入框、外部表单),上量前应接入专业扫描并建立举报下架流程。密码派生用 PBKDF2(Workers 原生),如需更强可换 argon2(WASM)。
+`isSuspicious` / `isPhishy` 为规则式扫描(混淆执行、密码输入框、外部表单),上量前应接入专业扫描。密码派生用 PBKDF2(Workers 原生),如需更强可换 argon2(WASM)。举报邮箱 `abuse@zhanjian.space` 需接到实际收件箱(见运营手册)。
 
 ## License
 
