@@ -362,6 +362,16 @@ ${FAVICON_LINK}
     </div>
   </div></section>
 
+  <section class="band"><div class="wrap" style="text-align:center">
+    <h2>${s.tryH}</h2>
+    <p class="sec-sub">${s.trySub}</p>
+    <a class="try" href="https://q0i7otn.zhanjian.space" target="_blank" rel="noopener">
+      <span class="lk">🔒</span>
+      <span class="ta"><span class="tu">q0i7otn.zhanjian.space</span><span class="th">${s.tryTh}</span></span>
+      <span class="go">→</span>
+    </a>
+  </div></section>
+
   <section><div class="wrap" style="text-align:center">
     <h2>${s.s1h}</h2>
     <p class="sec-sub">${s.s1sub}</p>
@@ -451,15 +461,6 @@ ${FAVICON_LINK}
     </div>
   </div></section>
 
-  <section class="band"><div class="wrap" style="text-align:center">
-    <h2>${s.tryH}</h2>
-    <p class="sec-sub">${s.trySub}</p>
-    <a class="try" href="https://q0i7otn.zhanjian.space" target="_blank" rel="noopener">
-      <span class="lk">🔒</span>
-      <span class="ta"><span class="tu">q0i7otn.zhanjian.space</span><span class="th">${s.tryTh}</span></span>
-      <span class="go">→</span>
-    </a>
-  </div></section>
 
   <section id="how"><div class="wrap">
     <h2>${s.howH}</h2>
@@ -477,10 +478,7 @@ ${FAVICON_LINK}
     <div class="feats">
       ${feature("📝", s.f1t, s.f1b)}
       ${feature("📚", s.f2t, s.f2b)}
-      ${feature("👥", s.f3t, s.f3b)}
-      ${feature("👁", s.f4t, s.f4b)}
       ${feature("🤖", s.f5t, s.f5b)}
-      ${feature("🛡", s.f6t, s.f6b)}
     </div>
   </div></section>
 
