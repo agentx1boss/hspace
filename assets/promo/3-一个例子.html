@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 生成的一页</title>
+<style>
+  *{box-sizing:border-box;margin:0}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;
+       background:radial-gradient(120% 120% at 50% 0%,#2a1d3a,#0f1015);color:#f5f3ff}
+  .card{max-width:400px;width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);
+        border-radius:22px;padding:34px;text-align:center;backdrop-filter:blur(8px);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .badge{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+         color:#f0784f;background:rgba(240,120,79,.14);padding:5px 12px;border-radius:999px;margin-bottom:18px}
+  h1{font-size:26px;line-height:1.25;margin-bottom:12px}
+  p{color:#b9b4c9;font-size:15px;line-height:1.7;margin-bottom:22px}
+  .orb{width:90px;height:90px;margin:0 auto 22px;border-radius:50%;
+       background:conic-gradient(from 0deg,#f0784f,#9333ea,#4f7cff,#f0784f);animation:spin 6s linear infinite;filter:blur(2px)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  button{border:0;border-radius:12px;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;
+         background:#f0784f;color:#fff;transition:transform .08s}
+  button:active{transform:scale(.96)}
+  .count{margin-top:16px;font-size:13px;color:#8b8b9a}
+  @media(prefers-reduced-motion:reduce){.orb{animation:none}}
+</style></head>
+<body>
+  <div class="card">
+    <div class="orb"></div>
+    <div class="badge">这是一个自包含 HTML 篇目</div>
+    <h1>AI 生成的网页,<br>点开即读</h1>
+    <p>动画、交互、样式全在——HSpace 原样呈现,不改你一行代码,对方什么都不用装。左下角有个「目录」可以翻回册子。</p>
+    <button onclick="var c=document.getElementById('c');c.textContent='被点了 '+(++window._n||(window._n=1))+' 次 · 交互也照常工作 ✨'">点我试试</button>
+    <div class="count" id="c">按钮、脚本、样式,全部生效</div>
+  </div>
+</body></html>

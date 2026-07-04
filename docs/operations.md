@@ -65,6 +65,15 @@ npx wrangler d1 execute html-share --remote --command \
   "SELECT name, SUM(count) FROM metrics GROUP BY name"
 ```
 
+## 定位 / slogan 变更时的同步清单
+
+改了 [positioning.md](positioning.md) 的定位或 slogan 后,以下触点要一并更新(否则会"门面挂旧招牌"):
+
+- [ ] 落地页 `backend/src/landing.ts`(`L.en` / `L.zh`)+ OG 卡(`assets/og-card-1200x630.png` → 传 R2)
+- [ ] 插件 `vscode-extension/`:README(中英)、package.json description(发新版)
+- [ ] GitHub About(`gh repo edit --description`)
+- [ ] **推广册子** `assets/promo/`:改完走 PATCH 升版(见该目录 README),线上 q0i7otn 链接/密码不变
+
 ## 待办
 
 - 联系/举报邮箱:`mengmajiang@gmail.com`(直接可收信)。举报仍需人工到 `reports` 表查看。
