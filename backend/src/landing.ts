@@ -351,15 +351,6 @@ ${FAVICON_LINK}
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">${s.ctaInstall}</a>
       <a class="btn btn-s" href="${GITHUB}" target="_blank" rel="noopener">${s.ctaGithub}</a>
     </div>
-
-    <div class="mock">
-      <div class="row">
-        <div class="lk">🔒</div>
-        <div><div class="url">a7k2m9x.zhanjian.space</div><div class="sub">${s.mockSub}</div></div>
-      </div>
-      <div class="pw"><span class="k">${s.pwLabel}</span><span class="v">4831</span></div>
-      <div class="copied"><span class="d"></span>${s.copied}</div>
-    </div>
   </div></section>
 
   <section class="band"><div class="wrap" style="text-align:center">
