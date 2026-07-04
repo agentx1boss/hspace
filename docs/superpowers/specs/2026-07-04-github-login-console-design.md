@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
 ```
 
 - 现有 `pages.owner_id`、`api_keys.owner_id` 语义不变,新用户的值为 `gh:<id>`。
-- **每用户同一时刻只有一把有效 API key**:重新生成 = 旧 key `revoked=1` + 插入新行(表结构不变)。
+- **每用户同一时刻只有一把有效 API key**:重新生成 = 删除旧行 + 插入新行(batch 原子;revoked 字段保留但登录用户路径不再使用)。
 - founder 迁移:上线后手动一条 UPDATE 把现有 founder `owner_id` 的 `api_keys`/`pages` 归到自己的 `gh:<id>` 下(operations.md 记录步骤)。
 
 ## 3. GitHub OAuth 流程(web)
