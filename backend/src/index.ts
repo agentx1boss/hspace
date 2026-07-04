@@ -76,7 +76,7 @@ export default {
       if (asset) return asset;
       const site = await serveSitePage(url.pathname, request, env);
       if (site) return site;
-      return landingResp();
+      return landingResp(request);
     }
 
     // ── 路由：用户内容子域 → 提供页面 ──
@@ -146,7 +146,7 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
   if (path === "/pages" && request.method === "GET") return listPages(request, env);
 
   if (path === "/health") return json({ ok: true, service: "hspace" });
-  if (path === "/") return landingResp();
+  if (path === "/") return landingResp(request);
   const asset = await serveBrandAsset(path, env);
   if (asset) return asset;
   const site = await serveSitePage(path, request, env);
@@ -726,15 +726,25 @@ async function serveBrandAsset(path: string, env: Env): Promise<Response | null>
   });
 }
 
-/** 落地页响应:允许被搜索引擎索引,不加 noindex */
-function landingResp(): Response {
-  return new Response(landingPage(), {
+/** 落地页响应:英文默认;?lang=zh 或浏览器 Accept-Language 为中文则出中文 */
+function landingResp(request: Request): Response {
+  const url = new URL(request.url);
+  const q = url.searchParams.get("lang");
+  let lang: "en" | "zh";
+  if (q === "zh" || q === "en") {
+    lang = q;
+  } else {
+    const al = (request.headers.get("Accept-Language") || "").toLowerCase();
+    lang = al.startsWith("zh") ? "zh" : "en";
+  }
+  return new Response(landingPage(lang), {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "public, max-age=60",
+      "Vary": "Accept-Language",
     },
   });
 }

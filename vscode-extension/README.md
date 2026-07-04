@@ -1,4 +1,4 @@
-# HSpace
+# HSpace — Ship to one, not to all.
 
 English | [简体中文](https://github.com/agentx1boss/hspace/blob/main/vscode-extension/README.zh-CN.md)
 

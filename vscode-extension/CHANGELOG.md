@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.5 — 2026-07-04
+
+- 商店标题/描述改为英文优先(对齐全球开发者画像),README 顶部加 slogan「Ship to one, not to all.」
+
 ## 0.4.4 — 2026-07-04
 
 - 英文 slogan 定稿:Ship to one, not to all.(商店描述同步)

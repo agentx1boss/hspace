@@ -21,23 +21,148 @@ function step(n: string, title: string, body: string): string {
   return `<div class="step"><div class="sn">${n}</div><div><h3>${title}</h3><p>${body}</p></div></div>`;
 }
 
-export function landingPage(): string {
+
+type Lang = "en" | "zh";
+const L: Record<Lang, Record<string, string>> = {
+  en: {
+    htmllang: "en",
+    title: "HSpace — Ship your AI-built demo to exactly the right people",
+    desc: "The HTML demo or Markdown doc your AI just wrote — turn it into a link + password: see who opened it, revoke anytime, iterate without changing the link. Targeted sharing for Cursor / Claude Code developers.",
+    ogTitle: "HSpace — Ship to one, not to all.",
+    ogDesc: "One link + password: see who opened it, revoke anytime, iterate without changing the link.",
+    navHow: "How it works", navFeat: "Features", navFaq: "FAQ", install: "Install",
+    heroTag: "Built for AI coding · Targeted sharing, not public hosting",
+    heroH1: `Ship <span class="hl">to one</span>, not to all.`,
+    heroLead: "The HTML demo or Markdown doc Cursor / Claude Code just wrote — turn it into a link + password for teammates and clients: see who opened it, revoke anytime, iterate without changing the link.",
+    tension: "Publish anonymously, share accountably.",
+    ctaInstall: "Install the VS Code extension", ctaGithub: "View on GitHub",
+    mockSub: "AI-generated proposal · expires in 7 days", pwLabel: "Password",
+    copied: "Link & password copied — just paste",
+    s1h: "Your side: one click in the editor",
+    s1sub: "Done writing = done sharing. Click the cloud icon and link+password hit your clipboard; the sidebar shows receipts, recipients and versions.",
+    vsRecent: "HSPACE · RECENT",
+    vsColl: "Q3 plan (collection · 5)", vsArch: "architecture-review.md",
+    vsToast: "Published: a7k2m9x.zhanjian.space (password 4831, link & password copied)",
+    vsOpen: "Open", vsChpw: "Change password",
+    s1cap: "VS Code / Cursor extension · or publish right inside Claude via MCP",
+    s2h: "Their side: one password, the whole thing",
+    s2sub: "Table of contents, per-doc reading, cross-doc navigation — all behind one link.",
+    tocTitle: "Q3 Growth Plan", tocMeta: "5 docs · shared 2026-07",
+    d1: "Overview & goals", d2: "Data analysis", d3: "Channel strategy", d4: "Budget & timeline", d5: "Appendix: competitors",
+    capToc: "Collection index", capRead: "Markdown doc · sidebar nav",
+    readH: "Data analysis", tMetric: "Metric",
+    diffH: "Not another HTML host",
+    diffSub: "Regular hosts race to publish to the world. Sharing with teammates and clients needs a different toolkit.",
+    anti: "Not a: file drive · collab editor · site builder · public gallery.",
+    c1t: "🚀 Out in 30 seconds", c1b: "Zero signup, zero config — publish from your editor or an AI chat, link+password in one paste. Others gate content behind paid tiers and setup; here it's the default.",
+    c2t: "🎯 Sent wrong? Take it back", c2b: "Change the password to revoke; per-recipient links mean kicking one person out doesn't change everyone's password; you get receipts on who opened it and how often.",
+    c3t: "🔁 The link stays live", c3b: "AI iterates the content, the link stays the same — update after review comments, roll back to any version. No more “final_v3” links.",
+    tryH: "Try it yourself",
+    trySub: "Below is a real password-gated HSpace collection (Markdown + HTML). Enter the password and you’ve just been a recipient.",
+    tryTh: `A 3-doc collection · password <b>1024</b>`,
+    howH: "Three steps to send", howSub: "In your editor, or right in an AI chat.",
+    st1t: "Open a file or folder", st1b: "Any .html / .md file, or right-click a folder to publish a collection.",
+    st2t: "Publish in one click", st2b: "Click the cloud icon; a 4-digit password is generated and content goes to the edge.",
+    st3t: "Send link + password", st3b: "Both land on your clipboard; one paste into Slack / email, to the right people.",
+    featH: "Built for the AI coding workflow",
+    featSub: "Content is born in your editor and AI chats — sharing should happen there too. Publish anonymously, share accountably.",
+    f1t: "Markdown, beautifully published", f1b: "Publish .md and it renders into a clean reading page: headings, tables, code blocks, light/dark themes.",
+    f2t: "Document collections", f2b: "Bundle a batch of md/html into one link, one password, one table of contents with cross-doc nav.",
+    f3t: "Per-recipient links", f3b: "Give each recipient their own password: know who opened it and how often; kick one out without changing everyone else's.",
+    f4t: "View receipts", f4b: "See how many times each link was opened, right in the panel — whether they actually looked, at a glance.",
+    f5t: "Callable by AI", f5b: "An MCP server lets Claude / Cursor publish inside the chat; an OpenAPI spec plugs into GPT Actions and agents.",
+    f6t: "Edge password gate", f6b: "Passwords verified at the edge, signed cookie remembers for 24h, brute-force locked out.",
+    faqH: "You might ask",
+    faqQ1: "Will it get indexed by search engines?", faqA1: "No. Every shared page is noindex and requires a password — even if the link is forwarded, without the password it's a wall.",
+    faqQ2: "Where is content stored, and for how long?", faqA2: "Content is sent over HTTPS and stored at Cloudflare's edge (R2); passwords are stored only as one-way hashes, never plaintext. Anonymous shares expire in 7 days at most; you can also delete anytime and the link goes dark immediately.",
+    faqQ3: "Sent to the wrong person / want to cut access?", faqA3: "Change the password (the old one dies instantly) or delete it. With per-recipient links, you can revoke just one person without affecting the others.",
+    faqQ4: "Is it free? Any limits?", faqA4: "Core capabilities are free right now — password sharing, collections, receipts, per-recipient links, versioning, all un-gated. Anonymous & instant: single file ≤ 1MB, up to 7 days, 50/day; phishing and malicious content are prohibited and taken down. Permanent links, custom branding and team spaces may come to Pro/Team later; core stays free and open source.",
+    faqQ5: "Can I self-host?", faqA5_pre: "Yes. Front and back end are fully open source (MIT); the backend is a Cloudflare Worker — follow the ", faqA5_link: "README", faqA5_post: " and you have your own instance in ten minutes; the extension and MCP can point at it.",
+    ctaBandH: "Next demo you build, try sharing it this way",
+    ctaVsx: "Cursor / Open VSX",
+    flinkPrivacy: "Privacy", flinkTerms: "Terms", flinkReport: "Report",
+    switchLabel: "中文",
+  },
+  zh: {
+    htmllang: "zh",
+    title: "HSpace — AI 写完的 demo,只发给该看的人",
+    desc: "AI 写完的 demo,只发给该看的人:一键变成「链接 + 密码」,谁看了有回执,发错了随时撤回。为 Cursor / Claude Code 开发者而生的定向分享。",
+    ogTitle: "HSpace — AI 写完的 demo,只发给该看的人",
+    ogDesc: "一键变成「链接 + 密码」:谁看了有回执,发错了随时撤回,链接不变可迭代。",
+    navHow: "如何使用", navFeat: "功能", navFaq: "FAQ", install: "安装插件",
+    heroTag: "为 AI 编程而生 · 定向分享,不是公开托管",
+    heroH1: `<span class="hl">AI 写完的 demo</span>,只发给该看的人`,
+    heroLead: "Cursor / Claude Code 刚生成的 HTML demo、Markdown 方案——一键变成「链接 + 密码」发给同事和客户:谁看了有回执,发错了随时撤回,链接不变可迭代。",
+    tension: "发布侧匿名,分发侧有回执。",
+    ctaInstall: "安装 VS Code 插件", ctaGithub: "在 GitHub 查看",
+    mockSub: "AI 生成的方案 · 7 天后自动失效", pwLabel: "访问密码",
+    copied: "链接和密码已复制,粘贴发走即可",
+    s1h: "你这边:编辑器里点一下",
+    s1sub: "写完就是发完。云图标一点,链接+密码进剪贴板;侧栏面板看回执、管访问人、升版本。",
+    vsRecent: "HSPACE · 最近发布",
+    vsColl: "Q3 方案(合集 · 5 篇)", vsArch: "架构评审.md",
+    vsToast: "已发布:a7k2m9x.zhanjian.space(密码 4831,链接和密码已复制)",
+    vsOpen: "浏览器打开", vsChpw: "修改密码",
+    s1cap: "VS Code / Cursor 插件 · 也可在 Claude 对话里经 MCP 直接发布",
+    s2h: "对方那边:输一次密码,通览全部",
+    s2sub: "目录、逐篇阅读、篇间导航,全在一个链接里。",
+    tocTitle: "Q3 增长方案", tocMeta: "5 篇 · 2026-07 分享",
+    d1: "总览与目标", d2: "数据分析", d3: "渠道策略", d4: "预算与排期", d5: "附录:竞品对比",
+    capToc: "合集目录页", capRead: "Markdown 篇目 · 侧栏导航",
+    readH: "数据分析", tMetric: "指标",
+    diffH: "不是又一个 HTML 托管",
+    diffSub: "常规托管都在抢「发布到全世界」;给同事和客户看的东西,要的是另一套能力。",
+    anti: "我们不是:网盘 · 协作工具 · 建站平台 · 公开画廊。",
+    c1t: "🚀 30 秒发出去", c1b: "零注册、零配置,编辑器或 AI 对话里一键发布,链接+密码一次粘贴。别家的密码保护要付费套餐加一堆配置,这里是默认。",
+    c2t: "🎯 发错了?收得回", c2b: "改密码即撤回;每人一链,踢掉一个人不用换所有人的密码;谁看了、看了几次,有回执。",
+    c3t: "🔁 链接是活的", c3b: "AI 迭代内容,链接不变——review 意见改完直接更新,历史版本可回滚。不用再发「最终版_v3」新链接。",
+    tryH: "亲自体验一次",
+    trySub: "下面是一本真实的 HSpace 私密合集(含 Markdown 与 HTML)。输入密码,你就完成了一次接收方的完整体验。",
+    tryTh: `一本 3 篇的册子 · 访问密码 <b>1024</b>`,
+    howH: "三步发走", howSub: "在编辑器里,或直接在 AI 对话里。",
+    st1t: "打开文件或文件夹", st1b: "任意 .html / .md 文件,或右键一个文件夹发布为合集。",
+    st2t: "一键发布", st2b: "点云图标,自动生成 4 位密码,内容上传到边缘。",
+    st3t: "链接 + 密码发走", st3b: "两者一起进剪贴板,微信 / 邮件里一次粘贴,交给该看的人。",
+    featH: "为 AI 编程工作流而生",
+    featSub: "内容诞生在编辑器和 AI 对话里,分享也应该在那里发生。发布侧匿名,分发侧有回执。",
+    f1t: "Markdown 成刊", f1b: "发布 .md 自动渲染成排版精良的阅读页:标题、表格、代码块,亮暗双主题。",
+    f2t: "文档合集", f2b: "一批 md/html 打包成一个链接、一个密码、一个目录页,篇间自由导航。",
+    f3t: "每人一链", f3b: "给每个接收者一个专属密码:谁看了、看了几次一清二楚,踢掉一个人不用换所有人的密码。",
+    f4t: "访问回执", f4b: "在面板里看到每个链接被打开了多少次——对方到底看没看,一目了然。",
+    f5t: "AI 可直接调用", f5b: "MCP server 让 Claude / Cursor 在对话里直接发布;OpenAPI 规范接入 GPT Actions 等。",
+    f6t: "边缘密码网关", f6b: "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。",
+    faqH: "你可能想问",
+    faqQ1: "内容会被搜索引擎收录吗?", faqA1: "不会。所有分享页面都带 noindex,且必须输入密码才能看到内容——链接被转发也没关系,没有密码就是一堵墙。",
+    faqQ2: "内容存在哪里?保留多久?", faqA2: "内容经 HTTPS 传输,存储在 Cloudflare 全球边缘(R2);密码只存单向哈希,不存明文。匿名分享最长 7 天自动失效;你也可以随时手动删除,链接立即失效。",
+    faqQ3: "发错了 / 不想给某人看了怎么办?", faqA3: "随时改密码(旧密码立即失效)或直接删除。用「每人一链」时,可以只撤销某一个人的密码,其他人不受影响。",
+    faqQ4: "免费吗?有什么限制?", faqA4: "核心能力现在全部免费——密码分享、合集、访问回执、每人一链、版本化,都不阉割。匿名即用:单文件 ≤ 1MB、最长 7 天有效、每天 50 次;禁止钓鱼与恶意内容,违规会被下架。未来永久链接、自定义品牌、团队空间会面向 Pro / Team,核心能力永远免费、开源可自建。",
+    faqQ5: "可以自己部署吗?", faqA5_pre: "可以。前后端完全开源(MIT),后端是一个 Cloudflare Worker,照 ", faqA5_link: "README", faqA5_post: " 十分钟即可拥有自己的实例,插件与 MCP 均可指向自建地址。",
+    ctaBandH: "下一个 demo 写完,试试这样发",
+    ctaVsx: "Cursor / Open VSX",
+    flinkPrivacy: "隐私", flinkTerms: "条款", flinkReport: "举报",
+    switchLabel: "EN",
+  },
+};
+
+export function landingPage(lang: Lang = "en"): string {
+  const s = L[lang];
+  const other = lang === "en" ? "?lang=zh" : "?lang=en";
   return `<!doctype html>
-<html lang="zh"><head><meta charset="utf-8">
+<html lang="${lang}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HSpace — AI 写完的 demo,只发给该看的人</title>
+<title>${s.title}</title>
 ${FAVICON_LINK}
 <link rel="canonical" href="${SITE}/">
-<meta name="description" content="AI 写完的 demo,只发给该看的人:一键变成「链接 + 密码」,谁看了有回执,发错了随时撤回。为 Cursor / Claude Code 开发者而生的定向分享。">
-<meta property="og:title" content="HSpace — AI 写完的 demo,只发给该看的人">
-<meta property="og:description" content="一键变成「链接 + 密码」:谁看了有回执,发错了随时撤回,链接不变可迭代。">
+<meta name="description" content="${s.desc}">
+<meta property="og:title" content="${s.ogTitle}">
+<meta property="og:description" content="${s.ogDesc}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${SITE}/">
 <meta property="og:image" content="${SITE}/og-card.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="HSpace — AI 写完的 demo,只发给该看的人">
+<meta name="twitter:title" content="${s.ogTitle}">
 <meta name="twitter:image" content="${SITE}/og-card.png">
 <style>
   :root{--bg:#faf9f7;--fg:#1d1d1f;--muted:#6a6a70;--accent:#E2603C;--card:#fff;
@@ -208,45 +333,46 @@ ${FAVICON_LINK}
   <header><div class="wrap">
     <a class="logo" href="/"><span class="tile">${MARK}</span>HSpace</a>
     <nav class="nav">
-      <a class="ghost" href="#how">如何使用</a>
-      <a class="ghost" href="#features">功能</a>
+      <a class="ghost" href="#how">${s.navHow}</a>
+      <a class="ghost" href="#features">${s.navFeat}</a>
       <a class="ghost" href="#faq">FAQ</a>
       <a class="ghost" href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
-      <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装插件</a>
+      <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">${s.install}</a>
+      <a class="ghost" href="${other}">${s.switchLabel}</a>
     </nav>
   </div></header>
 
   <section class="hero"><div class="wrap">
-    <span class="tag">为 AI 编程而生 · 定向分享,不是公开托管</span>
-    <h1><span class="hl">AI 写完的 demo</span>,只发给该看的人</h1>
-    <p class="lead">Cursor / Claude Code 刚生成的 HTML demo、Markdown 方案——一键变成「链接 + 密码」发给同事和客户:谁看了有回执,发错了随时撤回,链接不变可迭代。</p>
-    <p class="tension">发布侧匿名,分发侧有回执。</p>
+    <span class="tag">${s.heroTag}</span>
+    <h1>${s.heroH1}</h1>
+    <p class="lead">${s.heroLead}</p>
+    <p class="tension">${s.tension}</p>
     <div class="cta">
-      <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装 VS Code 插件</a>
-      <a class="btn btn-s" href="${GITHUB}" target="_blank" rel="noopener">在 GitHub 查看</a>
+      <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">${s.ctaInstall}</a>
+      <a class="btn btn-s" href="${GITHUB}" target="_blank" rel="noopener">${s.ctaGithub}</a>
     </div>
 
     <div class="mock">
       <div class="row">
         <div class="lk">🔒</div>
-        <div><div class="url">a7k2m9x.zhanjian.space</div><div class="sub">AI 生成的方案 · 7 天后自动失效</div></div>
+        <div><div class="url">a7k2m9x.zhanjian.space</div><div class="sub">${s.mockSub}</div></div>
       </div>
-      <div class="pw"><span class="k">访问密码</span><span class="v">4831</span></div>
-      <div class="copied"><span class="d"></span>链接和密码已复制,粘贴发走即可</div>
+      <div class="pw"><span class="k">${s.pwLabel}</span><span class="v">4831</span></div>
+      <div class="copied"><span class="d"></span>${s.copied}</div>
     </div>
   </div></section>
 
   <section><div class="wrap" style="text-align:center">
-    <h2>你这边:编辑器里点一下</h2>
-    <p class="sec-sub">写完就是发完。云图标一点,链接+密码进剪贴板;侧栏面板看回执、管访问人、升版本。</p>
+    <h2>${s.s1h}</h2>
+    <p class="sec-sub">${s.s1sub}</p>
     <div class="vsc">
       <div class="vbar"><div class="dots"><i></i><i></i><i></i></div><span class="vt">pricing-demo.html — my-project</span></div>
       <div class="vbody">
         <div class="vside">
-          <div class="vh">HSPACE · 最近发布</div>
+          <div class="vh">${s.vsRecent}</div>
           <div class="vi on"><span>🔒</span><span class="nm">pricing-demo.html</span><em>👁 12 · v2</em></div>
-          <div class="vi"><span>📖</span><span class="nm">Q3 方案(合集 · 5 篇)</span><em>👁 8</em></div>
-          <div class="vi"><span>🔒</span><span class="nm">架构评审.md</span><em>👁 3</em></div>
+          <div class="vi"><span>📖</span><span class="nm">${s.vsColl}</span><em>👁 8</em></div>
+          <div class="vi"><span>🔒</span><span class="nm">${s.vsArch}</span><em>👁 3</em></div>
         </div>
         <div class="vmain">
           <div class="vtabs"><span class="vtab">pricing-demo.html</span><span class="vcloud"><span class="ring"></span>☁️</span></div>
@@ -258,122 +384,122 @@ ${FAVICON_LINK}
             <i style="width:41%;background:#7fae8b"></i>
             <i style="width:70%;background:#3f4250"></i>
           </div>
-          <div class="vtoast"><span class="ok">✓</span>已发布:<span class="u">a7k2m9x.zhanjian.space</span>(密码 4831,链接和密码已复制)
-            <div class="vbtns"><span>浏览器打开</span><span>修改密码</span></div>
+          <div class="vtoast"><span class="ok">✓</span>${s.vsToast}
+            <div class="vbtns"><span>${s.vsOpen}</span><span>${s.vsChpw}</span></div>
           </div>
         </div>
       </div>
     </div>
-    <div style="font-size:13.5px;color:var(--muted);margin-top:12px">VS Code / Cursor 插件 · 也可在 Claude 对话里经 MCP 直接发布</div>
+    <div style="font-size:13.5px;color:var(--muted);margin-top:12px">${s.s1cap}</div>
   </div></section>
 
   <section class="band"><div class="wrap">
-    <h2>对方那边:输一次密码,通览全部</h2>
-    <p class="sec-sub">目录、逐篇阅读、篇间导航,全在一个链接里。</p>
+    <h2>${s.s2h}</h2>
+    <p class="sec-sub">${s.s2sub}</p>
     <div class="shots">
       <div>
         <div class="shot">
           <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="addr">🔒 q3plan.zhanjian.space</div></div>
           <div class="toc">
-            <div class="h">Q3 增长方案</div>
-            <div class="m">5 篇 · 2026-07 分享</div>
-            <div class="r"><span class="n">1</span><span>总览与目标</span><span class="a">→</span></div>
-            <div class="r"><span class="n">2</span><span>数据分析</span><span class="a">→</span></div>
-            <div class="r"><span class="n">3</span><span>渠道策略</span><span class="a">→</span></div>
-            <div class="r"><span class="n">4</span><span>预算与排期</span><span class="a">→</span></div>
-            <div class="r"><span class="n">5</span><span>附录:竞品对比</span><span class="a">→</span></div>
+            <div class="h">${s.tocTitle}</div>
+            <div class="m">${s.tocMeta}</div>
+            <div class="r"><span class="n">1</span><span>${s.d1}</span><span class="a">→</span></div>
+            <div class="r"><span class="n">2</span><span>${s.d2}</span><span class="a">→</span></div>
+            <div class="r"><span class="n">3</span><span>${s.d3}</span><span class="a">→</span></div>
+            <div class="r"><span class="n">4</span><span>${s.d4}</span><span class="a">→</span></div>
+            <div class="r"><span class="n">5</span><span>${s.d5}</span><span class="a">→</span></div>
           </div>
         </div>
-        <div class="cap">合集目录页</div>
+        <div class="cap">${s.capToc}</div>
       </div>
       <div>
         <div class="shot">
           <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="addr">🔒 q3plan.zhanjian.space/2</div></div>
           <div class="read">
             <div class="side">
-              <div class="t">Q3 增长方案</div>
-              <div class="i"><span>1</span><span>总览与目标</span></div>
-              <div class="i on"><span>2</span><span>数据分析</span></div>
-              <div class="i"><span>3</span><span>渠道策略</span></div>
-              <div class="i"><span>4</span><span>预算与排期</span></div>
+              <div class="t">${s.tocTitle}</div>
+              <div class="i"><span>1</span><span>${s.d1}</span></div>
+              <div class="i on"><span>2</span><span>${s.d2}</span></div>
+              <div class="i"><span>3</span><span>${s.d3}</span></div>
+              <div class="i"><span>4</span><span>${s.d4}</span></div>
             </div>
             <div class="main">
-              <div class="h">数据分析</div>
+              <div class="h">${s.d2}</div>
               <div class="p" style="width:96%"></div>
               <div class="p" style="width:88%"></div>
               <div class="p" style="width:70%"></div>
               <div class="tb">
-                <div class="tr th"><div>指标</div><div>Q1</div><div>Q2</div></div>
+                <div class="tr th"><div>${s.tMetric}</div><div>Q1</div><div>Q2</div></div>
                 <div class="tr"><div>GMV</div><div>1.2M</div><div>1.5M</div></div>
               </div>
             </div>
           </div>
         </div>
-        <div class="cap">Markdown 篇目 · 侧栏导航</div>
+        <div class="cap">${s.capRead}</div>
       </div>
     </div>
   </div></section>
 
   <section><div class="wrap">
-    <h2>不是又一个 HTML 托管</h2>
-    <p class="sec-sub">常规托管都在抢「发布到全世界」;给同事和客户看的东西,要的是另一套能力。</p>
-    <p class="anti">我们不是:网盘 · 协作工具 · 建站平台 · 公开画廊。</p>
+    <h2>${s.diffH}</h2>
+    <p class="sec-sub">${s.diffSub}</p>
+    <p class="anti">${s.anti}</p>
     <div class="grid3">
-      <div class="diff"><h3>🚀 30 秒发出去</h3><p>零注册、零配置,编辑器或 AI 对话里一键发布,链接+密码一次粘贴。别家的密码保护要付费套餐加一堆配置,这里是默认。</p></div>
-      <div class="diff"><h3>🎯 发错了?收得回</h3><p>改密码即撤回;每人一链,踢掉一个人不用换所有人的密码;谁看了、看了几次,有回执。</p></div>
-      <div class="diff"><h3>🔁 链接是活的</h3><p>AI 迭代内容,链接不变——review 意见改完直接更新,历史版本可回滚。不用再发「最终版_v3」新链接。</p></div>
+      <div class="diff"><h3>${s.c1t}</h3><p>${s.c1b}</p></div>
+      <div class="diff"><h3>${s.c2t}</h3><p>${s.c2b}</p></div>
+      <div class="diff"><h3>${s.c3t}</h3><p>${s.c3b}</p></div>
     </div>
   </div></section>
 
   <section class="band"><div class="wrap" style="text-align:center">
-    <h2>亲自体验一次</h2>
-    <p class="sec-sub">下面是一本真实的 HSpace 私密合集(含 Markdown 与 HTML)。输入密码,你就完成了一次接收方的完整体验。</p>
+    <h2>${s.tryH}</h2>
+    <p class="sec-sub">${s.trySub}</p>
     <a class="try" href="https://q0i7otn.zhanjian.space" target="_blank" rel="noopener">
       <span class="lk">🔒</span>
-      <span class="ta"><span class="tu">q0i7otn.zhanjian.space</span><span class="th">一本 3 篇的册子 · 访问密码 <b>1024</b></span></span>
+      <span class="ta"><span class="tu">q0i7otn.zhanjian.space</span><span class="th">${s.tryTh}</span></span>
       <span class="go">→</span>
     </a>
   </div></section>
 
   <section id="how"><div class="wrap">
-    <h2>三步发走</h2>
-    <p class="sec-sub">在编辑器里,或直接在 AI 对话里。</p>
+    <h2>${s.howH}</h2>
+    <p class="sec-sub">${s.howSub}</p>
     <div class="steps">
-      ${step("1", "打开文件或文件夹", "任意 .html / .md 文件,或右键一个文件夹发布为合集。")}
-      ${step("2", "一键发布", "点云图标,自动生成 4 位密码,内容上传到边缘。")}
-      ${step("3", "链接 + 密码发走", "两者一起进剪贴板,微信 / 邮件里一次粘贴,交给该看的人。")}
+      ${step("1", s.st1t, s.st1b)}
+      ${step("2", s.st2t, s.st2b)}
+      ${step("3", s.st3t, s.st3b)}
     </div>
   </div></section>
 
   <section id="features" class="band"><div class="wrap">
-    <h2>为 AI 编程工作流而生</h2>
-    <p class="sec-sub">内容诞生在编辑器和 AI 对话里,分享也应该在那里发生。发布侧匿名,分发侧有回执。</p>
+    <h2>${s.featH}</h2>
+    <p class="sec-sub">${s.featSub}</p>
     <div class="feats">
-      ${feature("📝", "Markdown 成刊", "发布 .md 自动渲染成排版精良的阅读页:标题、表格、代码块,亮暗双主题。")}
-      ${feature("📚", "文档合集", "一批 md/html 打包成一个链接、一个密码、一个目录页,篇间自由导航。")}
-      ${feature("👥", "每人一链", "给每个接收者一个专属密码:谁看了、看了几次一清二楚,踢掉一个人不用换所有人的密码。")}
-      ${feature("👁", "访问回执", "在面板里看到每个链接被打开了多少次——对方到底看没看,一目了然。")}
-      ${feature("🤖", "AI 可直接调用", "MCP server 让 Claude / Cursor 在对话里直接发布;OpenAPI 规范接入 GPT Actions 等。")}
-      ${feature("🛡", "边缘密码网关", "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。")}
+      ${feature("📝", s.f1t, s.f1b)}
+      ${feature("📚", s.f2t, s.f2b)}
+      ${feature("👥", s.f3t, s.f3b)}
+      ${feature("👁", s.f4t, s.f4b)}
+      ${feature("🤖", s.f5t, s.f5b)}
+      ${feature("🛡", s.f6t, s.f6b)}
     </div>
   </div></section>
 
   <section id="faq"><div class="wrap">
-    <h2>你可能想问</h2>
+    <h2>${s.faqH}</h2>
     <div class="faqs">
-      <details><summary>内容会被搜索引擎收录吗?</summary><p>不会。所有分享页面都带 noindex,且必须输入密码才能看到内容——链接被转发也没关系,没有密码就是一堵墙。</p></details>
-      <details><summary>内容存在哪里?保留多久?</summary><p>内容经 HTTPS 传输,存储在 Cloudflare 全球边缘(R2);密码只存单向哈希,不存明文。匿名分享最长 7 天自动失效;你也可以随时手动删除,链接立即失效。</p></details>
-      <details><summary>发错了 / 不想给某人看了怎么办?</summary><p>随时改密码(旧密码立即失效)或直接删除。用「每人一链」时,可以只撤销某一个人的密码,其他人不受影响。</p></details>
-      <details><summary>免费吗?有什么限制?</summary><p><strong>核心能力现在全部免费</strong>——密码分享、合集、访问回执、每人一链、版本化,都不阉割。匿名即用:单文件 ≤ 1MB、最长 7 天有效、每天 50 次;禁止钓鱼与恶意内容,违规会被下架。未来永久链接、自定义品牌、团队空间**会**面向 Pro / Team,核心能力永远免费、开源可自建。</p></details>
-      <details><summary>可以自己部署吗?</summary><p>可以。前后端完全开源(MIT),后端是一个 Cloudflare Worker,照 <a href="${GITHUB}" target="_blank" rel="noopener">README</a> 十分钟即可拥有自己的实例,插件与 MCP 均可指向自建地址。</p></details>
+      <details><summary>${s.faqQ1}</summary><p>${s.faqA1}</p></details>
+      <details><summary>${s.faqQ2}</summary><p>${s.faqA2}</p></details>
+      <details><summary>${s.faqQ3}</summary><p>${s.faqA3}</p></details>
+      <details><summary>${s.faqQ4}</summary><p>${s.faqA4}</p></details>
+      <details><summary>${s.faqQ5}</summary><p>${s.faqA5_pre}<a href="${GITHUB}" target="_blank" rel="noopener">${s.faqA5_link}</a>${s.faqA5_post}</p></details>
     </div>
   </div></section>
 
   <section class="cta-band band"><div class="wrap">
-    <h2>下一个 demo 写完,试试这样发</h2>
+    <h2>${s.ctaBandH}</h2>
     <div class="cta">
-      <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装 VS Code 插件</a>
-      <a class="btn btn-s" href="${OPENVSX}" target="_blank" rel="noopener">Cursor / Open VSX</a>
+      <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">${s.ctaInstall}</a>
+      <a class="btn btn-s" href="${OPENVSX}" target="_blank" rel="noopener">${s.ctaVsx}</a>
     </div>
   </div></section>
 
@@ -382,9 +508,9 @@ ${FAVICON_LINK}
     <div class="links">
       <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
       <a href="${MARKETPLACE}" target="_blank" rel="noopener">Marketplace</a>
-      <a href="/privacy">隐私</a>
-      <a href="/terms">条款</a>
-      <a href="/report">举报</a>
+      <a href="/privacy">${s.flinkPrivacy}</a>
+      <a href="/terms">${s.flinkTerms}</a>
+      <a href="/report">${s.flinkReport}</a>
     </div>
   </div></footer>
 </body></html>`;
