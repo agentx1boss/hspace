@@ -2,7 +2,7 @@
   "name": "hspace",
   "displayName": "HSpace",
   "description": "Ship your AI-built demo to exactly the right people — link + password, view receipts, revoke anytime, iterate without changing the link. AI 写完的 demo,只发给该看的人。",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",
@@ -40,56 +40,56 @@
     "commands": [
       {
         "command": "hspace.publish",
-        "title": "HSpace: 发布当前文件",
+        "title": "HSpace: Publish current file",
         "icon": "$(cloud-upload)"
       },
       {
         "command": "hspace.publishFolder",
-        "title": "HSpace: 发布为合集"
+        "title": "HSpace: Publish as collection"
       },
       {
         "command": "hspace.setApiKey",
-        "title": "HSpace: 设置 API Key（登录）"
+        "title": "HSpace: Set API key (sign in)"
       },
       {
         "command": "hspace.signOut",
-        "title": "HSpace: 退出登录（清除 API Key）"
+        "title": "HSpace: Sign out (clear API key)"
       },
       {
         "command": "hspace.setPassword",
-        "title": "HSpace: 设置/修改密码"
+        "title": "HSpace: Set / change password"
       },
       {
         "command": "hspace.manageGrants",
-        "title": "HSpace: 管理访问人（每人一链）",
+        "title": "HSpace: Manage recipients (per-recipient links)",
         "icon": "$(organization)"
       },
       {
         "command": "hspace.updateContent",
-        "title": "HSpace: 更新内容（升版）",
+        "title": "HSpace: Update content (new version)",
         "icon": "$(cloud-upload)"
       },
       {
         "command": "hspace.versions",
-        "title": "HSpace: 版本历史 / 回滚",
+        "title": "HSpace: Version history / roll back",
         "icon": "$(history)"
       },
       {
         "command": "hspace.copyLink",
-        "title": "HSpace: 复制链接"
+        "title": "HSpace: Copy link"
       },
       {
         "command": "hspace.openInBrowser",
-        "title": "HSpace: 浏览器打开"
+        "title": "HSpace: Open in browser"
       },
       {
         "command": "hspace.delete",
-        "title": "HSpace: 删除页面",
+        "title": "HSpace: Delete page",
         "icon": "$(trash)"
       },
       {
         "command": "hspace.refresh",
-        "title": "HSpace: 刷新列表",
+        "title": "HSpace: Refresh list",
         "icon": "$(refresh)"
       }
     ],
@@ -167,7 +167,7 @@
       "explorer": [
         {
           "id": "hspace.recent",
-          "name": "HSpace · 最近发布"
+          "name": "HSpace · Recent"
         }
       ]
     },
@@ -177,12 +177,12 @@
         "hspace.apiBaseUrl": {
           "type": "string",
           "default": "https://html-share.kzhan.workers.dev",
-          "description": "后端 API 地址（不含末尾斜杠）。"
+          "description": "Backend API base URL (no trailing slash)."
         },
         "hspace.defaultExpiryDays": {
           "type": "number",
           "default": 7,
-          "description": "发布链接的默认过期天数（登录后可设 0 表示永不过期）。"
+          "description": "Default expiry in days for shared links (set 0 for never, when signed in)."
         }
       }
     }

@@ -60,13 +60,13 @@ async function getClient(context: vscode.ExtensionContext): Promise<ApiClient> {
 async function publishCommand(context: vscode.ExtensionContext, provider: RecentProvider, uriArg?: vscode.Uri) {
   const uri = resolveTargetUri(uriArg);
   if (!uri) {
-    vscode.window.showWarningMessage("请先打开或选中一个 .html 文件。");
+    vscode.window.showWarningMessage("Open or select a file first.");
     return;
   }
   const path = uri.path.toLowerCase();
   const isMd = path.endsWith(".md") || path.endsWith(".markdown");
   if (!isMd && !path.endsWith(".html") && !path.endsWith(".htm")) {
-    vscode.window.showWarningMessage("只能发布 .html / .htm / .md 文件。");
+    vscode.window.showWarningMessage("Only .html / .htm / .md files can be published.");
     return;
   }
 
@@ -79,7 +79,7 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
   const expiresIn = days === 0 && hasKey ? null : Math.max(1, days) * 86400;
 
   await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Notification, title: "正在发布…" },
+    { location: vscode.ProgressLocation.Notification, title: "Publishing…" },
     async () => {
       try {
         const text = await readHtml(uri);
@@ -103,19 +103,19 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
         });
         provider.refresh();
 
-        await vscode.env.clipboard.writeText(`${result.url} 密码：${password}`);
-        const actions = ["浏览器打开", "修改密码"];
+        await vscode.env.clipboard.writeText(`${result.url}  password: ${password}`);
+        const actions = ["Open in browser", "Change password"];
         const pick = await vscode.window.showInformationMessage(
-          `已发布：${result.url}（密码 ${password}，链接和密码已复制）`,
+          `Published: ${result.url} (password ${password}; link & password copied)`,
           ...actions
         );
-        if (pick === "浏览器打开") vscode.env.openExternal(vscode.Uri.parse(result.url));
-        if (pick && pick.endsWith("密码")) {
+        if (pick === "Open in browser") vscode.env.openExternal(vscode.Uri.parse(result.url));
+        if (pick === "Change password") {
           const rec = (loadRecords(context)).find((r) => r.slug === result.slug);
           if (rec) await setPasswordFor(context, provider, rec);
         }
       } catch (e) {
-        vscode.window.showErrorMessage(`发布失败：${errorMessage(e)}`);
+        vscode.window.showErrorMessage(`Publish failed: ${errorMessage(e)}`);
       }
     }
   );
@@ -132,11 +132,11 @@ async function publishFolderCommand(
 ) {
   // 收集候选文件：多选文件优先,否则把 uri 当文件夹读取单层
   let candidates: Candidate[];
-  let defaultTitle = "文档合集";
+  let defaultTitle = "Collection";
   try {
     if (uris && uris.length > 1) {
       candidates = await collectFiles(uris);
-      defaultTitle = "文档合集";
+      defaultTitle = "Collection";
     } else if (uri) {
       const stat = await vscode.workspace.fs.stat(uri);
       if (stat.type & vscode.FileType.Directory) {
@@ -147,20 +147,20 @@ async function publishFolderCommand(
         candidates = await collectFiles(files);
         defaultTitle = uri.path.split("/").pop() || defaultTitle;
       } else {
-        vscode.window.showWarningMessage("请右键一个文件夹,或多选文件后发布为合集。");
+        vscode.window.showWarningMessage("Right-click a folder, or multi-select files, to publish a collection.");
         return;
       }
     } else {
-      vscode.window.showWarningMessage("请在资源管理器右键文件夹,或多选文件后使用「发布为合集」。");
+      vscode.window.showWarningMessage("In the Explorer, right-click a folder or multi-select files, then use Publish as collection.");
       return;
     }
   } catch (e) {
-    vscode.window.showErrorMessage(`读取文件失败：${errorMessage(e)}`);
+    vscode.window.showErrorMessage(`Failed to read files: ${errorMessage(e)}`);
     return;
   }
 
   if (candidates.length < 2) {
-    vscode.window.showWarningMessage("合集至少需要 2 个 .md / .html 文件。");
+    vscode.window.showWarningMessage("A collection needs at least 2 .md / .html files.");
     return;
   }
   candidates.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
@@ -173,17 +173,17 @@ async function publishFolderCommand(
       picked: true,
       c,
     })),
-    { canPickMany: true, placeHolder: "选择要放进合集的文件(默认全选,按文件名排序)", ignoreFocusOut: true }
+    { canPickMany: true, placeHolder: "Select files for the collection (all selected by default, sorted by name)", ignoreFocusOut: true }
   );
   if (!picks || picks.length === 0) return;
   if (picks.length < 2) {
-    vscode.window.showWarningMessage("合集至少需要 2 个文件。");
+    vscode.window.showWarningMessage("A collection needs at least 2 files.");
     return;
   }
 
   // ② 合集标题
   const title = await vscode.window.showInputBox({
-    prompt: "合集标题(接收方在目录页看到)",
+    prompt: "Collection title (shown to recipients on the index page)",
     value: defaultTitle,
     ignoreFocusOut: true,
   });
@@ -192,7 +192,7 @@ async function publishFolderCommand(
   // ③ 发布
   const password = randomPin();
   await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Notification, title: "正在发布合集…" },
+    { location: vscode.ProgressLocation.Notification, title: "Publishing collection…" },
     async () => {
       try {
         const files: CollectionFile[] = picks.map((p) =>
@@ -219,18 +219,18 @@ async function publishFolderCommand(
         });
         provider.refresh();
 
-        await vscode.env.clipboard.writeText(`${result.url} 密码：${password}`);
+        await vscode.env.clipboard.writeText(`${result.url}  password: ${password}`);
         const pick = await vscode.window.showInformationMessage(
-          `合集已发布：${result.url}（${files.length} 篇，密码 ${password}，链接和密码已复制）`,
-          "浏览器打开", "修改密码"
+          `Collection published: ${result.url} (${files.length} docs, password ${password}; link & password copied)`,
+          "Open in browser", "Change password"
         );
-        if (pick === "浏览器打开") vscode.env.openExternal(vscode.Uri.parse(result.url));
-        if (pick === "修改密码") {
+        if (pick === "Open in browser") vscode.env.openExternal(vscode.Uri.parse(result.url));
+        if (pick === "Change password") {
           const rec = loadRecords(context).find((r) => r.slug === result.slug);
           if (rec) await setPasswordFor(context, provider, rec);
         }
       } catch (e) {
-        vscode.window.showErrorMessage(`发布失败：${errorMessage(e)}`);
+        vscode.window.showErrorMessage(`Publish failed: ${errorMessage(e)}`);
       }
     }
   );
@@ -271,7 +271,7 @@ async function updateContent(context: vscode.ExtensionContext, provider: RecentP
   if (rec.kind === "collection") {
     // 合集:重新选文件夹整组替换
     const folder = await vscode.window.showOpenDialog({
-      canSelectFolders: true, canSelectFiles: false, openLabel: "选择文件夹更新此合集",
+      canSelectFolders: true, canSelectFiles: false, openLabel: "Choose a folder to update this collection",
     });
     if (!folder || folder.length === 0) return;
     let candidates: Candidate[];
@@ -280,14 +280,14 @@ async function updateContent(context: vscode.ExtensionContext, provider: RecentP
       const files = entries.filter(([n, t]) => t === vscode.FileType.File && isPublishable(n))
         .map(([n]) => vscode.Uri.joinPath(folder[0], n));
       candidates = await collectFiles(files);
-    } catch (e) { vscode.window.showErrorMessage(`读取失败：${errorMessage(e)}`); return; }
-    if (candidates.length < 2) { vscode.window.showWarningMessage("合集至少需要 2 个 .md / .html 文件。"); return; }
+    } catch (e) { vscode.window.showErrorMessage(`Read failed: ${errorMessage(e)}`); return; }
+    if (candidates.length < 2) { vscode.window.showWarningMessage("A collection needs at least 2 .md / .html files."); return; }
     candidates.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     const ok = await vscode.window.showWarningMessage(
-      `用「${folder[0].path.split("/").pop()}」里的 ${candidates.length} 个文件替换合集「${rec.filename}」的全部内容？链接与密码不变,升为新版本。`,
-      { modal: true }, "更新"
+      `Replace all content of "${rec.filename}" with the ${candidates.length} files in "${folder[0].path.split("/").pop()}"? Link and password stay the same; a new version is created.`,
+      { modal: true }, "Update"
     );
-    if (ok !== "更新") return;
+    if (ok !== "Update") return;
     const files: CollectionFile[] = candidates.map((c) =>
       c.isMd ? { name: c.name, markdown: c.text } : { name: c.name, html: c.text });
     await runUpdate(client, rec, { files, title: rec.filename }, provider, context);
@@ -296,21 +296,21 @@ async function updateContent(context: vscode.ExtensionContext, provider: RecentP
 
   // 单页:用当前编辑器文件更新(类型需一致)
   const uri = vscode.window.activeTextEditor?.document.uri;
-  if (!uri) { vscode.window.showWarningMessage("请先打开要用作新内容的文件。"); return; }
+  if (!uri) { vscode.window.showWarningMessage("Open the file you want to use as the new content first."); return; }
   const p = uri.path.toLowerCase();
   const isMd = p.endsWith(".md") || p.endsWith(".markdown");
   const isHtml = p.endsWith(".html") || p.endsWith(".htm");
-  if (!isMd && !isHtml) { vscode.window.showWarningMessage("当前文件不是 .html / .md。"); return; }
+  if (!isMd && !isHtml) { vscode.window.showWarningMessage("The current file isn\u2019t .html / .md."); return; }
   const type = isMd ? "md" : "html";
   if (rec.contentType && rec.contentType !== type) {
-    vscode.window.showWarningMessage(`类型不符:该页面是 ${rec.contentType},不能用 ${type} 文件更新。`);
+    vscode.window.showWarningMessage(`Type mismatch: this page is ${rec.contentType} and can\u2019t be updated with a ${type} file.`);
     return;
   }
   const ok = await vscode.window.showWarningMessage(
-    `用当前文件「${uri.path.split("/").pop()}」更新「${rec.filename}」?链接与密码不变,升为新版本。`,
-    { modal: true }, "更新"
+    `Update "${rec.filename}" with the current file "${uri.path.split("/").pop()}"? Link and password stay the same; a new version is created.`,
+    { modal: true }, "Update"
   );
-  if (ok !== "更新") return;
+  if (ok !== "Update") return;
   const text = await readHtml(uri);
   await runUpdate(client, rec, isMd ? { markdown: text } : { html: text }, provider, context);
 }
@@ -328,9 +328,9 @@ async function runUpdate(
         rec.updatedAt = new Date().toISOString();
         await replaceRecord(context, rec);
         provider.refresh();
-        vscode.window.showInformationMessage(`已更新「${rec.filename}」到 v${v.current}(链接与密码不变)。`);
+        vscode.window.showInformationMessage(`Updated "${rec.filename}" to v${v.current} (link & password unchanged).`);
       } catch (e) {
-        vscode.window.showErrorMessage(`更新失败：${errorMessage(e)}`);
+        vscode.window.showErrorMessage(`Update failed: ${errorMessage(e)}`);
       }
     }
   );
@@ -342,52 +342,52 @@ async function showVersions(context: vscode.ExtensionContext, rec: Record) {
   let data: { current: number; versions: { version: number; size_bytes: number; created_at: number }[] };
   try {
     data = await client.listVersions(rec.slug, rec.editToken || undefined);
-  } catch (e) { vscode.window.showErrorMessage(`读取版本失败：${errorMessage(e)}`); return; }
-  if (data.versions.length <= 1) { vscode.window.showInformationMessage("该页面暂无历史版本(仅初版)。"); return; }
+  } catch (e) { vscode.window.showErrorMessage(`Failed to load versions: ${errorMessage(e)}`); return; }
+  if (data.versions.length <= 1) { vscode.window.showInformationMessage("No earlier versions yet (only the first)."); return; }
 
   const pick = await vscode.window.showQuickPick(
     data.versions.map((v) => ({
-      label: `v${v.version}${v.version === data.current ? "（当前）" : ""}`,
+      label: `v${v.version}${v.version === data.current ? " (current)" : ""}`,
       description: `${new Date(v.created_at * 1000).toLocaleString()} · ${(v.size_bytes / 1024).toFixed(1)} KB`,
       v,
     })),
-    { placeHolder: `「${rec.filename}」版本历史 — 选择要回滚到的版本`, ignoreFocusOut: true }
+    { placeHolder: `Version history of "${rec.filename}" — choose a version to roll back to`, ignoreFocusOut: true }
   );
   if (!pick || pick.v.version === data.current) return;
   const ok = await vscode.window.showWarningMessage(
-    `回滚到 v${pick.v.version}?当前内容会被替换为该版本(并记为新版本),链接与密码不变。`,
-    { modal: true }, "回滚"
+    `Roll back to v${pick.v.version}? Current content is replaced with that version (recorded as a new version); link & password stay the same.`,
+    { modal: true }, "Roll back"
   );
-  if (ok !== "回滚") return;
+  if (ok !== "Roll back") return;
   try {
     await client.restoreVersion(rec.slug, pick.v.version, rec.editToken || undefined);
     rec.updatedAt = new Date().toISOString();
     await replaceRecord(context, rec);
-    vscode.window.showInformationMessage(`已回滚到 v${pick.v.version} 的内容。`);
+    vscode.window.showInformationMessage(`Rolled back to the content of v${pick.v.version}.`);
   } catch (e) {
-    vscode.window.showErrorMessage(`回滚失败：${errorMessage(e)}`);
+    vscode.window.showErrorMessage(`Roll back failed: ${errorMessage(e)}`);
   }
 }
 
 async function setApiKey(context: vscode.ExtensionContext) {
   const key = await vscode.window.showInputBox({
-    prompt: "粘贴你的 API Key（在网站账户页生成）",
+    prompt: "Paste your API key (generate it on the account page)",
     password: true,
     ignoreFocusOut: true,
   });
   if (key === undefined) return;
   if (key === "") {
     await context.secrets.delete(SECRET_KEY);
-    vscode.window.showInformationMessage("已清除 API Key（当前为匿名模式）。");
+    vscode.window.showInformationMessage("API key cleared (anonymous mode).");
   } else {
     await context.secrets.store(SECRET_KEY, key.trim());
-    vscode.window.showInformationMessage("API Key 已保存。");
+    vscode.window.showInformationMessage("API key saved.");
   }
 }
 
 async function signOut(context: vscode.ExtensionContext) {
   await context.secrets.delete(SECRET_KEY);
-  vscode.window.showInformationMessage("已退出登录。");
+  vscode.window.showInformationMessage("Signed out.");
 }
 
 async function setPassword(context: vscode.ExtensionContext, provider: RecentProvider, node?: RecentNode) {
@@ -395,12 +395,12 @@ async function setPassword(context: vscode.ExtensionContext, provider: RecentPro
   if (!rec) {
     const records = loadRecords(context);
     if (records.length === 0) {
-      vscode.window.showInformationMessage("还没有已发布的页面。");
+      vscode.window.showInformationMessage("No published pages yet.");
       return;
     }
     const pick = await vscode.window.showQuickPick(
       records.map((r) => ({ label: r.filename, description: r.url, rec: r })),
-      { placeHolder: "选择要设置密码的页面" }
+      { placeHolder: "Select a page to set a password" }
     );
     rec = pick?.rec;
   }
@@ -409,7 +409,7 @@ async function setPassword(context: vscode.ExtensionContext, provider: RecentPro
 
 async function setPasswordFor(context: vscode.ExtensionContext, provider: RecentProvider, rec: Record) {
   const input = await vscode.window.showInputBox({
-    prompt: `为「${rec.filename}」设置密码（留空则移除密码）`,
+    prompt: `Set a password for "${rec.filename}" (leave empty to remove)`,
     password: true,
   });
   if (input === undefined) return;
@@ -419,25 +419,25 @@ async function setPasswordFor(context: vscode.ExtensionContext, provider: Recent
     rec.passwordProtected = input !== "";
     await replaceRecord(context, rec);
     provider.refresh();
-    vscode.window.showInformationMessage(input === "" ? "已移除密码。" : "密码已更新。");
+    vscode.window.showInformationMessage(input === "" ? "Password removed." : "Password updated.");
   } catch (e) {
-    vscode.window.showErrorMessage(`设置密码失败：${errorMessage(e)}`);
+    vscode.window.showErrorMessage(`Failed to set password: ${errorMessage(e)}`);
   }
 }
 
 async function deletePage(context: vscode.ExtensionContext, provider: RecentProvider, rec: Record) {
   const ok = await vscode.window.showWarningMessage(
-    `确认删除「${rec.filename}」？链接将立即失效。`,
+    `Delete "${rec.filename}"? The link stops working immediately.`,
     { modal: true },
-    "删除"
+    "Delete"
   );
-  if (ok !== "删除") return;
+  if (ok !== "Delete") return;
   try {
     const client = await getClient(context);
     await client.remove(rec.slug, rec.editToken || undefined);
   } catch (e) {
     // 即使后端报错(如已过期)，也从本地列表移除
-    vscode.window.showWarningMessage(`后端删除返回：${errorMessage(e)}（已从本地列表移除）`);
+    vscode.window.showWarningMessage(`Backend delete returned: ${errorMessage(e)} (removed from local list)`);
   }
   await removeRecord(context, rec.slug);
   provider.refresh();
@@ -445,7 +445,7 @@ async function deletePage(context: vscode.ExtensionContext, provider: RecentProv
 
 async function copyLink(url: string) {
   await vscode.env.clipboard.writeText(url);
-  vscode.window.showInformationMessage("链接已复制。");
+  vscode.window.showInformationMessage("Link copied.");
 }
 
 // ---- 每人一链:管理访问人 ----
@@ -455,42 +455,42 @@ async function manageGrants(context: vscode.ExtensionContext, rec: Record) {
   try {
     grants = await client.listGrants(rec.slug, rec.editToken || undefined);
   } catch (e) {
-    vscode.window.showErrorMessage(`读取访问人失败：${errorMessage(e)}`);
+    vscode.window.showErrorMessage(`Failed to load recipients: ${errorMessage(e)}`);
     return;
   }
 
-  const fmtSeen = (t: number | null) => (t ? new Date(t * 1000).toLocaleDateString() : "未访问");
+  const fmtSeen = (t: number | null) => (t ? new Date(t * 1000).toLocaleDateString() : "never");
   const active = grants.filter((g) => !g.revoked);
   const items: (vscode.QuickPickItem & { grant?: Grant; add?: boolean })[] = [
-    { label: "$(add) 添加访问人", detail: "生成一个独立密码,单独统计、可随时撤销", add: true },
+    { label: "$(add) Add recipient", detail: "A separate password — tracked individually, revocable anytime", add: true },
     ...active.map((g) => ({
-      label: `$(person) ${g.label || "(未命名)"}`,
-      description: `👁 ${g.hits} · 最近 ${fmtSeen(g.last_seen_at)}`,
-      detail: "选择以撤销此人的访问",
+      label: `$(person) ${g.label || "(unnamed)"}`,
+      description: `👁 ${g.hits} · last ${fmtSeen(g.last_seen_at)}`,
+      detail: "Select to revoke this person\u2019s access",
       grant: g,
     })),
   ];
 
   const pick = await vscode.window.showQuickPick(items, {
-    placeHolder: `「${rec.filename}」的访问人（共 ${active.length} 人）`,
+    placeHolder: `Recipients of "${rec.filename}" (${active.length} total)`,
     ignoreFocusOut: true,
   });
   if (!pick) return;
 
   if (pick.add) {
     const label = await vscode.window.showInputBox({
-      prompt: "访问人标签（如“张三”“客户A”，仅你可见）",
+      prompt: "Recipient label (e.g. Alex, Client A — only you see it)",
       ignoreFocusOut: true,
     });
     if (label === undefined) return;
     try {
       const g = await client.createGrant(rec.slug, label.trim(), rec.editToken || undefined);
-      await vscode.env.clipboard.writeText(`${g.url} 密码：${g.password}`);
+      await vscode.env.clipboard.writeText(`${g.url}  password: ${g.password}`);
       vscode.window.showInformationMessage(
-        `已为「${label || "访问人"}」创建专属密码 ${g.password}（链接+密码已复制,发给 TA 即可）`
+        `Created password ${g.password} for "${label || "recipient"}" (link & password copied — send it to them)`
       );
     } catch (e) {
-      vscode.window.showErrorMessage(`创建失败：${errorMessage(e)}`);
+      vscode.window.showErrorMessage(`Create failed: ${errorMessage(e)}`);
     }
     return;
   }
@@ -498,16 +498,16 @@ async function manageGrants(context: vscode.ExtensionContext, rec: Record) {
   if (pick.grant) {
     const g = pick.grant;
     const ok = await vscode.window.showWarningMessage(
-      `撤销「${g.label || "该访问人"}」的访问？TA 的密码将立即失效,其他人不受影响。`,
+      `Revoke access for "${g.label || "this recipient"}"? Their password stops working immediately; others are unaffected.`,
       { modal: true },
-      "撤销"
+      "Revoke"
     );
-    if (ok !== "撤销") return;
+    if (ok !== "Revoke") return;
     try {
       await client.revokeGrant(rec.slug, g.id, rec.editToken || undefined);
-      vscode.window.showInformationMessage(`已撤销「${g.label || "该访问人"}」的访问。`);
+      vscode.window.showInformationMessage(`Revoked access for "${g.label || "this recipient"}".`);
     } catch (e) {
-      vscode.window.showErrorMessage(`撤销失败：${errorMessage(e)}`);
+      vscode.window.showErrorMessage(`Revoke failed: ${errorMessage(e)}`);
     }
   }
 }
@@ -589,19 +589,19 @@ class RecentNode extends vscode.TreeItem {
     );
     const views = record.hits === undefined ? "" : `👁 ${record.hits}`;
     const ver = record.version && record.version > 1 ? `v${record.version}` : "";
-    const base = isColl ? `合集 · ${record.docs?.length ?? 0} 篇` : new URL(record.url).hostname;
+    const base = isColl ? `Collection · ${record.docs?.length ?? 0} docs` : new URL(record.url).hostname;
     this.description = [base, views, ver].filter(Boolean).join(" · ");
     const viewLine = record.hits === undefined
-      ? "访问量:点刷新查看"
-      : `访问量:${record.hits}${isColl ? "(目录+各篇)" : ""}`;
+      ? "Views: click refresh"
+      : `Views: ${record.hits}${isColl ? " (index + docs)" : ""}`;
     const verLine = record.version && record.version > 1
-      ? `\n版本:v${record.version}${record.updatedAt ? ` · 更新于 ${new Date(record.updatedAt).toLocaleDateString()}` : ""}`
+      ? `\nVersion: v${record.version}${record.updatedAt ? ` · updated ${new Date(record.updatedAt).toLocaleDateString()}` : ""}`
       : "";
-    this.tooltip = `${record.url}\n发布于 ${new Date(record.createdAt).toLocaleString()}\n${viewLine}${verLine}`;
+    this.tooltip = `${record.url}\nPublished ${new Date(record.createdAt).toLocaleString()}\n${viewLine}${verLine}`;
     this.iconPath = new vscode.ThemeIcon(isColl ? "book" : record.passwordProtected ? "lock" : "globe");
     this.contextValue = "hspacePage";
     // 合集节点展开看篇目,不整体跳转;单页点击直接打开
-    if (!isColl) this.command = { command: "hspace.openInBrowser", title: "打开", arguments: [this] };
+    if (!isColl) this.command = { command: "hspace.openInBrowser", title: "Open", arguments: [this] };
   }
 }
 
@@ -612,7 +612,7 @@ class DocNode extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon("file");
     this.command = {
       command: "vscode.open",
-      title: "打开",
+      title: "Open",
       arguments: [vscode.Uri.parse(`${url}/${doc.index}`)],
     };
   }
