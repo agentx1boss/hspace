@@ -148,7 +148,7 @@ npm install && npm run compile
 
 ## 安全注意
 
-`isSuspicious` / `isPhishy` 为规则式扫描(混淆执行、密码输入框、外部表单),上量前应接入专业扫描。密码派生用 PBKDF2(Workers 原生),如需更强可换 argon2(WASM)。举报邮箱 `abuse@zhanjian.space` 需接到实际收件箱(见运营手册)。
+`isSuspicious` / `isPhishy` 为规则式扫描(混淆执行、密码输入框、外部表单),上量前应接入专业扫描。密码派生用 PBKDF2(Workers 原生),如需更强可换 argon2(WASM)。举报邮箱 `mengmajiang@gmail.com`;举报入库后需人工到 `reports` 表处理(见运营手册)。
 
 ## License
 

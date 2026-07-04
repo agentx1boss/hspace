@@ -3,8 +3,7 @@
 import { FAVICON_LINK } from "./html";
 
 const SITE = "https://hspace.zhanjian.space";
-// TODO: 换成你实际监控的邮箱,并在 Cloudflare Email Routing 上把它接到你的收件箱
-const CONTACT = "abuse@zhanjian.space"; // 举报/联系邮箱
+const CONTACT = "mengmajiang@gmail.com"; // 举报/联系邮箱
 
 const DOC_CSS = `
   :root{--bg:#faf9f7;--fg:#1d1d1f;--muted:#6a6a70;--accent:#E2603C;--card:#fff;--border:#e7e4df;--soft:#f2f0ec;--ink:#1A1D24}

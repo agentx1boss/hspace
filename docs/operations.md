@@ -50,6 +50,6 @@ npx wrangler d1 execute html-share --remote --command \
 
 ## 待办
 
-- [ ] 把 `abuse@zhanjian.space` 接到实际收件箱(Cloudflare Email Routing),或改 `backend/src/pages.ts` 里的 `CONTACT` 为你监控的邮箱。
-- [ ] (可选)给举报到达发通知:Worker 里 `ctx.waitUntil(fetch(webhook))` 推到邮箱/Slack。
+- 联系/举报邮箱:`mengmajiang@gmail.com`(直接可收信)。举报仍需人工到 `reports` 表查看。
+- [ ] (可选)举报到达时自动通知:Worker 里 `ctx.waitUntil(fetch(webhook))` 推到邮箱/Slack,免去手动查表。
 - [ ] (上量后)把规则式 `isSuspicious`/`isPhishy` 升级为 Google Safe Browsing 等专业扫描。
