@@ -32,12 +32,19 @@ const BRAND_MARK = `<svg viewBox="0 0 64 64" width="28" height="28" aria-hidden=
  * 密码门 —— 接收方唯一的品牌触点。私密、可信、亮暗自适应、移动端友好。
  * action="" → 提交到当前 URL；成功后服务端 303 跳回同一路径,深链得以保留。
  */
-export function passwordPage(error = false): string {
+export function passwordPage(error = false, lang: "en" | "zh" = "en"): string {
+  const t = lang === "zh"
+    ? { title: "输入密码 · HSpace", h1: "有人给你分享了内容", sub: "输入访问密码即可查看",
+        ph: "访问密码", aria: "访问密码", btn: "查看内容", err: "密码不正确，请重试",
+        foot: "由 HSpace 私密分享", tail: "仅凭密码可见" }
+    : { title: "Enter password · HSpace", h1: "Someone shared this with you", sub: "Enter the password to view it",
+        ph: "Password", aria: "Password", btn: "View content", err: "Wrong password — try again",
+        foot: "Shared privately with HSpace", tail: "visible by password only" };
   return `<!doctype html>
-<html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
+<html lang="${lang}"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>输入密码 · HSpace</title>
+<title>${t.title}</title>
 <style>
   :root{--bg:#f4f2ef;--fg:#1d1d1f;--muted:#6e6e73;--accent:#E2603C;--card:#fff;
         --field:#f7f6f4;--border:#e3e0db;--ring:rgba(226,96,60,.18);--ink:#1A1D24}
@@ -81,18 +88,18 @@ export function passwordPage(error = false): string {
 <body>
   <form class="card${error ? " shake" : ""}" method="POST" action="" autocomplete="off">
     <div class="tile">${BRAND_MARK}</div>
-    <h1>有人给你分享了内容</h1>
-    <p class="sub">输入访问密码即可查看</p>
+    <h1>${t.h1}</h1>
+    <p class="sub">${t.sub}</p>
     <div class="field">
       <span class="lk">🔒</span>
-      <input type="password" name="password" placeholder="访问密码" autofocus required
+      <input type="password" name="password" placeholder="${t.ph}" autofocus required
              autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
-             aria-label="访问密码">
+             aria-label="${t.aria}">
     </div>
-    <button type="submit">查看内容</button>
-    ${error ? '<p class="err" role="alert">密码不正确，请重试</p>' : ""}
+    <button type="submit">${t.btn}</button>
+    ${error ? `<p class="err" role="alert">${t.err}</p>` : ""}
   </form>
-  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">由 HSpace 私密分享</a> · 仅凭密码可见</div>
+  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${t.foot}</a> · ${t.tail}</div>
 </body></html>`;
 }
 

@@ -635,9 +635,9 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
         return new Response(null, { status: 303, headers });
       }
       await env.RATELIMIT.put(attemptKey, String(failed + 1), { expirationTtl: 900 });
-      return htmlResp(passwordPage(true), 401);
+      return htmlResp(passwordPage(true, pickLang(request)), 401);
     }
-    if (!authed) return htmlResp(passwordPage(false), 401);
+    if (!authed) return htmlResp(passwordPage(false, pickLang(request)), 401);
   }
 
   // 计数（异步，不阻塞响应）:总量 + 按访问人归因
@@ -745,17 +745,17 @@ async function serveBrandAsset(path: string, env: Env): Promise<Response | null>
   });
 }
 
+/** 选择语言:英文默认;?lang=zh/en 显式覆盖,否则看浏览器 Accept-Language */
+function pickLang(request: Request): "en" | "zh" {
+  const q = new URL(request.url).searchParams.get("lang");
+  if (q === "zh" || q === "en") return q;
+  const al = (request.headers.get("Accept-Language") || "").toLowerCase();
+  return al.startsWith("zh") ? "zh" : "en";
+}
+
 /** 落地页响应:英文默认;?lang=zh 或浏览器 Accept-Language 为中文则出中文 */
 function landingResp(request: Request): Response {
-  const url = new URL(request.url);
-  const q = url.searchParams.get("lang");
-  let lang: "en" | "zh";
-  if (q === "zh" || q === "en") {
-    lang = q;
-  } else {
-    const al = (request.headers.get("Accept-Language") || "").toLowerCase();
-    lang = al.startsWith("zh") ? "zh" : "en";
-  }
+  const lang = pickLang(request);
   return new Response(landingPage(lang), {
     status: 200,
     headers: {
