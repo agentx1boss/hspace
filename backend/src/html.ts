@@ -3,8 +3,10 @@
 // 站点 favicon(32px PNG 内联,所有模板共用)
 export const FAVICON_LINK = '<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAByklEQVR4AexWvU4CQRCevcJYWKiFBQIac4mNUFCZQOIRa30BY0KIlS+hFL6CFYkk8gRqayCRwooCCpuLUf5ipQ2Vhjt3Vvay7t0eF+MFQm7Dx87Mfjvz5QMuaDDlFQmYTQficd1YT+i1WEK3Y0n93O9r4vACcL36eDpgEajZAAbgsuEMh2AoA8U5PDykXBSPYVC4BGBT+fKvIeIhHSimGFsa/AiHYMslINi1/2NFAiIH5tuB10LuoFPItShsihbm8u/H14HMygJwdAs5QwY/E/f9tcU9xitmjwjADR2YosBXCvN+MbuNCYdSwMnWElxmVh3YwJ6O+IR0IJ7z+GJn2WBci1T5EHG3LO1QzJUCmh+fIi+02FfA7v0bnDbfGah9eRn8TNzLz8MS4xFy7KV6NPq6E+tKAZyETiASlUZdBtZllF+GwHhXD1X6UaDd7XGvNuab149P45xtEwUw1h/fNiqN22SlkaYgFGnM5VahCpCHeeWRgMiB2XNAs6AO8iJQkkuY0weOizvomL7/ovGeCJcDvZ5ZB2EgDlE17XfNPOciT7MhLzYPErsE4CUcOOiaBMGGYFEBzkUeE6/gqcqeAlTkMOrzL2CSa98AAAD//6djUEEAAAAGSURBVAMASMzLQVmiCxsAAAAASUVORK5CYII=">';
 
-// 落地页:分享页页脚的"由 HSpace 私密分享"署名指向这里(增长闭环,新标签打开)
+// 落地页:各页页脚的品牌署名指向这里(增长闭环,新标签打开)
 const LANDING = "https://hspace.zhanjian.space";
+// 统一页脚署名:密码页 / 阅读页 / 目录页 / 合集导航 / 404 一律用英文 slogan(品牌 tagline)
+const FOOT_SIG = "HSpace · Ship to one, not to all.";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -35,11 +37,9 @@ const BRAND_MARK = `<svg viewBox="0 0 64 64" width="28" height="28" aria-hidden=
 export function passwordPage(error = false, lang: "en" | "zh" = "en", expiresAt: number | null = null): string {
   const t = lang === "zh"
     ? { title: "输入密码 · HSpace", h1: "有人给你分享了内容", sub: "输入访问密码即可查看",
-        ph: "访问密码", aria: "访问密码", btn: "查看内容", err: "密码不正确，请重试",
-        foot: "由 HSpace 私密分享", tail: "仅凭密码可见", until: "有效期至" }
+        ph: "访问密码", aria: "访问密码", btn: "查看内容", err: "密码不正确，请重试", until: "有效期至" }
     : { title: "Enter password · HSpace", h1: "Someone shared this with you", sub: "Enter the password to view it",
-        ph: "Password", aria: "Password", btn: "View content", err: "Wrong password — try again",
-        foot: "Shared privately with HSpace", tail: "visible by password only", until: "Available until" };
+        ph: "Password", aria: "Password", btn: "View content", err: "Wrong password — try again", until: "Available until" };
   const expLine = expiresAt
     ? `\n  <div class="exp">${t.until} ${new Date(expiresAt * 1000).toISOString().slice(0, 10)}</div>`
     : "";
@@ -103,7 +103,7 @@ export function passwordPage(error = false, lang: "en" | "zh" = "en", expiresAt:
     <button type="submit">${t.btn}</button>
     ${error ? `<p class="err" role="alert">${t.err}</p>` : ""}
   </form>
-  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${t.foot}</a> · ${t.tail}</div>${expLine}
+  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a></div>${expLine}
 </body></html>`;
 }
 
@@ -202,7 +202,7 @@ export function readingPage(title: string, articleHtml: string, nav?: Collection
   ${nav ? sidebar(nav) : ""}
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
-    <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">HSpace · 私密分享</a>${upd}</footer>
+    <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
   </div>
 </body></html>`;
 }
@@ -233,7 +233,7 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): 
     <div class="meta">${esc(meta)}</div>
     <div class="list">${rows}</div>
   </main>
-  <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">HSpace · 私密分享</a></footer>
+  <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a></footer>
 </body></html>`;
 }
 
@@ -298,7 +298,7 @@ function collectionNavWidget(nav: CollectionNav): string {
       <div class="hd"><span class="t">${esc(nav.collectionTitle)}</span><span class="x" id="x" aria-label="关闭">×</span></div>
       <div class="list">${items}</div>
       ${pn}
-      <a class="brand" href="${LANDING}" target="_blank" rel="noopener">由 HSpace 私密分享</a>
+      <a class="brand" href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a>
     </div>`;
   const json = JSON.stringify(markup).replace(/</g, "\\u003c");
   return `<div id="hspace-nav-host"></div><script>(function(){try{` +
@@ -331,5 +331,5 @@ export function notFoundPage(): string {
 <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;display:flex;flex-direction:column;gap:14px;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#17181c;color:#888;text-align:center}
 a{color:#8b8b90;text-decoration:none;font-size:13px}a:hover{color:#F0784F}</style>
 </head><body><div><h1>404</h1><p>该页面不存在、已删除或已过期。</p></div>
-<a href="${LANDING}" target="_blank" rel="noopener">· 由 HSpace 私密分享 ·</a></body></html>`;
+<a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a></body></html>`;
 }
