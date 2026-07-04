@@ -21,6 +21,7 @@ import { openapiSpec } from "./openapi";
 import { landingPage } from "./landing";
 import { privacyPage, termsPage, reportPage } from "./pages";
 import { handleAuth, sessionOwner, readCookie, hasSessionCookie } from "./auth";
+import { serveConsole } from "./console";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -81,6 +82,7 @@ export default {
     if (host === "hspace." + env.USERCONTENT_DOMAIN) {
       const auth = await handleAuth(url, request, env);
       if (auth) return auth;
+      if (url.pathname === "/console") return serveConsole(url, request, env);
       const asset = await serveBrandAsset(url.pathname, env);
       if (asset) return asset;
       const site = await serveSitePage(url.pathname, request, env);
@@ -158,6 +160,8 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   if (path === "/me" && request.method === "GET") return me(request, env);
   if (path === "/me/api-key" && request.method === "POST") return regenerateApiKey(request, env);
+
+  if (path === "/console" && request.method === "GET") return serveConsole(url, request, env);
 
   if (path === "/health") return json({ ok: true, service: "hspace" });
   if (path === "/") return landingResp(request);
