@@ -260,10 +260,10 @@ ${FAVICON_LINK}
 
   <section class="band"><div class="wrap" style="text-align:center">
     <h2>亲自体验一次</h2>
-    <p class="sec-sub">下面是一个真实的 HSpace 私密页面。输入密码,你就完成了一次接收方的完整体验。</p>
-    <a class="try" href="https://ccbgfhc.zhanjian.space" target="_blank" rel="noopener">
+    <p class="sec-sub">下面是一本真实的 HSpace 私密合集(含 Markdown 与 HTML)。输入密码,你就完成了一次接收方的完整体验。</p>
+    <a class="try" href="https://q0i7otn.zhanjian.space" target="_blank" rel="noopener">
       <span class="lk">🔒</span>
-      <span class="ta"><span class="tu">ccbgfhc.zhanjian.space</span><span class="th">点击打开 · 访问密码 <b>1024</b></span></span>
+      <span class="ta"><span class="tu">q0i7otn.zhanjian.space</span><span class="th">一本 3 篇的册子 · 访问密码 <b>1024</b></span></span>
       <span class="go">→</span>
     </a>
   </div></section>
