@@ -134,6 +134,10 @@ export async function verifySession(secret: string, cookie: string): Promise<str
   const [ownerId, exp, sig] = parts;
   if (Number(exp) < Math.floor(Date.now() / 1000)) return null;
   const key = await hmacKey(secret);
-  const ok = await crypto.subtle.verify("HMAC", key, b64ToBytes(sig), enc.encode(`${ownerId}.${exp}`));
-  return ok ? ownerId : null;
+  try {
+    const ok = await crypto.subtle.verify("HMAC", key, b64ToBytes(sig), enc.encode(`${ownerId}.${exp}`));
+    return ok ? ownerId : null;
+  } catch {
+    return null; // 畸形 base64(atob 抛错)一律视为无效
+  }
 }
