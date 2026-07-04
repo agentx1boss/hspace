@@ -147,6 +147,18 @@ ${FAVICON_LINK}
   .read .main .tb .tr{display:flex;font-size:11px}
   .read .main .tb .tr>div{flex:1;padding:6px 9px;border-right:1px solid var(--border)}
   .read .main .tb .th{background:var(--soft);font-weight:600}
+  /* 体验入口 */
+  .try{display:inline-flex;align-items:center;gap:14px;max-width:420px;width:100%;text-align:left;
+       background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;
+       box-shadow:0 10px 30px rgba(0,0,0,.08);transition:border-color .15s,transform .05s}
+  .try:hover{border-color:var(--accent)}
+  .try:active{transform:translateY(1px)}
+  .try .lk{width:42px;height:42px;border-radius:11px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:19px;flex:0 0 auto}
+  .try .ta{display:flex;flex-direction:column;flex:1;min-width:0}
+  .try .tu{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;font-weight:600;color:var(--fg)}
+  .try .th{font-size:13px;color:var(--muted);margin-top:2px}
+  .try .th b{color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:2px}
+  .try .go{color:var(--accent);font-size:20px;flex:0 0 auto}
   /* FAQ */
   .faqs{max-width:44rem;margin:0 auto}
   .faqs details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin:10px 0;padding:0 18px}
@@ -244,6 +256,16 @@ ${FAVICON_LINK}
       <div class="diff"><h3>📄 内容为主</h3><p>分发的是一份内容——demo、报告、方案,不是一个网站。没有构建、没有配置,只有「发出去」。</p></div>
       <div class="diff"><h3>🎯 可控可撤回</h3><p>随时改密码、删链接,立即失效;到期自动清理。链接是你可控的资产。</p></div>
     </div>
+  </div></section>
+
+  <section class="band"><div class="wrap" style="text-align:center">
+    <h2>亲自体验一次</h2>
+    <p class="sec-sub">下面是一个真实的 HSpace 私密页面。输入密码,你就完成了一次接收方的完整体验。</p>
+    <a class="try" href="https://ccbgfhc.zhanjian.space" target="_blank" rel="noopener">
+      <span class="lk">🔒</span>
+      <span class="ta"><span class="tu">ccbgfhc.zhanjian.space</span><span class="th">点击打开 · 访问密码 <b>1024</b></span></span>
+      <span class="go">→</span>
+    </a>
   </div></section>
 
   <section id="how"><div class="wrap">
