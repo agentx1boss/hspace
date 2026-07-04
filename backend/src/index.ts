@@ -16,7 +16,7 @@ import {
   verifyCookie,
 } from "./crypto";
 import { marked } from "marked";
-import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectBackButton, CollectionNav } from "./html";
+import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectCollectionNav, CollectionNav } from "./html";
 import { openapiSpec } from "./openapi";
 import { landingPage } from "./landing";
 import { privacyPage, termsPage, reportPage } from "./pages";
@@ -699,8 +699,9 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
     const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
     return htmlResp(readingPage(doc.title, article, nav, updated), 200);
   }
-  // html 篇目:保留原样,仅注入一个悬浮「← 目录」按钮(不改动用户 DOM 结构)
-  return new Response(injectBackButton(await obj.text()), { status: 200, headers: securityHeaders() });
+  // html 篇目:保留原样,注入一个 Shadow DOM 隔离的悬浮导航(目录+翻页,不影响用户页面)
+  const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
+  return new Response(injectCollectionNav(await obj.text(), nav), { status: 200, headers: securityHeaders() });
 }
 
 function htmlResp(body: string, status: number): Response {

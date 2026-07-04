@@ -220,29 +220,80 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): 
 }
 
 /**
- * 合集中 html 篇目的悬浮「← 目录」按钮。
- * 只注入这一个自包含元素,不改动用户 DOM;内联样式全部 !important 以抵御页面 CSS。
+ * 合集中 html 篇目的悬浮导航条(可折叠):目录 + 逐篇 + 上/下篇。
+ * 用 Shadow DOM 与用户页面彻底样式隔离——既不被页面 CSS 污染,也不影响页面。
+ * 只往 body 追加一个宿主元素 + 一段 IIFE,不改动用户原有 DOM。
  */
-export function backToTocButton(): string {
-  const s = [
-    "position:fixed!important", "left:16px!important", "bottom:16px!important",
-    "z-index:2147483647!important", "margin:0!important",
-    "display:inline-flex!important", "align-items:center!important", "gap:7px!important",
-    "padding:9px 15px!important", "background:#1A1D24!important", "color:#fff!important",
-    "font:600 13.5px/1 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif!important",
-    "text-decoration:none!important", "border-radius:999px!important",
-    "box-shadow:0 4px 16px rgba(0,0,0,.28)!important", "border:1px solid rgba(255,255,255,.14)!important",
-    "opacity:.92!important",
-  ].join(";");
-  const dot = "width:7px;height:7px;border-radius:50%;background:#F0784F;display:inline-block";
-  return `<a href="/" aria-label="返回目录" style="${s}"><span style="${dot}"></span>← 目录</a>`;
+function collectionNavWidget(nav: CollectionNav): string {
+  const items = nav.docs.map((d) =>
+    `<a class="doc${d.index === nav.current ? " on" : ""}" href="/${d.index}"><i>${d.index}</i><span>${esc(d.title)}</span></a>`
+  ).join("");
+  const prev = nav.current > 1 ? nav.current - 1 : 0;
+  const next = nav.current < nav.docs.length ? nav.current + 1 : 0;
+  const pn =
+    `<div class="pn">` +
+    (prev ? `<a href="/${prev}">← 上一篇</a>` : `<span class="dis">← 上一篇</span>`) +
+    (next ? `<a class="nx" href="/${next}">下一篇 →</a>` : `<span class="dis nx">下一篇 →</span>`) +
+    `</div>`;
+  const markup =
+    `<style>
+      :host{all:initial}
+      *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",sans-serif}
+      .pill{position:fixed;left:16px;bottom:16px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;
+            padding:9px 14px;background:#1A1D24;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:999px;
+            box-shadow:0 4px 18px rgba(0,0,0,.32);cursor:pointer;font-size:13px;font-weight:600;line-height:1}
+      .pill .dot{width:7px;height:7px;border-radius:50%;background:#F0784F}
+      .panel{position:fixed;left:16px;bottom:64px;z-index:2147483647;width:270px;max-width:calc(100vw - 32px);
+             background:#fff;color:#1d1d1f;border:1px solid #e5e2dd;border-radius:14px;overflow:hidden;
+             box-shadow:0 16px 44px rgba(0,0,0,.24);display:none;animation:pop .16s ease-out}
+      .panel.open{display:block}
+      @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+      .hd{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e5e2dd;font-weight:700;font-size:13px}
+      .hd .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .hd .x{cursor:pointer;color:#6e6e73;font-size:16px;line-height:1}
+      .list{max-height:min(50vh,340px);overflow-y:auto;padding:6px}
+      .doc{display:flex;gap:10px;align-items:baseline;padding:9px 10px;border-radius:8px;color:#1d1d1f;
+           text-decoration:none;font-size:13.5px;line-height:1.4;border-left:3px solid transparent}
+      .doc:hover{background:#f2f0ed}
+      .doc.on{background:#f2f0ed;border-left-color:#E2603C;font-weight:600}
+      .doc i{color:#8b8b90;font-style:normal;font-size:12px;font-variant-numeric:tabular-nums}
+      .doc.on i{color:#E2603C}
+      .pn{display:flex;gap:8px;padding:10px;border-top:1px solid #e5e2dd}
+      .pn a,.pn .dis{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none}
+      .pn a{color:#1d1d1f;background:#f2f0ed}
+      .pn a:hover{background:#e7e4df}
+      .pn .nx{text-align:center}
+      .pn .dis{color:#c4c0b8}
+      @media(prefers-color-scheme:dark){
+        .panel{background:#22242a;color:#e8e6e3;border-color:#2e3036}
+        .hd{border-color:#2e3036}.hd .x{color:#8b8b90}
+        .doc{color:#e8e6e3}.doc:hover,.doc.on{background:#2a2d34}
+        .pn{border-color:#2e3036}.pn a{color:#e8e6e3;background:#2a2d34}.pn a:hover{background:#33373f}.pn .dis{color:#55585f}
+      }
+      @media(prefers-reduced-motion:reduce){.panel{animation:none}}
+    </style>
+    <button class="pill" id="p" aria-label="打开目录"><span class="dot"></span>目录 · ${nav.current}/${nav.docs.length}</button>
+    <div class="panel" id="n" role="dialog" aria-label="合集导航">
+      <div class="hd"><span class="t">${esc(nav.collectionTitle)}</span><span class="x" id="x" aria-label="关闭">×</span></div>
+      <div class="list">${items}</div>
+      ${pn}
+    </div>`;
+  const json = JSON.stringify(markup).replace(/</g, "\\u003c");
+  return `<div id="hspace-nav-host"></div><script>(function(){try{` +
+    `var h=document.getElementById('hspace-nav-host');var r=h.attachShadow({mode:'open'});r.innerHTML=${json};` +
+    `var p=r.getElementById('p'),n=r.getElementById('n'),x=r.getElementById('x');` +
+    `p.addEventListener('click',function(){n.classList.toggle('open')});` +
+    `x.addEventListener('click',function(){n.classList.remove('open')});` +
+    `}catch(e){var a=document.createElement('a');a.href='/';a.textContent='\\u2190 目录';` +
+    `a.style.cssText='position:fixed;left:16px;bottom:16px;z-index:2147483647;background:#1A1D24;color:#fff;padding:9px 14px;border-radius:999px;text-decoration:none;font:600 13px sans-serif';` +
+    `document.body.appendChild(a);}})();</script>`;
 }
 
-/** 把悬浮按钮注入 html 篇目:插到最后一个 </body> 前,缺失则追加 */
-export function injectBackButton(html: string): string {
-  const btn = backToTocButton();
+/** 把合集悬浮导航注入 html 篇目:插到最后一个 </body> 前,缺失则追加 */
+export function injectCollectionNav(html: string, nav: CollectionNav): string {
+  const w = collectionNavWidget(nav);
   const i = html.toLowerCase().lastIndexOf("</body>");
-  return i === -1 ? html + btn : html.slice(0, i) + btn + html.slice(i);
+  return i === -1 ? html + w : html.slice(0, i) + w + html.slice(i);
 }
 
 export function lockedPage(): string {
