@@ -14,7 +14,10 @@
 ## 2. Slogan
 
 **主 slogan(中)**:AI 写完的 demo,只发给该看的人
-**主 slogan(英)**:Ship it to exactly the right people.
+**主 slogan(英)**:**Ship to one, not to all.**
+> 定稿理由:保留开发者的词 "ship",但用 "to one" 当场重定义——发给一个人,不是发给全世界;"to one, not to all" 对比结构节奏强,单行可印。中文承载信息(场景+人群),英文承载钩子(对比),互补不重复。
+
+**极简备选(视觉主导场景,如海报/OG 卡)**:Only the right eyes.
 
 备选(不同语境取用):
 
@@ -60,7 +63,7 @@
 ## 6. 各渠道 boilerplate(直接复制)
 
 **Marketplace 描述(≤200 字符,中英)**
-AI 写完的 demo,只发给该看的人:链接+密码、访问回执、随时撤回、链接不变可迭代。Ship your AI-built demo to exactly the right people.
+AI 写完的 demo,只发给该看的人:链接+密码、访问回执、随时撤回、链接不变可迭代。Ship to one, not to all.
 
 **GitHub About(英文优先,面向全球开发者)**
 Targeted sharing for AI-built HTML/Markdown: one link + password, view receipts, instant revoke, per-recipient passwords, versioned. Edge-native on Cloudflare, open source & self-hostable.

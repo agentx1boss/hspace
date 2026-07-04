@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.4 — 2026-07-04
+
+- 英文 slogan 定稿:Ship to one, not to all.(商店描述同步)
+
 ## 0.4.3 — 2026-07-04
 
 - Marketplace 商店描述同步新定位

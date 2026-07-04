@@ -374,7 +374,7 @@ ${FAVICON_LINK}
   </div></section>
 
   <footer><div class="wrap">
-    <div>© 2026 HSpace · AI 时代的定向分享</div>
+    <div>© 2026 HSpace · Ship to one, not to all.</div>
     <div class="links">
       <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
       <a href="${MARKETPLACE}" target="_blank" rel="noopener">Marketplace</a>

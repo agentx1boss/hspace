@@ -1,8 +1,8 @@
 {
   "name": "hspace",
   "displayName": "HSpace",
-  "description": "AI 写完的 demo,只发给该看的人:链接+密码、访问回执、随时撤回、链接不变可迭代。Ship your AI-built demo to exactly the right people.",
-  "version": "0.4.3",
+  "description": "AI 写完的 demo,只发给该看的人:链接+密码、访问回执、随时撤回、链接不变可迭代。Ship to one, not to all.",
+  "version": "0.4.4",
   "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",
