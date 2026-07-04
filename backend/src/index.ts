@@ -162,7 +162,11 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
   if (path === "/me" && request.method === "GET") return me(request, env);
   if (path === "/me/api-key" && request.method === "POST") return regenerateApiKey(request, env);
 
-  if (path === "/console" && request.method === "GET") return serveConsole(url, request, env);
+  // /console 仅本地 dev 直接服务(localhost 不是 hspace 子域);线上 API 域一律跳转到正主
+  if (path === "/console" && request.method === "GET") {
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return serveConsole(url, request, env);
+    return Response.redirect(`https://hspace.${env.USERCONTENT_DOMAIN}/console`, 302);
+  }
 
   if (path === "/health") return json({ ok: true, service: "hspace" });
   if (path === "/") return landingResp(request);
@@ -191,7 +195,9 @@ async function authOwner(request: Request, env: Env): Promise<string | null> {
   }
   // CSRF 防护:Cookie 凭据仅在请求来源为 hspace 落地域(或本地 dev)时被接受,配合 SameSite=Lax
   const src = request.headers.get("Origin") || request.headers.get("Referer") || "";
-  const allowed = [`https://hspace.${env.USERCONTENT_DOMAIN}`, "http://localhost:8787"];
+  const reqHost = new URL(request.url).hostname;
+  const allowed = [`https://hspace.${env.USERCONTENT_DOMAIN}`];
+  if (reqHost === "localhost" || reqHost === "127.0.0.1") allowed.push("http://localhost:8787");
   if (allowed.some((a) => src === a || src.startsWith(a + "/"))) {
     return sessionOwner(request, env);
   }

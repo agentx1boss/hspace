@@ -1,7 +1,7 @@
 # GitHub 登录 + Web Console 设计
 
 日期:2026-07-04
-状态:待评审
+状态:Phase 1(§2-4 + §5 账户区)已实现;§5 页面管理为 Phase 2、§6-7 为 Phase 3,见 plans/2026-07-04-github-login-web.md
 
 ## 1. 目标与非目标
 
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS users (
 | `GET /auth/github/callback` | 校验 state → 换 token → `GET api.github.com/user` 取 id/login → upsert `users` → 签发 session cookie → 302 `/console` |
 | `POST /auth/logout` | 清 cookie,302 落地页 |
 
-**Session:无状态签名 cookie**(不建 session 表):`__Host-hs_sess = base64(payload).hmac`,payload 含 `{owner_id, exp}`,HMAC-SHA256(SESSION_SECRET),有效期 30 天。属性:`HttpOnly; Secure; SameSite=Lax; Path=/`(host-only,`__Host-` 前缀禁止 Domain 属性)。__Host- 前缀防用户内容子域种 domain cookie 冒充。登出即删 cookie(无服务端吊销;30 天上限可接受,属已知取舍)。
+**Session:无状态签名 cookie**(不建 session 表):`__Host-hs_sess = <owner_id>.<exp>.<hmac_b64>`(HMAC-SHA256(SESSION_SECRET) 签名前两段),有效期 30 天。属性:`HttpOnly; Secure; SameSite=Lax; Path=/`(host-only,`__Host-` 前缀禁止 Domain 属性)。__Host- 前缀防用户内容子域种 domain cookie 冒充。登出即删 cookie(无服务端吊销;30 天上限可接受,属已知取舍)。
 
 ## 4. 认证扩展(关键架构决策)
 
@@ -61,11 +61,11 @@ CREATE TABLE IF NOT EXISTS users (
 
 **CSRF 防护**:cookie 凭据仅在请求 `Origin`(或 `Referer`)为 `https://hspace.zhanjian.space` 时被接受;配合 `SameSite=Lax`。Bearer 路径不受影响。
 
-新增的 console 专用端点只有两个(cookie 认证):
+新增的 console 专用端点只有两个(cookie 或 Bearer 认证——authOwner 双凭据统一处理):
 
 | 路由 | 行为 |
 |---|---|
-| `GET /me` | 返回 `{owner_id, github_login, api_key_masked, api_key_created_at}` |
+| `GET /me` | 返回 `{ownerId, githubLogin, apiKey: {createdAt} \| null}`(无明文、无哈希) |
 | `POST /me/api-key` | 吊销旧 key → 生成新 key(`randomToken(24)`,同现有逻辑)→ **明文仅此响应返回一次** |
 
 ## 5. Web Console
