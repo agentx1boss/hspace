@@ -1,7 +1,7 @@
 # HSpace 产品定位说明(权威版)
 
 > 单一事实来源:所有对外文案(落地页 / Marketplace / 社媒 / README)从本页取用。
-> 定稿 2026-07-04,基于 positioning-review.md 六项决议。改这页 = 改定位,需走评审。
+> 定稿 2026-07-04,基于定位评审六项决议(见 [decisions-log.md](decisions-log.md))。改这页 = 改定位,需走评审。
 
 ## 1. 定位声明(内部标准句式)
 
@@ -101,4 +101,4 @@ Targeted sharing for AI-built HTML/Markdown: one link + password, view receipts,
 - 不做多文件站点托管、不做构建
 
 ---
-关联文档:[定位评审](positioning-review.md) · [商业模式假设](business-model-hypothesis.md) · [运营手册](operations.md)
+关联文档:[决策日志](decisions-log.md) · [商业模式假设](business-model-hypothesis.md) · [运营手册](operations.md)
