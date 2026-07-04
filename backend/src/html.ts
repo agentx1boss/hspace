@@ -32,14 +32,17 @@ const BRAND_MARK = `<svg viewBox="0 0 64 64" width="28" height="28" aria-hidden=
  * 密码门 —— 接收方唯一的品牌触点。私密、可信、亮暗自适应、移动端友好。
  * action="" → 提交到当前 URL；成功后服务端 303 跳回同一路径,深链得以保留。
  */
-export function passwordPage(error = false, lang: "en" | "zh" = "en"): string {
+export function passwordPage(error = false, lang: "en" | "zh" = "en", expiresAt: number | null = null): string {
   const t = lang === "zh"
     ? { title: "输入密码 · HSpace", h1: "有人给你分享了内容", sub: "输入访问密码即可查看",
         ph: "访问密码", aria: "访问密码", btn: "查看内容", err: "密码不正确，请重试",
-        foot: "由 HSpace 私密分享", tail: "仅凭密码可见" }
+        foot: "由 HSpace 私密分享", tail: "仅凭密码可见", until: "有效期至" }
     : { title: "Enter password · HSpace", h1: "Someone shared this with you", sub: "Enter the password to view it",
         ph: "Password", aria: "Password", btn: "View content", err: "Wrong password — try again",
-        foot: "Shared privately with HSpace", tail: "visible by password only" };
+        foot: "Shared privately with HSpace", tail: "visible by password only", until: "Available until" };
+  const expLine = expiresAt
+    ? `\n  <div class="exp">${t.until} ${new Date(expiresAt * 1000).toISOString().slice(0, 10)}</div>`
+    : "";
   return `<!doctype html>
 <html lang="${lang}"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -81,6 +84,7 @@ export function passwordPage(error = false, lang: "en" | "zh" = "en"): string {
   .foot .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block}
   .foot a{color:var(--muted);text-decoration:none}
   .foot a:hover{color:var(--accent)}
+  .exp{color:var(--muted);font-size:11px;opacity:.55;letter-spacing:.02em;margin-top:-8px}
   .shake{animation:shake .4s}
   @keyframes shake{10%,90%{transform:translateX(-1px)}30%,70%{transform:translateX(-4px)}50%{transform:translateX(4px)}}
   @media(prefers-reduced-motion:reduce){.card,.shake{animation:none}}
@@ -99,7 +103,7 @@ export function passwordPage(error = false, lang: "en" | "zh" = "en"): string {
     <button type="submit">${t.btn}</button>
     ${error ? `<p class="err" role="alert">${t.err}</p>` : ""}
   </form>
-  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${t.foot}</a> · ${t.tail}</div>
+  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${t.foot}</a> · ${t.tail}</div>${expLine}
 </body></html>`;
 }
 

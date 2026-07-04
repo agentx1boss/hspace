@@ -635,9 +635,9 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
         return new Response(null, { status: 303, headers });
       }
       await env.RATELIMIT.put(attemptKey, String(failed + 1), { expirationTtl: 900 });
-      return htmlResp(passwordPage(true, pickLang(request)), 401);
+      return htmlResp(passwordPage(true, pickLang(request), page.expires_at), 401);
     }
-    if (!authed) return htmlResp(passwordPage(false, pickLang(request)), 401);
+    if (!authed) return htmlResp(passwordPage(false, pickLang(request), page.expires_at), 401);
   }
 
   // 计数（异步，不阻塞响应）:总量 + 按访问人归因
