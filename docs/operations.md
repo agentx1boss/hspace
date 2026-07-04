@@ -90,6 +90,29 @@ npx wrangler d1 execute html-share --remote --command \
 
 注意:promo 走**内容 PATCH**(只传 files,不带 expiresIn)升版时,`expires_at` 保持 NULL,不会被重置为 30 天;只有显式传 `expiresIn` 才会。要新发一本册子并常驻,发布后补一条上面的 UPDATE 即可。
 
+## GitHub 登录(OAuth App 与密钥)
+
+console(`hspace.zhanjian.space/console`)的 GitHub 登录依赖一个 OAuth App + 三个 Worker secrets:
+
+- OAuth App(github.com/settings/applications/new):Homepage `https://hspace.zhanjian.space`,callback **必须精确等于** `https://hspace.zhanjian.space/auth/github/callback`。
+- 本地开发另建一个 dev App(callback `http://localhost:8787/auth/github/callback`),凭据放 `backend/.dev.vars`(gitignored)。
+- secrets(`cd backend` 后 `npx wrangler secret put <名字>`):`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`SESSION_SECRET`(`openssl rand -hex 32` 生成)。轮换 `SESSION_SECRET` 会使所有登录会话立即失效(用户需重新登录),API key 不受影响。
+
+## founder 账户迁移(一次性)
+
+把 GitHub 登录之前的 founder 数据归到 GitHub 身份下(登录一次后执行):
+
+```bash
+# 1. 查自己的 GitHub owner_id(登录过 console 后 users 表有记录)
+npx wrangler d1 execute html-share --remote --command "SELECT owner_id, github_login FROM users"
+# 2. 查旧 founder owner_id(HSPACE_API_KEY 对应的那行)
+npx wrangler d1 execute html-share --remote --command "SELECT DISTINCT owner_id FROM api_keys"
+# 3. 归并 pages 与 api_keys(<old> 为旧 owner_id,<gh> 形如 gh:123456)
+npx wrangler d1 execute html-share --remote --command "UPDATE pages SET owner_id='<gh>' WHERE owner_id='<old>'; UPDATE api_keys SET owner_id='<gh>' WHERE owner_id='<old>'"
+```
+
+注意:console 的 Regenerate 会**删除该 owner 的全部 key**(每用户一行语义)。迁移后建议弃用旧 `HSPACE_API_KEY`,在 console 重新生成一把,更新 `.env`,此后只维护这一把。promo 册子页面(置顶内容)迁移后会出现在 console 列表中,`expires_at=NULL` 显示为 "no expiry"——**不要**在 console 对它们点 Renew(会写入 30 天过期,失去常驻;真点了就按上文「第一方置顶内容」重新置 NULL)。
+
 ## 待办
 
 - 联系/举报邮箱:`mengmajiang@gmail.com`(直接可收信)。举报仍需人工到 `reports` 表查看。
