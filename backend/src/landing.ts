@@ -159,6 +159,38 @@ ${FAVICON_LINK}
   .try .th{font-size:13px;color:var(--muted);margin-top:2px}
   .try .th b{color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:2px}
   .try .go{color:var(--accent);font-size:20px;flex:0 0 auto}
+  /* VS Code 风格编辑器 mock(发送方视角,恒暗——它就是编辑器) */
+  .vsc{max-width:760px;margin:8px auto 0;border-radius:12px;overflow:hidden;text-align:left;
+       border:1px solid #2c2f36;background:#1e1f24;box-shadow:0 20px 54px rgba(0,0,0,.35);
+       font-size:12.5px;color:#c8c8cc}
+  .vsc .vbar{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#17181c;border-bottom:1px solid #2c2f36}
+  .vsc .vbar .dots{display:flex;gap:6px}
+  .vsc .vbar .dots i{width:10px;height:10px;border-radius:50%;background:#3a3d45;display:block}
+  .vsc .vbar .vt{flex:1;text-align:center;color:#8b8b90;font-size:11.5px}
+  .vsc .vbody{display:flex;min-height:250px;position:relative}
+  .vsc .vside{width:222px;flex:0 0 auto;background:#191a1f;border-right:1px solid #2c2f36;padding:10px 8px}
+  .vsc .vh{font-size:10px;font-weight:700;letter-spacing:.06em;color:#8b8b90;padding:0 8px 8px}
+  .vsc .vi{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:6px;white-space:nowrap;overflow:hidden}
+  .vsc .vi.on{background:#26282f}
+  .vsc .vi .nm{overflow:hidden;text-overflow:ellipsis}
+  .vsc .vi em{font-style:normal;color:#8b8b90;font-size:10.5px;margin-left:auto;flex:0 0 auto}
+  .vsc .vmain{flex:1;display:flex;flex-direction:column;min-width:0}
+  .vsc .vtabs{display:flex;align-items:center;background:#17181c;border-bottom:1px solid #2c2f36}
+  .vsc .vtab{padding:8px 16px;background:#1e1f24;border-right:1px solid #2c2f36;font-size:11.5px;color:#e8e6e3}
+  .vsc .vcloud{margin-left:auto;padding:0 14px;font-size:15px;position:relative}
+  .vsc .vcloud .ring{position:absolute;inset:2px 6px;border:1.5px solid #F0784F;border-radius:8px;
+       animation:pulse 2s ease-out infinite}
+  @keyframes pulse{0%{opacity:.9;transform:scale(.9)}70%{opacity:0;transform:scale(1.25)}100%{opacity:0}}
+  .vsc .vcode{flex:1;padding:14px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .vsc .vcode i{display:block;height:9px;border-radius:4px;margin:7px 0;opacity:.75}
+  .vsc .vtoast{position:absolute;right:12px;bottom:12px;max-width:320px;background:#26282f;border:1px solid #3a3d45;
+       border-radius:9px;padding:11px 13px;font-size:11.5px;color:#e8e6e3;box-shadow:0 10px 26px rgba(0,0,0,.4)}
+  .vsc .vtoast .ok{color:#F0784F;font-weight:700;margin-right:5px}
+  .vsc .vtoast .u{font-family:ui-monospace,monospace}
+  .vsc .vtoast .vbtns{display:flex;gap:8px;margin-top:9px}
+  .vsc .vtoast .vbtns span{padding:4px 10px;border-radius:6px;background:#F0784F;color:#fff;font-weight:600;font-size:11px}
+  .vsc .vtoast .vbtns span+span{background:#3a3d45}
+  @media(max-width:720px){.vsc .vside{display:none}}
   /* FAQ */
   .faqs{max-width:44rem;margin:0 auto}
   .faqs details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin:10px 0;padding:0 18px}
@@ -201,9 +233,40 @@ ${FAVICON_LINK}
     </div>
   </div></section>
 
-  <section><div class="wrap">
-    <h2>接收方看到的样子</h2>
-    <p class="sec-sub">输一次密码,通览整本册子——目录、逐篇阅读、篇间导航,全在一个链接里。</p>
+  <section><div class="wrap" style="text-align:center">
+    <h2>你这边:编辑器里点一下</h2>
+    <p class="sec-sub">写完就是发完。云图标一点,链接+密码进剪贴板;侧栏面板看回执、管访问人、升版本。</p>
+    <div class="vsc">
+      <div class="vbar"><div class="dots"><i></i><i></i><i></i></div><span class="vt">pricing-demo.html — my-project</span></div>
+      <div class="vbody">
+        <div class="vside">
+          <div class="vh">HSPACE · 最近发布</div>
+          <div class="vi on"><span>🔒</span><span class="nm">pricing-demo.html</span><em>👁 12 · v2</em></div>
+          <div class="vi"><span>📖</span><span class="nm">Q3 方案(合集 · 5 篇)</span><em>👁 8</em></div>
+          <div class="vi"><span>🔒</span><span class="nm">架构评审.md</span><em>👁 3</em></div>
+        </div>
+        <div class="vmain">
+          <div class="vtabs"><span class="vtab">pricing-demo.html</span><span class="vcloud"><span class="ring"></span>☁️</span></div>
+          <div class="vcode" aria-hidden="true">
+            <i style="width:52%;background:#6a7bd8"></i>
+            <i style="width:78%;background:#3f4250"></i>
+            <i style="width:64%;background:#c98a6a"></i>
+            <i style="width:83%;background:#3f4250"></i>
+            <i style="width:41%;background:#7fae8b"></i>
+            <i style="width:70%;background:#3f4250"></i>
+          </div>
+          <div class="vtoast"><span class="ok">✓</span>已发布:<span class="u">a7k2m9x.zhanjian.space</span>(密码 4831,链接和密码已复制)
+            <div class="vbtns"><span>浏览器打开</span><span>修改密码</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:13.5px;color:var(--muted);margin-top:12px">VS Code / Cursor 插件 · 也可在 Claude 对话里经 MCP 直接发布</div>
+  </div></section>
+
+  <section class="band"><div class="wrap">
+    <h2>对方那边:输一次密码,通览全部</h2>
+    <p class="sec-sub">目录、逐篇阅读、篇间导航,全在一个链接里。</p>
     <div class="shots">
       <div>
         <div class="shot">
@@ -248,7 +311,7 @@ ${FAVICON_LINK}
     </div>
   </div></section>
 
-  <section class="band"><div class="wrap">
+  <section><div class="wrap">
     <h2>不是又一个 HTML 托管</h2>
     <p class="sec-sub">常规托管都在抢「发布到全世界」;给同事和客户看的东西,要的是另一套能力。</p>
     <div class="grid3">
