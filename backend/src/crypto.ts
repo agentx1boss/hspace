@@ -118,3 +118,22 @@ export async function verifyCookie(secret: string, slug: string, cookie: string)
   const ok = await crypto.subtle.verify("HMAC", key, b64ToBytes(cSig), enc.encode(payload));
   return ok ? grantId : null;
 }
+
+/** 签发登录会话 Cookie 值:"<ownerId>.<exp>.<sig>"(ownerId 形如 gh:123,不含 ".") */
+export async function signSession(secret: string, ownerId: string, expEpoch: number): Promise<string> {
+  const payload = `${ownerId}.${expEpoch}`;
+  const key = await hmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
+  return `${payload}.${bufToB64(sig)}`;
+}
+
+/** 校验会话 Cookie:签名有效且未过期返回 ownerId,否则 null */
+export async function verifySession(secret: string, cookie: string): Promise<string | null> {
+  const parts = cookie.split(".");
+  if (parts.length !== 3) return null;
+  const [ownerId, exp, sig] = parts;
+  if (Number(exp) < Math.floor(Date.now() / 1000)) return null;
+  const key = await hmacKey(secret);
+  const ok = await crypto.subtle.verify("HMAC", key, b64ToBytes(sig), enc.encode(`${ownerId}.${exp}`));
+  return ok ? ownerId : null;
+}
