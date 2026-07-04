@@ -48,6 +48,23 @@ npx wrangler d1 execute html-share --remote --command \
   "UPDATE reports SET status='dismissed' WHERE id='<report-id>'"
 ```
 
+## 落地页埋点(第一方,无 Cookie/PII)
+
+事件写入 D1 `metrics` 表(`pv` 浏览 / `install` 装插件点击 / `try` 体验入口 / `gh` GitHub / `vsx` Open VSX),按天、按语言聚合。尊重 DNT。
+
+```bash
+cd backend
+# 近 7 天各事件汇总
+npx wrangler d1 execute html-share --remote --command \
+  "SELECT day, name, lang, count FROM metrics WHERE day >= date('now','-7 day') ORDER BY day DESC, name"
+# 验证'英文默认'假设:pv 的中英占比
+npx wrangler d1 execute html-share --remote --command \
+  "SELECT lang, SUM(count) FROM metrics WHERE name='pv' GROUP BY lang"
+# 转化:安装点击 / 浏览
+npx wrangler d1 execute html-share --remote --command \
+  "SELECT name, SUM(count) FROM metrics GROUP BY name"
+```
+
 ## 待办
 
 - 联系/举报邮箱:`mengmajiang@gmail.com`(直接可收信)。举报仍需人工到 `reports` 表查看。

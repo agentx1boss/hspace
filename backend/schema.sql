@@ -31,6 +31,15 @@ CREATE TABLE IF NOT EXISTS versions (
   PRIMARY KEY (slug, version)
 );
 
+-- 第一方边缘埋点:落地页转化聚合计数(无 Cookie、不存 IP、无 PII)
+CREATE TABLE IF NOT EXISTS metrics (
+  day    TEXT NOT NULL,           -- YYYY-MM-DD
+  name   TEXT NOT NULL,           -- pv | install | try | gh | vsx
+  lang   TEXT NOT NULL DEFAULT '',-- en | zh
+  count  INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, name, lang)
+);
+
 -- 举报：违规内容举报,后台人工处理/下架
 CREATE TABLE IF NOT EXISTS reports (
   id          TEXT PRIMARY KEY,

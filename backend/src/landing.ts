@@ -511,5 +511,18 @@ ${FAVICON_LINK}
       <a href="/report">${s.flinkReport}</a>
     </div>
   </div></footer>
+  <script>(function(){try{
+    if(navigator.doNotTrack==='1'||window.doNotTrack==='1'||navigator.msDoNotTrack==='1')return;
+    var L='${lang}';
+    function e(n){try{navigator.sendBeacon('/e?n='+n+'&l='+L)}catch(_){}}
+    e('pv');
+    document.addEventListener('click',function(ev){
+      var a=ev.target.closest&&ev.target.closest('a');if(!a)return;var h=a.href||'';
+      if(h.indexOf('marketplace.visualstudio.com')>-1)e('install');
+      else if(h.indexOf('open-vsx.org')>-1)e('vsx');
+      else if(h.indexOf('q0i7otn')>-1)e('try');
+      else if(h.indexOf('github.com')>-1)e('gh');
+    },true);
+  }catch(_){}})();</script>
 </body></html>`;
 }

@@ -70,6 +70,9 @@ export default {
     const url = new URL(request.url);
     const host = url.hostname;
 
+    // 第一方埋点 beacon(与域名无关,任意 origin 命中):无 Cookie、不存 IP、只聚合计数
+    if (url.pathname === "/e") return recordEvent(url, env, ctx);
+
     // 落地页 + 法务/举报页:内容域的 hspace 子域(通配路由已覆盖;www/apex 已被其他服务占用)
     if (host === "hspace." + env.USERCONTENT_DOMAIN) {
       const asset = await serveBrandAsset(url.pathname, env);
@@ -706,6 +709,22 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
 
 function htmlResp(body: string, status: number): Response {
   return new Response(body, { status, headers: securityHeaders() });
+}
+
+/** 第一方埋点:GET /e?n=<事件>&l=<语言> → 聚合计数入 D1。只收白名单事件,无 PII */
+async function recordEvent(url: URL, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const noStore = { "Cache-Control": "no-store", "Content-Type": "text/plain" };
+  const n = url.searchParams.get("n") || "";
+  if (!["pv", "install", "try", "gh", "vsx"].includes(n)) return new Response(null, { status: 204, headers: noStore });
+  const l = url.searchParams.get("l");
+  const lang = l === "zh" || l === "en" ? l : "";
+  const day = new Date().toISOString().slice(0, 10);
+  ctx.waitUntil(
+    env.DB.prepare(
+      "INSERT INTO metrics (day, name, lang, count) VALUES (?, ?, ?, 1) ON CONFLICT(day, name, lang) DO UPDATE SET count = count + 1"
+    ).bind(day, n, lang).run()
+  );
+  return new Response(null, { status: 204, headers: noStore });
 }
 
 /** 品牌静态资源(og 卡片 / favicon),存于 R2 assets/ 前缀,长缓存 */
