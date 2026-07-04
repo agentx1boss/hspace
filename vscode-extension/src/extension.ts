@@ -18,6 +18,7 @@ interface Record {
   contentType?: "md" | "html"; // 单页内容类型(用于更新校验)
   version?: number;      // 当前内容版本
   updatedAt?: string | null; // 最近更新时间(ISO)
+  expiresAt?: string | null; // 过期时间(ISO);null=永久
 }
 
 // ─────────────────────────── activate ───────────────────────────
@@ -100,6 +101,7 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
           kind: "single",
           contentType: isMd ? "md" : "html",
           version: 1,
+          expiresAt: result.expiresAt,
         });
         provider.refresh();
 
@@ -216,6 +218,7 @@ async function publishFolderCommand(
           passwordProtected: result.passwordProtected,
           kind: "collection",
           docs: result.docs,
+          expiresAt: result.expiresAt,
         });
         provider.refresh();
 
@@ -531,6 +534,7 @@ async function refreshStats(context: vscode.ExtensionContext, provider: RecentPr
             rec.hits = s.hits;
             rec.version = s.version;
             rec.updatedAt = s.updatedAt;
+            rec.expiresAt = s.expiresAt;
             rec.statsAt = new Date().toISOString();
           } catch {
             // 页面可能已过期/删除;保留原值,不打断整体刷新
@@ -580,6 +584,17 @@ async function removeRecord(context: vscode.ExtensionContext, slug: string) {
 
 // ─────────────────────────── TreeView ───────────────────────────
 
+/** 过期时间的展示:description 里的紧凑徽标 + tooltip 整行 */
+function expiryHint(expiresAt: string | null | undefined): { badge: string; line: string } {
+  if (expiresAt === undefined) return { badge: "", line: "Expires: refresh to load" };
+  if (expiresAt === null) return { badge: "", line: "Expires: never (permanent)" };
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  const when = new Date(expiresAt).toLocaleString();
+  if (ms <= 0) return { badge: "⚠ expired", line: `Expired ${when}` };
+  const left = ms < 86400000 ? `${Math.ceil(ms / 3600000)}h` : `${Math.round(ms / 86400000)}d`;
+  return { badge: `⏳ ${left}`, line: `Expires ${when}` };
+}
+
 class RecentNode extends vscode.TreeItem {
   constructor(public record: Record) {
     const isColl = record.kind === "collection";
@@ -589,15 +604,16 @@ class RecentNode extends vscode.TreeItem {
     );
     const views = record.hits === undefined ? "" : `👁 ${record.hits}`;
     const ver = record.version && record.version > 1 ? `v${record.version}` : "";
+    const exp = expiryHint(record.expiresAt);
     const base = isColl ? `Collection · ${record.docs?.length ?? 0} docs` : new URL(record.url).hostname;
-    this.description = [base, views, ver].filter(Boolean).join(" · ");
+    this.description = [base, views, ver, exp.badge].filter(Boolean).join(" · ");
     const viewLine = record.hits === undefined
       ? "Views: click refresh"
       : `Views: ${record.hits}${isColl ? " (index + docs)" : ""}`;
     const verLine = record.version && record.version > 1
       ? `\nVersion: v${record.version}${record.updatedAt ? ` · updated ${new Date(record.updatedAt).toLocaleDateString()}` : ""}`
       : "";
-    this.tooltip = `${record.url}\nPublished ${new Date(record.createdAt).toLocaleString()}\n${viewLine}${verLine}`;
+    this.tooltip = `${record.url}\nPublished ${new Date(record.createdAt).toLocaleString()}\n${viewLine}${verLine}\n${exp.line}`;
     this.iconPath = new vscode.ThemeIcon(isColl ? "book" : record.passwordProtected ? "lock" : "globe");
     this.contextValue = "hspacePage";
     // 合集节点展开看篇目,不整体跳转;单页点击直接打开
