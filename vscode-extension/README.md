@@ -46,6 +46,7 @@ No sign-up, no configuration. It just works.
 - Single HTML / Markdown file only; ≤ 512 KB anonymous, ≤ 2 MB signed in
 - Every link expires — no permanent links: anonymous ≤ 3 days (one-shot, no renewal), signed in ≤ 30 days per term, renewable before it lapses
 - Sign in (free) to unlock per-recipient links, version history/rollback, renewal, bigger files & collections; publishing a single draft stays signup-free
+- Sign in: run **HSpace: Sign in with GitHub** — it opens the console (hspace.zhanjian.space/console); sign in, copy your API key, and paste it back into the editor.
 - Max 20 publishes per IP per hour; anonymous publishes also capped at 50 per day
 - Anonymous pages always keep a password, and their content cannot be replaced after publishing (sign in to unlock both)
 - Wrong password attempts are limited to 10 per 15 minutes
