@@ -20,6 +20,7 @@ import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectCol
 import { openapiSpec } from "./openapi";
 import { landingPage } from "./landing";
 import { privacyPage, termsPage, reportPage } from "./pages";
+import { handleAuth, sessionOwner, readCookie } from "./auth";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -853,16 +854,6 @@ async function uniqueSlug(env: Env): Promise<string> {
     if (!exists) return slug;
   }
   return randomSlug(9);
-}
-
-function readCookie(request: Request, name: string): string | null {
-  const header = request.headers.get("Cookie");
-  if (!header) return null;
-  for (const part of header.split(";")) {
-    const [k, ...v] = part.trim().split("=");
-    if (k === name) return v.join("=");
-  }
-  return null;
 }
 
 async function allowRate(ip: string, env: Env, anonymous: boolean): Promise<boolean> {
