@@ -115,8 +115,8 @@ git commit -m "crypto:登录会话 Cookie 的签发与校验"
 import { randomToken, signSession, verifySession } from "./crypto";
 import type { Env } from "./index";
 
-const SESSION_COOKIE = "hs_sess";
-const STATE_COOKIE = "hs_oauth_state";
+const SESSION_COOKIE = "__Host-hs_sess";
+const STATE_COOKIE = "__Host-hs_oauth_state";
 const SESSION_TTL = 30 * 24 * 3600; // 30 天
 
 const now = () => Math.floor(Date.now() / 1000);
@@ -137,7 +137,7 @@ function redirect(location: string, cookies: string[] = []): Response {
   return new Response(null, { status: 302, headers });
 }
 
-const clearState = `${STATE_COOKIE}=; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+const clearState = `${STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
 // GET /auth/github —— 生成防 CSRF 的 state 存短时 Cookie,跳 GitHub 授权页(scope 为空,只取公开身份)
 function startOAuth(url: URL, env: Env): Response {
@@ -147,7 +147,7 @@ function startOAuth(url: URL, env: Env): Response {
   auth.searchParams.set("redirect_uri", callbackUrl(url));
   auth.searchParams.set("state", state);
   return redirect(auth.toString(), [
-    `${STATE_COOKIE}=${state}; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+    `${STATE_COOKIE}=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
   ]);
 }
 
@@ -354,7 +354,7 @@ Run: `cd backend && npx wrangler dev`(后台),然后:
 ```bash
 curl -si http://localhost:8787/auth/github | grep -iE "^(HTTP|Location|Set-Cookie)"
 ```
-Expected: `302`;`Location: https://github.com/login/oauth/authorize?client_id=dev-client-id&redirect_uri=...%2Fauth%2Fgithub%2Fcallback&state=<32hex>`;`Set-Cookie: hs_oauth_state=...Max-Age=600`
+Expected: `302`;`Location: https://github.com/login/oauth/authorize?client_id=dev-client-id&redirect_uri=...%2Fauth%2Fgithub%2Fcallback&state=<32hex>`;`Set-Cookie: __Host-hs_oauth_state=...Max-Age=600`
 
 ```bash
 curl -si "http://localhost:8787/auth/github/callback?code=x&state=y" | grep -iE "^(HTTP|Location)"
@@ -449,17 +449,17 @@ curl -s http://localhost:8787/me   # 无 Cookie
 Expected: `{"error":"unauthorized"}`(401)
 
 ```bash
-curl -s http://localhost:8787/me -H "Cookie: hs_sess=$SESS"   # 有 Cookie 但无来源头
+curl -s http://localhost:8787/me -H "Cookie: __Host-hs_sess=$SESS"   # 有 Cookie 但无来源头
 ```
 Expected: `{"error":"unauthorized"}`(Origin/Referer 校验生效)
 
 ```bash
-curl -s http://localhost:8787/me -H "Cookie: hs_sess=$SESS" -H "Referer: http://localhost:8787/console"
+curl -s http://localhost:8787/me -H "Cookie: __Host-hs_sess=$SESS" -H "Referer: http://localhost:8787/console"
 ```
 Expected: `{"ownerId":"gh:1","githubLogin":null,"apiKey":null}`(gh:1 未走过 OAuth,users 无行,属预期)
 
 ```bash
-KEY=$(curl -s -X POST http://localhost:8787/me/api-key -H "Cookie: hs_sess=$SESS" \
+KEY=$(curl -s -X POST http://localhost:8787/me/api-key -H "Cookie: __Host-hs_sess=$SESS" \
   -H "Origin: http://localhost:8787" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).apiKey))')
 curl -s http://localhost:8787/pages -H "Authorization: Bearer $KEY"
 ```
@@ -688,7 +688,7 @@ curl -s "http://localhost:8787/console?error=auth_failed" | grep -o "Sign-in fai
 Expected: `Sign-in failed`
 
 ```bash
-curl -s http://localhost:8787/console -H "Cookie: hs_sess=$SESS" | grep -oE "(Save it now|Regenerate)"
+curl -s http://localhost:8787/console -H "Cookie: __Host-hs_sess=$SESS" | grep -oE "(Save it now|Regenerate)"
 ```
 Expected: 首次 `Save it now`(自动生成 key 明文展示);再跑一次同命令,Expected: `Regenerate`(已有 key → 掩码态)。
 
@@ -699,7 +699,7 @@ Expected: `Cache-Control: no-store`
 
 - [ ] **Step 5: 浏览器手工检查(可选但建议)**
 
-打开 `http://localhost:8787/console`:未登录卡片样式正常;带伪造 Cookie(devtools 手动设 `hs_sess`)刷新后 Regenerate 按钮全流程可用(confirm → 新 key 展示 → Copy)。
+打开 `http://localhost:8787/console`:未登录卡片样式正常;带伪造 Cookie(devtools 手动设 `__Host-hs_sess`)刷新后 Regenerate 按钮全流程可用(confirm → 新 key 展示 → Copy)。
 
 - [ ] **Step 6: Commit**
 

@@ -20,7 +20,7 @@ import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectCol
 import { openapiSpec } from "./openapi";
 import { landingPage } from "./landing";
 import { privacyPage, termsPage, reportPage } from "./pages";
-import { handleAuth, sessionOwner, readCookie } from "./auth";
+import { handleAuth, sessionOwner, readCookie, hasSessionCookie } from "./auth";
 
 export interface Env {
   BUCKET: R2Bucket;
@@ -196,6 +196,8 @@ async function publish(request: Request, env: Env): Promise<Response> {
   const hasAuthHeader = !!request.headers.get("Authorization");
   const ownerId = await authOwner(request, env);
   if (hasAuthHeader && !ownerId) return json({ error: "invalid_api_key" }, 401);
+  // 带会话 Cookie 但未通过校验(过期/来源不符):明确 401,绝不静默降级为匿名发布
+  if (!hasAuthHeader && !ownerId && hasSessionCookie(request)) return json({ error: "session_expired" }, 401);
 
   // 频率限制（按 IP）：小时窗口对所有人生效，日窗口只限匿名
   const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
