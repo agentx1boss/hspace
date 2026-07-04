@@ -684,8 +684,13 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
       const failed = Number((await env.RATELIMIT.get(attemptKey)) ?? "0");
       if (failed >= 10) return htmlResp(lockedPage(), 429);
 
-      const form = await request.formData();
-      const pw = String(form.get("password") ?? "");
+      let pw = "";
+      try {
+        const form = await request.formData();
+        pw = String(form.get("password") ?? "");
+      } catch {
+        // 畸形/非 form body:按空密码走下面的密码错误路径
+      }
       let matched: string | null = null;
       if (hasPagePw && (await verifyPassword(pw, page.password_hash!, page.password_salt!))) {
         matched = ""; // 共享密码
@@ -850,7 +855,12 @@ async function serveSitePage(path: string, request: Request, env: Env): Promise<
       return siteHtml(reportPage(pre));
     }
     if (request.method === "POST") {
-      const form = await request.formData();
+      let form: FormData;
+      try {
+        form = await request.formData();
+      } catch {
+        return siteHtml(reportPage(""), 400);
+      }
       const raw = String(form.get("slug") ?? "").trim();
       // 从链接或短码中抽出 slug
       const m = raw.match(/([a-z0-9]{4,})(?:\.[a-z0-9.-]+)?\/?$/i) || raw.match(/^([a-z0-9]+)$/i);
