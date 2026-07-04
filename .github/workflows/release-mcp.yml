@@ -1,0 +1,44 @@
+# 打 mcp-v* tag 自动发布 hspace-mcp 到 npm。
+# 需要仓库 secret:NPM_TOKEN(npmjs.com 建 Automation 或 Granular token,勾选 bypass 2FA)
+#
+# 用法:改 mcp-server/package.json version → git tag mcp-v<x.y.z> → push tag
+# (与插件的 v* tag 互不干扰:v* 发双市场,mcp-v* 发 npm)
+
+name: Release MCP
+
+on:
+  push:
+    tags: ["mcp-v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp-server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: 校验 tag 与 package.json 版本一致
+        run: |
+          TAG="${GITHUB_REF_NAME#mcp-v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag mcp-v$TAG 与 package.json 版本 $PKG 不一致"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: 发布到 npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

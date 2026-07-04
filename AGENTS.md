@@ -34,13 +34,14 @@ npx wrangler deploy       # 部署(或推 backend/** 到 main 自动部署)
 npm run compile && npx @vscode/vsce package
 # 发版 = 改 package.json version → git tag v<x> → push tag(CI 自动发双市场)
 # MCP(cd mcp-server):npm run build
-# MCP 发布 = npm version patch → npm publish --access public --otp=<码>(手动,非 CI;详见 mcp-server/README「发布到 npm」)
+# MCP 发布 = 改 mcp-server/package.json version → git tag mcp-v<x> → push tag(CI 自动发 npm;需 secret NPM_TOKEN)
 ```
 
 ## CI/CD
 
 - `backend/**` 推 main → **Deploy Backend**(tsc + wrangler deploy + /health 冒烟)
 - 打 `v*` tag → **Release Extension**(打包 + Marketplace + Open VSX + GitHub Release)
+- 打 `mcp-v*` tag → **Release MCP**(校验版本 + build + npm publish;需 secret `NPM_TOKEN`)
 - 改完务必确认 CI 绿灯(`gh run watch`)。
 
 ## 约定与红线

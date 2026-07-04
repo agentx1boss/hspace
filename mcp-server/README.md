@@ -55,28 +55,33 @@ node dist/index.js   # 通过 stdio 提供 MCP 服务
 
 ## 发布到 npm(维护者)
 
-发布者当前为 `wjllance`;包名 `hspace-mcp`,公开包。`prepublishOnly` 会自动 `npm run build`。
+包名 `hspace-mcp`,公开包。`prepublishOnly` 会自动 `npm run build`。
+
+### 推荐:打 tag 由 CI 自动发布
 
 ```bash
 cd mcp-server
-# 1) 首次:登录(账号 wjllance)
+npm version patch          # 改 package.json version(不自动 push)
+cd .. && git add -A && git commit -m "mcp: v<x.y.z>"
+git tag mcp-v<x.y.z>       # 版本号须与 package.json 一致
+git push && git push --tags
+```
+
+推送 `mcp-v*` tag 触发 **Release MCP** 工作流:校验版本一致 → `npm ci` → 构建 → `npm publish`。与插件的 `v*` tag 互不干扰(`v*` 发双市场,`mcp-v*` 发 npm)。
+
+**一次性前置**:npmjs.com → Access Tokens 建一个 **Automation / Granular token(勾选 bypass 2FA)**,加为仓库 secret `NPM_TOKEN`。
+
+### 备用:本地手动发布(带 2FA 验证码)
+
+```bash
+cd mcp-server
 npm login && npm whoami
-
-# 2) 升版本(补丁/次版本/主版本),会改 package.json 并本地打 tag
 npm version patch
-
-# 3) 发布 —— npm 账号开了 2FA,必须带一次性验证码
-npm publish --access public --otp=<身份验证器 6 位码>
-
-# 4) 验证
+npm publish --access public --otp=<身份验证器 6 位码>   # 30 秒刷新,尽快回车
 npm view hspace-mcp version
 ```
 
-- **2FA 说明**:发布时必须 `--otp=<code>`(30 秒刷新,复制后尽快回车)。若想免手输(或将来做 CI 自动发布),在 npmjs.com → Access Tokens 建一个 **Granular/Automation token 并勾选 bypass 2FA**,写入 `~/.npmrc`(`//registry.npmjs.org/:_authToken=...`)或设为 CI secret `NPM_TOKEN`。
 - 发布后 MCP 配置里的 `npx -y hspace-mcp` 才可用;发新版无需改客户端配置,`npx` 会拉最新。
-- 提交 `package.json` 的版本变更并 push(`git push --tags` 若用了 `npm version`)。
-
-> 与插件不同:插件是打 `v*` tag 由 CI 自动发双市场;MCP 目前是**手动 `npm publish`**(尚无 CI 自动发布)。
 
 ## License
 
