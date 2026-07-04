@@ -71,7 +71,9 @@ ${FAVICON_LINK}
        padding:5px 13px;border-radius:999px;font-weight:600;margin-bottom:22px}
   h1{font-size:clamp(32px,6vw,52px);line-height:1.1;letter-spacing:-.02em;margin:0 0 18px;font-weight:800}
   h1 .hl{color:var(--accent)}
-  .lead{font-size:clamp(16px,2.4vw,19px);color:var(--muted);max-width:36rem;margin:0 auto 32px}
+  .lead{font-size:clamp(16px,2.4vw,19px);color:var(--muted);max-width:36rem;margin:0 auto 14px}
+  .tension{font-size:13.5px;color:var(--muted);font-style:italic;margin:0 auto 30px}
+  .anti{text-align:center;color:var(--muted);font-size:13.5px;margin:-28px auto 36px;letter-spacing:.02em}
   .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 
   .mock{max-width:440px;margin:56px auto 0;background:var(--card);border:1px solid var(--border);
@@ -218,6 +220,7 @@ ${FAVICON_LINK}
     <span class="tag">为 AI 编程而生 · 定向分享,不是公开托管</span>
     <h1><span class="hl">AI 写完的 demo</span>,只发给该看的人</h1>
     <p class="lead">Cursor / Claude Code 刚生成的 HTML demo、Markdown 方案——一键变成「链接 + 密码」发给同事和客户:谁看了有回执,发错了随时撤回,链接不变可迭代。</p>
+    <p class="tension">发布侧匿名,分发侧有回执。</p>
     <div class="cta">
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装 VS Code 插件</a>
       <a class="btn btn-s" href="${GITHUB}" target="_blank" rel="noopener">在 GitHub 查看</a>
@@ -314,6 +317,7 @@ ${FAVICON_LINK}
   <section><div class="wrap">
     <h2>不是又一个 HTML 托管</h2>
     <p class="sec-sub">常规托管都在抢「发布到全世界」;给同事和客户看的东西,要的是另一套能力。</p>
+    <p class="anti">我们不是:网盘 · 协作工具 · 建站平台 · 公开画廊。</p>
     <div class="grid3">
       <div class="diff"><h3>🚀 30 秒发出去</h3><p>零注册、零配置,编辑器或 AI 对话里一键发布,链接+密码一次粘贴。别家的密码保护要付费套餐加一堆配置,这里是默认。</p></div>
       <div class="diff"><h3>🎯 发错了?收得回</h3><p>改密码即撤回;每人一链,踢掉一个人不用换所有人的密码;谁看了、看了几次,有回执。</p></div>
@@ -358,9 +362,9 @@ ${FAVICON_LINK}
     <h2>你可能想问</h2>
     <div class="faqs">
       <details><summary>内容会被搜索引擎收录吗?</summary><p>不会。所有分享页面都带 noindex,且必须输入密码才能看到内容——链接被转发也没关系,没有密码就是一堵墙。</p></details>
-      <details><summary>内容存在哪里?保留多久?</summary><p>内容加密传输后存储在 Cloudflare 全球边缘(R2)。匿名分享最长 7 天自动失效;你也可以随时手动删除,链接立即失效。</p></details>
+      <details><summary>内容存在哪里?保留多久?</summary><p>内容经 HTTPS 传输,存储在 Cloudflare 全球边缘(R2);密码只存单向哈希,不存明文。匿名分享最长 7 天自动失效;你也可以随时手动删除,链接立即失效。</p></details>
       <details><summary>发错了 / 不想给某人看了怎么办?</summary><p>随时改密码(旧密码立即失效)或直接删除。用「每人一链」时,可以只撤销某一个人的密码,其他人不受影响。</p></details>
-      <details><summary>免费吗?有什么限制?</summary><p>匿名免费即用:单文件 ≤ 1MB、最长 7 天有效、每天 50 次。禁止钓鱼与恶意内容,违规会被下架。</p></details>
+      <details><summary>免费吗?有什么限制?</summary><p><strong>核心能力现在全部免费</strong>——密码分享、合集、访问回执、每人一链、版本化,都不阉割。匿名即用:单文件 ≤ 1MB、最长 7 天有效、每天 50 次;禁止钓鱼与恶意内容,违规会被下架。未来永久链接、自定义品牌、团队空间**会**面向 Pro / Team,核心能力永远免费、开源可自建。</p></details>
       <details><summary>可以自己部署吗?</summary><p>可以。前后端完全开源(MIT),后端是一个 Cloudflare Worker,照 <a href="${GITHUB}" target="_blank" rel="noopener">README</a> 十分钟即可拥有自己的实例,插件与 MCP 均可指向自建地址。</p></details>
     </div>
   </div></section>
