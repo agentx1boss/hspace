@@ -2,9 +2,9 @@
 
 English | [简体中文](https://github.com/agentx1boss/hspace/blob/main/vscode-extension/README.zh-CN.md)
 
-**Private sharing for AI-generated content.** Turn the HTML or Markdown your AI just wrote into a link + password, and hand it only to the people who should see it.
+**For developers who build with AI: ship that fresh demo to exactly the right people.** Turn the HTML demo or Markdown doc Cursor / Claude Code just wrote into a link + password — see who opened it, revoke it anytime, iterate without changing the link.
 
-AI-generated demos, reports, data visualizations — you want to send them to a client, a teammate, a small circle, not to the whole internet. HSpace is not hosting; it's **private distribution**: every link is password-gated, never indexed by search engines, safe against accidental forwarding, and revocable at any time.
+AI-generated demos, reports, data visualizations — you want to send them to a client, a teammate, a small circle, not to the whole internet. HSpace is not hosting; it's **targeted sharing**: every link is password-gated, never indexed by search engines, safe against accidental forwarding, and revocable at any time.
 
 ## Why it's different
 

@@ -25,19 +25,19 @@ export function landingPage(): string {
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HSpace — 私密分享 AI 生成的内容</title>
+<title>HSpace — AI 写完的 demo,只发给该看的人</title>
 ${FAVICON_LINK}
 <link rel="canonical" href="${SITE}/">
-<meta name="description" content="一键把 AI 生成的 HTML / Markdown 发布成「链接 + 密码」,只交给该看的人。不是托管,是私域分发。">
-<meta property="og:title" content="HSpace — 私密分享 AI 生成的内容">
-<meta property="og:description" content="一键把 AI 生成的 HTML / Markdown 发布成链接 + 密码,只给该看的人。">
+<meta name="description" content="AI 写完的 demo,只发给该看的人:一键变成「链接 + 密码」,谁看了有回执,发错了随时撤回。为 Cursor / Claude Code 开发者而生的定向分享。">
+<meta property="og:title" content="HSpace — AI 写完的 demo,只发给该看的人">
+<meta property="og:description" content="一键变成「链接 + 密码」:谁看了有回执,发错了随时撤回,链接不变可迭代。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${SITE}/">
 <meta property="og:image" content="${SITE}/og-card.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="HSpace — 私密分享 AI 生成的内容">
+<meta name="twitter:title" content="HSpace — AI 写完的 demo,只发给该看的人">
 <meta name="twitter:image" content="${SITE}/og-card.png">
 <style>
   :root{--bg:#faf9f7;--fg:#1d1d1f;--muted:#6a6a70;--accent:#E2603C;--card:#fff;
@@ -183,9 +183,9 @@ ${FAVICON_LINK}
   </div></header>
 
   <section class="hero"><div class="wrap">
-    <span class="tag">私域分发,不是公开托管</span>
-    <h1>私密分享 <span class="hl">AI 生成</span>的内容</h1>
-    <p class="lead">一键把 AI 帮你写好的 HTML 或 Markdown 发布成「链接 + 密码」,像递名片一样,只交给该看的人。</p>
+    <span class="tag">为 AI 编程而生 · 定向分享,不是公开托管</span>
+    <h1><span class="hl">AI 写完的 demo</span>,只发给该看的人</h1>
+    <p class="lead">Cursor / Claude Code 刚生成的 HTML demo、Markdown 方案——一键变成「链接 + 密码」发给同事和客户:谁看了有回执,发错了随时撤回,链接不变可迭代。</p>
     <div class="cta">
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装 VS Code 插件</a>
       <a class="btn btn-s" href="${GITHUB}" target="_blank" rel="noopener">在 GitHub 查看</a>
@@ -250,11 +250,11 @@ ${FAVICON_LINK}
 
   <section class="band"><div class="wrap">
     <h2>不是又一个 HTML 托管</h2>
-    <p class="sec-sub">常规托管都在抢「发布到全世界」。HSpace 反着来。</p>
+    <p class="sec-sub">常规托管都在抢「发布到全世界」;给同事和客户看的东西,要的是另一套能力。</p>
     <div class="grid3">
-      <div class="diff"><h3>🔐 默认私密</h3><p>每次发布自动生成密码,没有密码谁也看不到,不被搜索引擎索引,不怕转发扩散。</p></div>
-      <div class="diff"><h3>📄 内容为主</h3><p>分发的是一份内容——demo、报告、方案,不是一个网站。没有构建、没有配置,只有「发出去」。</p></div>
-      <div class="diff"><h3>🎯 可控可撤回</h3><p>随时改密码、删链接,立即失效;到期自动清理。链接是你可控的资产。</p></div>
+      <div class="diff"><h3>🚀 30 秒发出去</h3><p>零注册、零配置,编辑器或 AI 对话里一键发布,链接+密码一次粘贴。别家的密码保护要付费套餐加一堆配置,这里是默认。</p></div>
+      <div class="diff"><h3>🎯 发错了?收得回</h3><p>改密码即撤回;每人一链,踢掉一个人不用换所有人的密码;谁看了、看了几次,有回执。</p></div>
+      <div class="diff"><h3>🔁 链接是活的</h3><p>AI 迭代内容,链接不变——review 意见改完直接更新,历史版本可回滚。不用再发「最终版_v3」新链接。</p></div>
     </div>
   </div></section>
 
@@ -279,8 +279,8 @@ ${FAVICON_LINK}
   </div></section>
 
   <section id="features" class="band"><div class="wrap">
-    <h2>为分享 AI 产物而生</h2>
-    <p class="sec-sub">内容诞生在与 AI 的对话里,分享也应该无缝衔接。</p>
+    <h2>为 AI 编程工作流而生</h2>
+    <p class="sec-sub">内容诞生在编辑器和 AI 对话里,分享也应该在那里发生。发布侧匿名,分发侧有回执。</p>
     <div class="feats">
       ${feature("📝", "Markdown 成刊", "发布 .md 自动渲染成排版精良的阅读页:标题、表格、代码块,亮暗双主题。")}
       ${feature("📚", "文档合集", "一批 md/html 打包成一个链接、一个密码、一个目录页,篇间自由导航。")}
@@ -303,7 +303,7 @@ ${FAVICON_LINK}
   </div></section>
 
   <section class="cta-band band"><div class="wrap">
-    <h2>把下一份 AI 产出,私密地发出去</h2>
+    <h2>下一个 demo 写完,试试这样发</h2>
     <div class="cta">
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">安装 VS Code 插件</a>
       <a class="btn btn-s" href="${OPENVSX}" target="_blank" rel="noopener">Cursor / Open VSX</a>
@@ -311,7 +311,7 @@ ${FAVICON_LINK}
   </div></section>
 
   <footer><div class="wrap">
-    <div>© 2026 HSpace · 私密分享 AI 生成的内容</div>
+    <div>© 2026 HSpace · AI 时代的定向分享</div>
     <div class="links">
       <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
       <a href="${MARKETPLACE}" target="_blank" rel="noopener">Marketplace</a>

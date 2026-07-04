@@ -2,9 +2,9 @@
 
 [English](https://github.com/agentx1boss/hspace/blob/main/vscode-extension/README.md) | 简体中文
 
-**私密分享 AI 生成的内容。** 一键把 AI 帮你写好的 HTML 或 Markdown 发布成"链接 + 密码",只交给该看的人。
+**给用 AI 编程的你:demo 写完,只发给该看的人。** Cursor / Claude Code 刚生成的 HTML demo、Markdown 方案,一键变成"链接 + 密码"——谁看了有回执,发错了随时撤回,链接不变可迭代。
 
-AI 生成的 demo、报告、方案、数据可视化——你想发给客户、同事、小圈子,而不是发到全世界。HSpace 不是托管,是**私域分发**:每个链接都带密码,不被搜索引擎收录,不怕转发扩散,随时可撤回。
+AI 生成的 demo、报告、方案、数据可视化——你想发给客户、同事、小圈子,而不是发到全世界。HSpace 不是托管,是**定向分享**:每个链接都带密码,不被搜索引擎收录,不怕转发扩散,随时可撤回。
 
 ## 为什么不一样
 
