@@ -32,6 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   reg("hspace.publish", (uri?: vscode.Uri) => publishCommand(context, provider, uri));
   reg("hspace.publishFolder", (uri?: vscode.Uri, uris?: vscode.Uri[]) => publishFolderCommand(context, provider, uri, uris));
+  reg("hspace.signIn", () => signIn(context));
   reg("hspace.setApiKey", () => setApiKey(context));
   reg("hspace.signOut", () => signOut(context));
   reg("hspace.setPassword", (node?: RecentNode) => setPassword(context, provider, node));
@@ -50,6 +51,7 @@ export function deactivate() {}
 // ─────────────────────────── 命令 ───────────────────────────
 
 const DEFAULT_API_BASE = "https://html-share.kzhan.workers.dev";
+const CONSOLE_URL = "https://hspace.zhanjian.space/console"; // 托管版 console(自建后端无此页面)
 
 async function getClient(context: vscode.ExtensionContext): Promise<ApiClient> {
   // 兜底:配置为空(如旧 htmlshare.* 迁移后遗留空值)时回退到官方实例,避免 fetch 相对 URL 失败
@@ -342,9 +344,11 @@ async function runUpdate(
 // ---- 内容版本化:版本历史与回滚 ----
 async function showVersions(context: vscode.ExtensionContext, rec: Record) {
   if (rec.editToken) {
-    vscode.window.showInformationMessage(
-      "Version history & rollback are a signed-in feature. Anonymous pages can still be updated in place, but there's no history to browse. Sign in (free) and republish to keep versions."
+    const pick = await vscode.window.showInformationMessage(
+      "Version history & rollback are a signed-in feature. Anonymous pages can still be updated in place, but there's no history to browse. Sign in (free) and republish to keep versions.",
+      "Sign in"
     );
+    if (pick === "Sign in") vscode.commands.executeCommand("hspace.signIn");
     return;
   }
   const client = await getClient(context);
@@ -382,9 +386,11 @@ async function showVersions(context: vscode.ExtensionContext, rec: Record) {
 async function renew(context: vscode.ExtensionContext, provider: RecentProvider, rec: Record) {
   // 匿名页面(有 editToken)不可续:后端会拒,这里提前给出引导
   if (rec.editToken) {
-    vscode.window.showInformationMessage(
-      "Anonymous links are one-shot (up to 3 days) and can't be renewed. Sign in (free) and republish to get renewable 30-day links."
+    const pick = await vscode.window.showInformationMessage(
+      "Anonymous links are one-shot (up to 3 days) and can't be renewed. Sign in (free) and republish to get renewable 30-day links.",
+      "Sign in"
     );
+    if (pick === "Sign in") vscode.commands.executeCommand("hspace.signIn");
     return;
   }
   const opts = [7, 14, 30].map((d) => ({ label: `${d} days`, days: d }));
@@ -405,9 +411,15 @@ async function renew(context: vscode.ExtensionContext, provider: RecentProvider,
   }
 }
 
+async function signIn(context: vscode.ExtensionContext) {
+  // 浏览器登录 GitHub → console 一键复制 API key → 回编辑器粘贴(粘贴框已提前打开)
+  await vscode.env.openExternal(vscode.Uri.parse(CONSOLE_URL + "?from=vscode"));
+  await setApiKey(context);
+}
+
 async function setApiKey(context: vscode.ExtensionContext) {
   const key = await vscode.window.showInputBox({
-    prompt: "Paste your API key (generate it on the account page)",
+    prompt: "Paste your API key (copy it from hspace.zhanjian.space/console)",
     password: true,
     ignoreFocusOut: true,
   });
@@ -487,9 +499,11 @@ async function copyLink(url: string) {
 // ---- 每人一链:管理访问人 ----
 async function manageGrants(context: vscode.ExtensionContext, rec: Record) {
   if (rec.editToken) {
-    vscode.window.showInformationMessage(
-      "Per-recipient links are a signed-in feature. Sign in (free) and republish to give each recipient their own password and receipt."
+    const pick = await vscode.window.showInformationMessage(
+      "Per-recipient links are a signed-in feature. Sign in (free) and republish to give each recipient their own password and receipt.",
+      "Sign in"
     );
+    if (pick === "Sign in") vscode.commands.executeCommand("hspace.signIn");
     return;
   }
   const client = await getClient(context);

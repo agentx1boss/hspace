@@ -2,7 +2,7 @@
   "name": "hspace",
   "displayName": "HSpace",
   "description": "Ship your AI-built demo to exactly the right people — link + password, view receipts, revoke anytime. 稿出即递,点开即读,心里有数。",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "publisher": "agentx1boss",
   "license": "MIT",
   "icon": "icon.png",
@@ -48,8 +48,12 @@
         "title": "HSpace: Publish as collection"
       },
       {
+        "command": "hspace.signIn",
+        "title": "HSpace: Sign in with GitHub"
+      },
+      {
         "command": "hspace.setApiKey",
-        "title": "HSpace: Set API key (sign in)"
+        "title": "HSpace: Set API key (paste manually)"
       },
       {
         "command": "hspace.signOut",
