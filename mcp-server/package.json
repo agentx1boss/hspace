@@ -1,13 +1,19 @@
 {
   "name": "hspace-mcp",
   "version": "0.1.0",
-  "description": "MCP server for HSpace — 在 AI 对话里直接把 HTML/Markdown 私密发布成链接+密码",
+  "description": "MCP server for HSpace — publish HTML/Markdown as a private link + password, right from your AI chat.",
   "license": "MIT",
   "type": "module",
   "bin": { "hspace-mcp": "dist/index.js" },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "keywords": ["mcp", "model-context-protocol", "hspace", "share", "html", "markdown", "ai", "claude", "cursor"],
+  "homepage": "https://hspace.zhanjian.space",
+  "repository": { "type": "git", "url": "git+https://github.com/agentx1boss/hspace.git", "directory": "mcp-server" },
+  "bugs": { "url": "https://github.com/agentx1boss/hspace/issues" },
+  "engines": { "node": ">=18" },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "start": "node dist/index.js"
   },
   "dependencies": {
