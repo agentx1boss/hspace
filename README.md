@@ -77,7 +77,7 @@ Machine-readable **OpenAPI 3 spec** at [`/openapi.json`](https://html-share.kzha
 | DELETE | `/pages/:slug` | Delete (link goes dark) | Bearer or `X-Edit-Token` |
 | GET | `/pages/:slug/stats` · `/versions` · `/grants` | Receipts, versions, per-recipient links | Bearer or `X-Edit-Token` |
 
-Anonymous vs. signed-in (thresholds in `wrangler.toml`): anonymous ≤ 1 MB, ≤ 7 days, 20/hr & 50/day, must keep a password; signed-in ≤ 2 MB, permanent links, no daily cap.
+Anonymous vs. signed-in (thresholds in `wrangler.toml`): anonymous ≤ 1 MB, ≤ 7 days, 20/hr & 50/day, must keep a password; signed-in ≤ 2 MB, up to 30 days per term (renewable), no daily cap. **Every link expires — there are no permanent links** (renew before it lapses; abandon and it self-cleans).
 
 ## Legal & ops
 

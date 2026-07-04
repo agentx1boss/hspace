@@ -20,8 +20,9 @@ USERCONTENT_DOMAIN = "zhanjian.space"
 # 单文件大小上限(字节)
 MAX_SIZE_BYTES = "2097152"        # 2 MB(登录)
 ANON_MAX_SIZE_BYTES = "1048576"   # 1 MB(匿名)
-# 匿名链接默认过期(秒)
-ANON_DEFAULT_TTL = "604800"       # 7 天
+# 链接有效期(秒)。没有永久链接:匿名固定 7 天;登录最长 30 天/期,可在到期前续期(弃置即自动过期)。
+ANON_DEFAULT_TTL = "604800"       # 7 天(匿名)
+OWNER_MAX_TTL = "2592000"         # 30 天(登录单期上限,可续)
 # 频率限制:每个 IP 每小时最大发布次数(匿名+登录)
 RATE_LIMIT_PER_HOUR = "20"
 # 频率限制:每个 IP 每天最大发布次数(仅匿名)

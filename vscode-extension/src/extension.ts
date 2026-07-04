@@ -18,7 +18,7 @@ interface Record {
   contentType?: "md" | "html"; // 单页内容类型(用于更新校验)
   version?: number;      // 当前内容版本
   updatedAt?: string | null; // 最近更新时间(ISO)
-  expiresAt?: string | null; // 过期时间(ISO);null=永久
+  expiresAt?: string | null; // 过期时间(ISO);所有链接都有有效期(null 仅第一方置顶内容)
 }
 
 // ─────────────────────────── activate ───────────────────────────
@@ -38,6 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
   reg("hspace.manageGrants", (node?: RecentNode) => node && manageGrants(context, node.record));
   reg("hspace.updateContent", (node?: RecentNode) => node && updateContent(context, provider, node.record));
   reg("hspace.versions", (node?: RecentNode) => node && showVersions(context, node.record));
+  reg("hspace.renew", (node?: RecentNode) => node && renew(context, provider, node.record));
   reg("hspace.copyLink", (node?: RecentNode) => node && copyLink(node.record.url));
   reg("hspace.openInBrowser", (node?: RecentNode) => node && vscode.env.openExternal(vscode.Uri.parse(node.record.url)));
   reg("hspace.delete", (node?: RecentNode) => node && deletePage(context, provider, node.record));
@@ -75,9 +76,9 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
   // 所有发布强制带密码：默认随机 4 位数字（alwaysAskPassword 暂时屏蔽）
   const password = randomPin();
 
-  const hasKey = !!(await context.secrets.get(SECRET_KEY));
-  const days = cfg.get<number>("defaultExpiryDays", 7);
-  const expiresIn = days === 0 && hasKey ? null : Math.max(1, days) * 86400;
+  // 没有永久链接:天数钳在 [1, 30];后端再按登录/匿名档二次钳制
+  const days = Math.min(Math.max(cfg.get<number>("defaultExpiryDays", 7), 1), 30);
+  const expiresIn = days * 86400;
 
   await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Notification, title: "Publishing…" },
@@ -201,9 +202,8 @@ async function publishFolderCommand(
           p.c.isMd ? { name: p.c.name, markdown: p.c.text } : { name: p.c.name, html: p.c.text }
         );
         const client = await getClient(context);
-        const hasKey = !!(await context.secrets.get(SECRET_KEY));
-        const days = vscode.workspace.getConfiguration("hspace").get<number>("defaultExpiryDays", 7);
-        const expiresIn = days === 0 && hasKey ? null : Math.max(1, days) * 86400;
+        const days = Math.min(Math.max(vscode.workspace.getConfiguration("hspace").get<number>("defaultExpiryDays", 7), 1), 30);
+        const expiresIn = days * 86400;
 
         const result: PublishResult = await client.publish({
           files, title: title || defaultTitle, password, expiresIn,
@@ -369,6 +369,28 @@ async function showVersions(context: vscode.ExtensionContext, rec: Record) {
     vscode.window.showInformationMessage(`Rolled back to the content of v${pick.v.version}.`);
   } catch (e) {
     vscode.window.showErrorMessage(`Roll back failed: ${errorMessage(e)}`);
+  }
+}
+
+// ---- 续期:把有效期从现在往后推(没有永久链接;弃置即自动过期)----
+async function renew(context: vscode.ExtensionContext, provider: RecentProvider, rec: Record) {
+  const hasKey = !!(await context.secrets.get(SECRET_KEY));
+  const max = hasKey ? 30 : 7; // 匿名 7 天、登录 30 天(后端会再次钳制)
+  const opts = [7, 14, 30].filter((d) => d <= max).map((d) => ({ label: `${d} days`, days: d }));
+  const pick = await vscode.window.showQuickPick(opts, {
+    placeHolder: `Renew "${rec.filename}" — new term from now (max ${max} days${hasKey ? "" : ", sign in for 30"})`,
+    ignoreFocusOut: true,
+  });
+  if (!pick) return;
+  try {
+    const client = await getClient(context);
+    await client.patch(rec.slug, { expiresIn: pick.days * 86400 }, rec.editToken || undefined);
+    rec.expiresAt = new Date(Date.now() + pick.days * 86400 * 1000).toISOString();
+    await replaceRecord(context, rec);
+    provider.refresh();
+    vscode.window.showInformationMessage(`Renewed — expires ${new Date(rec.expiresAt).toLocaleDateString()}.`);
+  } catch (e) {
+    vscode.window.showErrorMessage(`Renew failed: ${errorMessage(e)}`);
   }
 }
 

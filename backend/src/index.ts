@@ -30,6 +30,7 @@ export interface Env {
   USERCONTENT_DOMAIN: string;
   MAX_SIZE_BYTES: string;
   ANON_DEFAULT_TTL: string;
+  OWNER_MAX_TTL: string;
   RATE_LIMIT_PER_HOUR: string;
   RATE_LIMIT_PER_DAY: string;
   ANON_MAX_SIZE_BYTES: string;
@@ -226,10 +227,12 @@ async function publish(request: Request, env: Env): Promise<Response> {
     return json({ error: "service_busy" }, 503);
   }
 
-  // 过期：匿名的 TTL 钳制在 [60 秒, ANON_DEFAULT_TTL] 内，防止传超长 expiresIn 变相拿永久链接
-  let ttl = typeof body.expiresIn === "number" ? body.expiresIn : Number(env.ANON_DEFAULT_TTL);
-  if (!ownerId) ttl = Math.min(Math.max(ttl, 60), Number(env.ANON_DEFAULT_TTL));
-  const expiresAt = ownerId && body.expiresIn === null ? null : now() + ttl;
+  // 过期：没有永久链接。每档 TTL 钳制在 [60 秒, 该档上限] 内(匿名 7 天 / 登录 30 天),
+  // expiresIn===null 或缺省都按该档上限处理，不再产生永久页(永久仅限第一方置顶内容，靠直接改库)。
+  const maxTtl = Number(ownerId ? env.OWNER_MAX_TTL : env.ANON_DEFAULT_TTL);
+  const reqTtl = typeof body.expiresIn === "number" ? body.expiresIn : maxTtl;
+  const ttl = Math.min(Math.max(reqTtl, 60), maxTtl);
+  const expiresAt = now() + ttl;
 
   // 密码
   let passwordHash: string | null = null;
@@ -327,6 +330,8 @@ function prepareDoc(
 async function patchPage(slug: string, request: Request, env: Env): Promise<Response> {
   const page = await getPage(env, slug);
   if (!page || page.status !== "active") return json({ error: "not_found" }, 404);
+  // 弃置即死:已过期的链接不可再更新/续期,只能重新发布(拿新链接)
+  if (page.expires_at && page.expires_at < now()) return json({ error: "expired" }, 410);
   const who = await mutateRole(page, request, env);
   if (who === "none") return json({ error: "forbidden" }, 403);
   const isOwner = who === "owner";
@@ -399,14 +404,12 @@ async function patchPage(slug: string, request: Request, env: Env): Promise<Resp
     }
   }
 
-  if (typeof body.expiresIn === "number") {
-    // 匿名改过期同样钳制上限
-    const ttl = isOwner ? body.expiresIn : Math.min(Math.max(body.expiresIn, 60), Number(env.ANON_DEFAULT_TTL));
+  // 续期:expiresIn 为秒则续到 now+ttl;null 或缺省的续期语义 = 续到该档上限。都从"现在"起算,钳制在档内上限。
+  if (typeof body.expiresIn === "number" || body.expiresIn === null) {
+    const maxTtl = Number(isOwner ? env.OWNER_MAX_TTL : env.ANON_DEFAULT_TTL);
+    const reqTtl = typeof body.expiresIn === "number" ? body.expiresIn : maxTtl;
+    const ttl = Math.min(Math.max(reqTtl, 60), maxTtl);
     sets.push("expires_at = ?"); args.push(now() + ttl);
-  }
-  if (body.expiresIn === null) {
-    if (!isOwner) return json({ error: "permanent_requires_login" }, 403);
-    sets.push("expires_at = NULL");
   }
 
   if (sets.length === 0) return json({ error: "nothing_to_update" }, 400);

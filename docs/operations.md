@@ -74,6 +74,22 @@ npx wrangler d1 execute html-share --remote --command \
 - [ ] GitHub About(`gh repo edit --description`)
 - [ ] **推广册子** `assets/promo/`:改完走 PATCH 升版(见该目录 README),线上 q0i7otn 链接/密码不变
 
+## 第一方置顶内容(常驻,不过期)
+
+**没有永久链接是产品级不变量**——API 与插件都产生不了永久页(`expiresIn:null` 只当"续到档内上限":匿名 7 天 / 登录 30 天)。唯一例外是我们自己的营销物料(promo 册子 q0i7otn / aqm3anv、落地演示):它们是**第一方置顶内容**,靠直接改库把 `expires_at` 置 NULL 常驻(servePage 把 NULL 当"无到期")。
+
+```bash
+cd backend
+# 查看置顶状态(NULL = 常驻)
+npx wrangler d1 execute html-share --remote --command \
+  "SELECT slug, expires_at FROM pages WHERE slug IN ('q0i7otn','aqm3anv')"
+# 置顶(仅限第一方营销物料;别拿它给用户页开后门)
+npx wrangler d1 execute html-share --remote --command \
+  "UPDATE pages SET expires_at = NULL WHERE slug = '<slug>'"
+```
+
+注意:promo 走**内容 PATCH**(只传 files,不带 expiresIn)升版时,`expires_at` 保持 NULL,不会被重置为 30 天;只有显式传 `expiresIn` 才会。要新发一本册子并常驻,发布后补一条上面的 UPDATE 即可。
+
 ## 待办
 
 - 联系/举报邮箱:`mengmajiang@gmail.com`(直接可收信)。举报仍需人工到 `reports` 表查看。

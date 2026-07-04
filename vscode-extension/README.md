@@ -44,7 +44,7 @@ No sign-up, no configuration. It just works.
 ## Limits (default hosted instance)
 
 - Single HTML / Markdown file only; ≤ 1 MB anonymous, ≤ 2 MB signed in
-- Anonymous shares expire after 7 days at most (sign in for permanent links)
+- Every link expires — no permanent links: anonymous ≤ 7 days, signed in ≤ 30 days per term, renewable before it lapses
 - Max 20 publishes per IP per hour; anonymous publishes also capped at 50 per day
 - Anonymous pages always keep a password, and their content cannot be replaced after publishing (sign in to unlock both)
 - Wrong password attempts are limited to 10 per 15 minutes

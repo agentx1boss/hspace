@@ -22,7 +22,7 @@ export interface PublishOptions {
   title?: string; // 合集标题
   filename?: string;
   password?: string;
-  expiresIn?: number | null; // 秒；null=永不过期（需登录）
+  expiresIn?: number | null; // 秒；后端钳制在档内上限(匿名 7 天 / 登录 30 天);没有永久链接
 }
 
 export class ApiError extends Error {

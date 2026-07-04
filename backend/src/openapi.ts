@@ -17,7 +17,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
         "- Markdown 会被渲染成排版精良的阅读页;合集(`files`)会生成一个目录页与逐篇导航。",
     },
     servers: [{ url: origin, description: "HSpace API" }],
-    // 匿名可用({} 表示无需鉴权);登录用户用 Bearer API Key 解锁永久链接与更高配额
+    // 匿名可用({} 表示无需鉴权);登录用户用 Bearer API Key 解锁更长有效期(30 天/期,可续)与更高配额
     security: [{}, { bearerAuth: [] }],
     paths: {
       "/publish": {
@@ -75,7 +75,8 @@ export function openapiSpec(origin: string): Record<string, unknown> {
           summary: "更新内容(升版)/ 改密码 / 改有效期",
           description:
             "带 `html`/`markdown`(单页)或 `files`(合集)即更新内容并升一个版本,旧版保留可回滚,类型需与原页面一致。" +
-            "也可改密码或有效期。匿名可更新自己页面的内容(每次重新扫描),但仍不可移除密码、不可改为永久。" +
+            "也可改密码或续期(把有效期从现在往后推,最长 30 天/期;没有永久链接)。已过期的链接不可再更新/续期,需重新发布。" +
+            "匿名可更新自己页面的内容(每次重新扫描),但仍不可移除密码。" +
             "鉴权用 Bearer(登录)或 `X-Edit-Token`。",
           parameters: [{ $ref: "#/components/parameters/EditToken" }],
           requestBody: {
@@ -373,7 +374,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
             expiresIn: {
               type: "integer",
               nullable: true,
-              description: "有效期(秒)。匿名钳制在 [60, 604800];null=永久(需登录)。省略用默认 7 天。",
+              description: "有效期(秒),从现在起算。钳制在 [60, 该档上限]:匿名 7 天、登录 30 天。没有永久链接;null 或省略都取该档上限。",
             },
           },
         },
@@ -390,7 +391,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
           type: "object",
           properties: {
             password: { type: "string", nullable: true, description: "新密码;null 或空串=移除密码(仅登录)" },
-            expiresIn: { type: "integer", nullable: true, description: "新有效期(秒);null=永久(仅登录)" },
+            expiresIn: { type: "integer", nullable: true, description: "续期:把有效期从现在起重设为该秒数(钳制在档内上限,登录 30 天);null=续到上限。没有永久。" },
             html: { type: "string", description: "覆盖内容(仅登录、非合集、类型需一致)" },
             markdown: { type: "string", description: "覆盖内容(仅登录、非合集、类型需一致)" },
           },
@@ -400,7 +401,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
           properties: {
             slug: { type: "string" },
             url: { type: "string", description: "分享链接;私密页面需配合密码访问" },
-            expiresAt: { type: "string", nullable: true, description: "过期时间 ISO8601;null=永久" },
+            expiresAt: { type: "string", description: "过期时间 ISO8601(所有链接都有有效期)" },
             passwordProtected: { type: "boolean" },
             docs: {
               type: "array",
