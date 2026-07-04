@@ -38,6 +38,8 @@ MAX_DOCS = "50"
 
 # ── 密钥(用 `wrangler secret put` 设置,勿写进本文件)──
 # COOKIE_SIGNING_SECRET  用于给密码通过后的 Cookie 签名(随机长字符串)
+# SESSION_SECRET         登录会话 Cookie 签名(随机长字符串)
+# GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET  GitHub OAuth App 凭据
 
 # ── R2:存 HTML 对象 ──
 [[r2_buckets]]
