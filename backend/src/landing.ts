@@ -6,6 +6,12 @@ const SITE = "https://hspace.zhanjian.space";
 const GITHUB = "https://github.com/agentx1boss/hspace";
 const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=agentx1boss.hspace";
 const OPENVSX = "https://open-vsx.org/extension/agentx1boss/hspace";
+const MCP_README = "https://github.com/agentx1boss/hspace/tree/main/mcp-server";
+const MCP_CONFIG = `{
+  "mcpServers": {
+    "hspace": { "command": "npx", "args": ["-y", "hspace-mcp"] }
+  }
+}`;
 
 const MARK = `<svg viewBox="0 0 64 64" width="26" height="26" aria-hidden="true">
   <rect x="9" y="8" width="11" height="48" rx="5.5" fill="#fff"/>
@@ -109,6 +115,10 @@ const L: Record<Lang, Record<string, string>> = {
     f4t: "View receipts", f4b: "See how many times each link was opened, right in the panel — whether they actually looked, at a glance.",
     f5t: "Callable by AI", f5b: "An MCP server lets Claude / Cursor publish inside the chat; an OpenAPI spec plugs into GPT Actions and agents.",
     f6t: "Edge password gate", f6b: "Passwords verified at the edge, signed cookie remembers for 24h, brute-force locked out.",
+    mcpH: "Publish from your AI chat",
+    mcpSub: "Add the MCP server to Claude Desktop / Cursor / Claude Code — then just say “publish this as a password link”.",
+    mcpNote: "No install needed — npx pulls the latest. Full setup in the",
+    mcpReadme: "MCP README",
     faqH: "You might ask",
     faqQ1: "Will it get indexed by search engines?", faqA1: "No. Every shared page is noindex and requires a password — even if the link is forwarded, without the password it's a wall.",
     faqQ2: "Where is content stored, and for how long?", faqA2: "Content is sent over HTTPS and stored at Cloudflare's edge (R2); passwords are stored only as one-way hashes, never plaintext. Every link expires — by design: anonymous links last up to 3 days (one-shot, no renewal), signed-in links up to 30 and can be renewed before they lapse. There are no permanent links, and you can delete anytime — the link goes dark immediately.",
@@ -170,6 +180,10 @@ const L: Record<Lang, Record<string, string>> = {
     f3t: "每人一链", f3b: "给每个接收者一个专属密码:谁看了、看了几次一清二楚,踢掉一个人不用换所有人的密码。",
     f4t: "访问回执", f4b: "在面板里看到每个链接被打开了多少次——对方到底看没看,一目了然。",
     f5t: "AI 可直接调用", f5b: "MCP server 让 Claude / Cursor 在对话里直接发布;OpenAPI 规范接入 GPT Actions 等。",
+    mcpH: "在 AI 对话里直接发布",
+    mcpSub: "把 MCP server 加进 Claude Desktop / Cursor / Claude Code,然后对 AI 说「把这个发成带密码的链接」即可。",
+    mcpNote: "无需安装,npx 自动拉取最新版。完整配置见",
+    mcpReadme: "MCP 说明",
     f6t: "边缘密码网关", f6b: "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。",
     faqH: "你可能想问",
     faqQ1: "内容会被搜索引擎收录吗?", faqA1: "不会。所有分享页面都带 noindex,且必须输入密码才能看到内容——链接被转发也没关系,没有密码就是一堵墙。",
@@ -362,6 +376,13 @@ ${FAVICON_LINK}
   .vsc .vtoast .vbtns span+span{background:#3a3d45}
   @media(max-width:720px){.vsc .vside{display:none}}
   /* FAQ */
+  .mcp{max-width:32rem;margin:0 auto;text-align:left;background:var(--ink);color:#e8e6e3;
+       border-radius:12px;padding:18px 20px;overflow-x:auto;
+       font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:0 12px 32px rgba(0,0,0,.14)}
+  .mcp code{background:none;color:inherit;padding:0}
+  .mcp-note{color:var(--muted);font-size:13px;margin:16px 0 0}
+  .mcp-note a{color:var(--accent)}
+  .mcp-note code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
   .faqs{max-width:44rem;margin:0 auto}
   .faqs details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin:10px 0;padding:0 18px}
   .faqs summary{cursor:pointer;padding:15px 0;font-weight:600;font-size:15.5px;list-style:none;position:relative}
@@ -528,6 +549,13 @@ ${FAVICON_LINK}
       ${feature("📚", s.f2t, s.f2b)}
       ${feature("🤖", s.f5t, s.f5b)}
     </div>
+  </div></section>
+
+  <section class="band"><div class="wrap" style="text-align:center">
+    <h2>${s.mcpH}</h2>
+    <p class="sec-sub">${s.mcpSub}</p>
+    <pre class="mcp"><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
+    <p class="mcp-note">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
   </div></section>
 
   <section id="faq"><div class="wrap">
