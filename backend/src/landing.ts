@@ -125,12 +125,13 @@ const L: Record<Lang, Record<string, string>> = {
     icRec: "1-click",
     ccSub: "One plugin bundles the publisher and the /share command.",
     ccNote: "Then run <code>/share</code> — or just ask.",
-    cuSub: "Settings → MCP → Add opens <code>~/.cursor/mcp.json</code> — paste:",
-    cuNote: "Prefer the editor? Install the <b>VS Code extension</b> from Open VSX — same one-click panel.",
     cxSub: "One command (or a TOML block in <code>~/.codex/config.toml</code>):",
     cxNote: "Restart Codex, then ask it to publish.",
-    cdSub: "Settings → Developer → Edit Config, add:",
-    cdNote: "Restart the app, then ask it to publish.",
+    anyT: "Cursor · Claude Desktop · any MCP client",
+    anySub: "Same standard config — drop <code>hspace</code> into your <code>mcp.json</code>:",
+    anyCursor: "<b>Cursor</b> — Settings → MCP → Add <span class='dim'>opens</span> <code>~/.cursor/mcp.json</code>",
+    anyDesktop: "<b>Claude Desktop</b> — Settings → Developer → Edit Config",
+    anyVsx: "<span class='dim'>Cursor users can also install the <b>VS Code extension</b> from Open VSX — same one-click panel.</span>",
     mcpNote: "No install needed — npx pulls the latest. Full setup & self-hosting in the",
     mcpReadme: "MCP README",
     faqH: "You might ask",
@@ -199,12 +200,13 @@ const L: Record<Lang, Record<string, string>> = {
     icRec: "一键装",
     ccSub: "一个插件,同时装好发布器与 /share 命令。",
     ccNote: "然后运行 <code>/share</code>——或直接说一声。",
-    cuSub: "设置 → MCP → Add,会打开 <code>~/.cursor/mcp.json</code>,粘贴:",
-    cuNote: "更爱编辑器?从 Open VSX 装 <b>VS Code 插件</b>——同样的一键面板。",
     cxSub: "一条命令(或写进 <code>~/.codex/config.toml</code> 的 TOML):",
     cxNote: "重启 Codex,然后让它发布。",
-    cdSub: "设置 → Developer → Edit Config,加入:",
-    cdNote: "重启应用,然后让它发布。",
+    anyT: "Cursor · Claude Desktop · 任意 MCP 客户端",
+    anySub: "同一套标准配置——把 <code>hspace</code> 加进你的 <code>mcp.json</code>:",
+    anyCursor: "<b>Cursor</b> — 设置 → MCP → Add,<span class='dim'>会打开</span> <code>~/.cursor/mcp.json</code>",
+    anyDesktop: "<b>Claude Desktop</b> — 设置 → Developer → Edit Config",
+    anyVsx: "<span class='dim'>Cursor 用户也可从 Open VSX 装 <b>VS Code 插件</b>——同样的一键面板。</span>",
     mcpNote: "无需安装,npx 自动拉取最新版。完整配置与自建部署见",
     mcpReadme: "MCP 说明",
     f6t: "边缘密码网关", f6b: "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。",
@@ -418,13 +420,21 @@ ${FAVICON_LINK}
   .ic pre{background:var(--ink);color:#e8e6e3;border-radius:10px;padding:12px 14px;overflow-x:auto;margin:0 0 auto;
        font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .ic pre code{background:none;color:inherit;padding:0}
-  .ic pre .k{color:#8b909c}
   .ic .icnote{color:var(--muted);font-size:12.5px;margin:11px 0 0}
   .ic .icnote a{color:var(--accent)}
   .ic .icnote code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
   .ic-foot{color:var(--muted);font-size:13px;margin:24px 0 0;text-align:center}
   .ic-foot a{color:var(--accent)}
   .ic-foot code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
+  .ic.wide{grid-column:1 / -1}
+  .icrow{display:flex;gap:24px;align-items:flex-start}
+  .icrow pre{flex:0 1 26rem;min-width:0}
+  .icpaths{flex:1;min-width:0;font-size:13px;line-height:1.6}
+  .icpaths p{margin:0 0 12px}
+  .icpaths p:last-child{margin-bottom:0}
+  .icpaths .dim{color:var(--muted)}
+  .icpaths code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.9em}
+  @media(max-width:720px){.icrow{flex-direction:column}.icrow pre{flex:1 1 auto;width:100%}}
   .faqs{max-width:44rem;margin:0 auto}
   .faqs details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin:10px 0;padding:0 18px}
   .faqs summary{cursor:pointer;padding:15px 0;font-weight:600;font-size:15.5px;list-style:none;position:relative}
@@ -577,22 +587,22 @@ ${FAVICON_LINK}
         <p class="icnote">${s.ccNote}</p>
       </div>
       <div class="ic">
-        <h3>Cursor</h3>
-        <p class="icsub">${s.cuSub}</p>
-        <pre><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
-        <p class="icnote">${s.cuNote}</p>
-      </div>
-      <div class="ic">
         <h3>Codex CLI</h3>
         <p class="icsub">${s.cxSub}</p>
         <pre><code>codex mcp add hspace -- npx -y hspace-mcp</code></pre>
         <p class="icnote">${s.cxNote}</p>
       </div>
-      <div class="ic">
-        <h3>Claude Desktop</h3>
-        <p class="icsub">${s.cdSub}</p>
-        <pre><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
-        <p class="icnote">${s.cdNote}</p>
+      <div class="ic wide">
+        <h3>${s.anyT}</h3>
+        <p class="icsub">${s.anySub}</p>
+        <div class="icrow">
+          <pre><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
+          <div class="icpaths">
+            <p>${s.anyCursor}</p>
+            <p>${s.anyDesktop}</p>
+            <p>${s.anyVsx}</p>
+          </div>
+        </div>
       </div>
     </div>
     <p class="ic-foot">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
