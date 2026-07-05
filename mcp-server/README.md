@@ -13,7 +13,46 @@
 
 ## 安装与配置
 
-无需全局安装,用 `npx` 直接跑。在客户端的 MCP 配置里加:
+无需全局安装,`npx` 直接拉取运行。按你的客户端选装法(顺序同[落地页](https://hspace.zhanjian.space)):
+
+### Claude Code(推荐,一键装)
+
+直接装[插件](../clients/claude-code),自带本 MCP + `/share` 命令:
+
+```bash
+claude plugin marketplace add agentx1boss/hspace
+claude plugin install hspace@hspace
+```
+
+然后运行 `/share`,或直接对 Claude 说「把这个发成带密码的链接」。只想要 MCP 也行:`claude mcp add hspace -- npx -y hspace-mcp`。
+
+### Cursor
+
+设置 → MCP → Add,填 Command `npx`、Args `-y hspace-mcp`。更爱编辑器?从 [Open VSX](https://open-vsx.org/extension/agentx1boss/hspace) 装 VS Code 插件——同样的一键面板。
+
+### Codex CLI
+
+一条命令:
+
+```bash
+codex mcp add hspace -- npx -y hspace-mcp
+```
+
+或写进 `~/.codex/config.toml`(用 **TOML**,不是 JSON):
+
+```toml
+[mcp_servers.hspace]
+command = "npx"
+args = ["-y", "hspace-mcp"]
+
+# 可选
+# [mcp_servers.hspace.env]
+# HSPACE_API_KEY = "your-api-key"
+```
+
+### Claude Desktop / 其他 MCP 客户端
+
+编辑 `claude_desktop_config.json`(设置 → Developer → Edit Config),用标准 JSON:
 
 ```jsonc
 {
@@ -31,21 +70,6 @@
   }
 }
 ```
-
-- **Claude Desktop**:编辑 `claude_desktop_config.json`(设置 → Developer → Edit Config),用上面的 JSON 格式。
-- **Cursor**:设置 → MCP → Add,填入上面的 command/args。
-- **Claude Code**:推荐直接装[插件](../clients/claude-code)(自带本 MCP + `/share` 命令):`/plugin marketplace add agentx1boss/hspace` → `/plugin install hspace@hspace`;或手动 `claude mcp add hspace -- npx -y hspace-mcp`。
-- **Codex CLI**:`codex mcp add hspace -- npx -y hspace-mcp`,或在 `~/.codex/config.toml` 里用 **TOML** 格式(不是 JSON):
-
-  ```toml
-  [mcp_servers.hspace]
-  command = "npx"
-  args = ["-y", "hspace-mcp"]
-
-  # 可选
-  # [mcp_servers.hspace.env]
-  # HSPACE_API_KEY = "your-api-key"
-  ```
 
 配置后重启客户端,即可对 AI 说「把这份内容发布成带密码的链接」。
 
