@@ -409,6 +409,8 @@ ${FAVICON_LINK}
   .mxc .n{opacity:.35}
   @media(max-width:720px){.mxl{padding:11px 12px;font-size:13px}.mxc{font-size:12.5px;padding:11px 6px}}
   @media(max-width:720px){.grid3,.steps,.feats,.shots{grid-template-columns:1fr}.hero{padding:52px 0 44px}}
+  /* 小屏:藏掉页内锚点导航,保留 Install / GitHub / 语言切换 */
+  @media(max-width:640px){.nav a[href^="#"]{display:none}}
 </style></head>
 <body>
   <header><div class="wrap">
