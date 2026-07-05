@@ -12,6 +12,8 @@ const MCP_CONFIG = `{
     "hspace": { "command": "npx", "args": ["-y", "hspace-mcp"] }
   }
 }`;
+const PLUGIN_INSTALL = `claude plugin marketplace add agentx1boss/hspace
+claude plugin install hspace@hspace`;
 
 const MARK = `<svg viewBox="0 0 64 64" width="26" height="26" aria-hidden="true">
   <rect x="9" y="8" width="11" height="48" rx="5.5" fill="#fff"/>
@@ -115,8 +117,11 @@ const L: Record<Lang, Record<string, string>> = {
     f4t: "View receipts", f4b: "See how many times each link was opened, right in the panel — whether they actually looked, at a glance.",
     f5t: "Callable by AI", f5b: "An MCP server lets Claude / Cursor publish inside the chat; an OpenAPI spec plugs into GPT Actions and agents.",
     f6t: "Edge password gate", f6b: "Passwords verified at the edge, signed cookie remembers for 24h, brute-force locked out.",
-    mcpH: "Publish from your AI chat",
-    mcpSub: "Add the MCP server to Claude Desktop / Cursor / Claude Code — then just say “publish this as a password link”.",
+    mcpH: "Publish straight from your AI chat",
+    mcpSub: "In Claude Code, the HSpace plugin hands you a /share command. In Claude Desktop / Cursor / Codex, add the MCP server — then just say “publish this as a password link”.",
+    pluginCap: "Claude Code · one plugin, /share ready",
+    pluginNote: "Two commands install the command and the publisher together. Then run",
+    mcpCap: "Claude Desktop · Cursor · other MCP clients",
     mcpNote: "No install needed — npx pulls the latest. Full setup in the",
     mcpReadme: "MCP README",
     mcpCodex: "Using Codex CLI? Run",
@@ -182,7 +187,10 @@ const L: Record<Lang, Record<string, string>> = {
     f4t: "访问回执", f4b: "在面板里看到每个链接被打开了多少次——对方到底看没看,一目了然。",
     f5t: "AI 可直接调用", f5b: "MCP server 让 Claude / Cursor 在对话里直接发布;OpenAPI 规范接入 GPT Actions 等。",
     mcpH: "在 AI 对话里直接发布",
-    mcpSub: "把 MCP server 加进 Claude Desktop / Cursor / Claude Code,然后对 AI 说「把这个发成带密码的链接」即可。",
+    mcpSub: "Claude Code 装上 HSpace 插件即得 /share 命令;Claude Desktop / Cursor / Codex 加 MCP server 后,对 AI 说「把这个发成带密码的链接」即可。",
+    pluginCap: "Claude Code · 一个插件,/share 开箱即用",
+    pluginNote: "两条命令,同时装好命令与发布器。然后运行",
+    mcpCap: "Claude Desktop · Cursor · 其他 MCP 客户端",
     mcpNote: "无需安装,npx 自动拉取最新版。完整配置见",
     mcpReadme: "MCP 说明",
     mcpCodex: "用 Codex CLI?运行",
@@ -526,6 +534,18 @@ ${FAVICON_LINK}
     </div>
   </div></section>
 
+  <section class="band"><div class="wrap" style="text-align:center">
+    <h2>${s.mcpH}</h2>
+    <p class="sec-sub">${s.mcpSub}</p>
+    <p class="mcp-cap">${s.pluginCap}</p>
+    <pre class="mcp"><code>${PLUGIN_INSTALL}</code></pre>
+    <p class="mcp-note">${s.pluginNote} <code>/share</code></p>
+    <p class="mcp-cap" style="margin-top:30px">${s.mcpCap}</p>
+    <pre class="mcp"><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
+    <p class="mcp-note">${s.mcpCodex} <code>codex mcp add hspace -- npx -y hspace-mcp</code></p>
+    <p class="mcp-note">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
+  </div></section>
+
   <section><div class="wrap">
     <h2>${s.diffH}</h2>
     <p class="sec-sub">${s.diffSub}</p>
@@ -556,15 +576,6 @@ ${FAVICON_LINK}
       ${feature("📚", s.f2t, s.f2b)}
       ${feature("🤖", s.f5t, s.f5b)}
     </div>
-  </div></section>
-
-  <section class="band"><div class="wrap" style="text-align:center">
-    <h2>${s.mcpH}</h2>
-    <p class="sec-sub">${s.mcpSub}</p>
-    <p class="mcp-cap">Claude Desktop · Cursor · Claude Code</p>
-    <pre class="mcp"><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
-    <p class="mcp-note">${s.mcpCodex} <code>codex mcp add hspace -- npx -y hspace-mcp</code></p>
-    <p class="mcp-note">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
   </div></section>
 
   <section id="faq"><div class="wrap">
