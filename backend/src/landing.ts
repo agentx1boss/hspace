@@ -80,7 +80,7 @@ const L: Record<Lang, Record<string, string>> = {
     heroH1: `Ship <span class="hl">to one</span>, not to all.`,
     heroLead: "The HTML demo or Markdown doc Cursor / Claude Code just wrote — turn it into a link + password for teammates and clients: see who opened it, revoke anytime, iterate without changing the link.",
     tension: "Publish anonymously, share accountably.",
-    ctaInstall: "Install the VS Code extension", ctaGithub: "View on GitHub",
+    ctaInstall: "Install the VS Code extension", ctaGithub: "View on GitHub", ctaPlugin: "Claude Code plugin",
     mockSub: "AI-generated proposal · expires in 7 days", pwLabel: "Password",
     copied: "Link & password copied — just paste",
     s1h: "Your side: one click in the editor",
@@ -150,7 +150,7 @@ const L: Record<Lang, Record<string, string>> = {
     heroH1: `<span class="hl">稿出即递</span>,点开即读,心里有数`,
     heroLead: "Cursor / Claude Code 刚出的稿——HTML demo、Markdown 方案,一键变成「链接 + 密码」发给同事和客户。Markdown 自动排成阅读页、HTML 原样能跑,对方点开就能看;谁看了有回执,发错了随时撤回,链接不变可迭代。",
     tension: "发布侧匿名,分发侧有回执。",
-    ctaInstall: "安装 VS Code 插件", ctaGithub: "在 GitHub 查看",
+    ctaInstall: "安装 VS Code 插件", ctaGithub: "在 GitHub 查看", ctaPlugin: "Claude Code 插件",
     mockSub: "AI 生成的方案 · 7 天后自动失效", pwLabel: "访问密码",
     copied: "链接和密码已复制,粘贴发走即可",
     s1h: "你这边:编辑器里点一下",
@@ -442,6 +442,7 @@ ${FAVICON_LINK}
     <p class="tension">${s.tension}</p>
     <div class="cta">
       <a class="btn btn-p" href="${MARKETPLACE}" target="_blank" rel="noopener">${s.ctaInstall}</a>
+      <a class="btn btn-s" href="#ai">${s.ctaPlugin}</a>
       <a class="btn btn-s" href="${GITHUB}" target="_blank" rel="noopener">${s.ctaGithub}</a>
     </div>
   </div></section>
@@ -534,7 +535,7 @@ ${FAVICON_LINK}
     </div>
   </div></section>
 
-  <section class="band"><div class="wrap" style="text-align:center">
+  <section id="ai" class="band"><div class="wrap" style="text-align:center">
     <h2>${s.mcpH}</h2>
     <p class="sec-sub">${s.mcpSub}</p>
     <p class="mcp-cap">${s.pluginCap}</p>
