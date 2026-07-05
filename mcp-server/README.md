@@ -28,7 +28,7 @@ claude plugin install hspace@hspace
 
 ### Cursor
 
-设置 → MCP → Add,填 Command `npx`、Args `-y hspace-mcp`。更爱编辑器?从 [Open VSX](https://open-vsx.org/extension/agentx1boss/hspace) 装 VS Code 插件——同样的一键面板。
+设置 → MCP → Add 会打开 `~/.cursor/mcp.json`(或项目级 `.cursor/mcp.json`),用与下方「Claude Desktop」相同的 JSON,把 `hspace` 加进 `mcpServers` 即可。更爱编辑器?从 [Open VSX](https://open-vsx.org/extension/agentx1boss/hspace) 装 VS Code 插件——同样的一键面板。
 
 ### Codex CLI
 

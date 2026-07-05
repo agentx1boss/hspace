@@ -125,7 +125,7 @@ const L: Record<Lang, Record<string, string>> = {
     icRec: "1-click",
     ccSub: "One plugin bundles the publisher and the /share command.",
     ccNote: "Then run <code>/share</code> — or just ask.",
-    cuSub: "Settings → MCP → Add, then ask in chat:",
+    cuSub: "Settings → MCP → Add opens <code>~/.cursor/mcp.json</code> — paste:",
     cuNote: "Prefer the editor? Install the <b>VS Code extension</b> from Open VSX — same one-click panel.",
     cxSub: "One command (or a TOML block in <code>~/.codex/config.toml</code>):",
     cxNote: "Restart Codex, then ask it to publish.",
@@ -199,7 +199,7 @@ const L: Record<Lang, Record<string, string>> = {
     icRec: "一键装",
     ccSub: "一个插件,同时装好发布器与 /share 命令。",
     ccNote: "然后运行 <code>/share</code>——或直接说一声。",
-    cuSub: "设置 → MCP → Add,之后在对话里说:",
+    cuSub: "设置 → MCP → Add,会打开 <code>~/.cursor/mcp.json</code>,粘贴:",
     cuNote: "更爱编辑器?从 Open VSX 装 <b>VS Code 插件</b>——同样的一键面板。",
     cxSub: "一条命令(或写进 <code>~/.codex/config.toml</code> 的 TOML):",
     cxNote: "重启 Codex,然后让它发布。",
@@ -579,8 +579,7 @@ ${FAVICON_LINK}
       <div class="ic">
         <h3>Cursor</h3>
         <p class="icsub">${s.cuSub}</p>
-        <pre><code><span class="k">Command</span>  npx
-<span class="k">Args</span>     -y hspace-mcp</code></pre>
+        <pre><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
         <p class="icnote">${s.cuNote}</p>
       </div>
       <div class="ic">
