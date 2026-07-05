@@ -21,6 +21,7 @@ In one line: **others "publish to the world," HSpace does targeted sharing.**
 - ✅ VS Code / Cursor extension: one-click publish `.html` / `.md`, auto 4-digit password, link+password copied
 - ✅ Document collections: right-click a folder / multi-select → a batch of md/html becomes one link + password + index page, with cross-doc nav
 - ✅ MCP server: publish right inside Claude / Cursor conversations (single + collection)
+- ✅ Claude Code plugin: `/plugin marketplace add agentx1boss/hspace` → `/plugin install hspace@hspace` → `/share` (bundles the MCP server)
 - ✅ View receipts: see each link's view count in the panel (`GET /pages/:slug/stats`)
 - ✅ Per-recipient links: one link, a separate password per person, per-person stats, revoke one without affecting others (`/pages/:slug/grants`)
 - ✅ Content versioning: the link stays, content iterates; history + roll back
@@ -32,6 +33,7 @@ hspace/
 ├── backend/            Cloudflare Worker (publish API + subdomain serving + password gate)
 ├── vscode-extension/   VS Code / Cursor extension
 ├── mcp-server/         MCP server (publish from an AI chat)
+├── clients/            Claude Code plugin (/share command + bundled MCP config)
 ├── docs/               positioning, business model, design & ops docs
 ├── assets/             brand assets (appicon / favicon / lockup / OG card)
 └── .github/workflows/  CI (deploy backend / release extension)

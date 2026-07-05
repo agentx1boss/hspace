@@ -21,6 +21,7 @@
 - ✅ VS Code / Cursor 插件:一键发布 `.html` / `.md`,自动生成 4 位密码,链接+密码复制即走
 - ✅ 文档合集:右键文件夹/多选文件 → 一批 md/html 打包成一个链接+密码+目录页,篇间导航
 - ✅ MCP server:在 Claude / Cursor 对话里直接发布(单篇 + 合集),内容诞生处即分享处
+- ✅ Claude Code 插件:`/plugin marketplace add agentx1boss/hspace` → `/plugin install hspace@hspace` → `/share`(自带 MCP 配置,零手工接线)
 - ✅ 访问回执:面板刷新即可看到每个链接的累计访问量(`GET /pages/:slug/stats`)
 - ✅ 每人一链:同一链接给每人独立密码,按人统计,单独撤销不影响他人(`/pages/:slug/grants`)
 - ✅ 密码网关:边缘验证 + 签名 Cookie(24h 免重输),防暴力破解(10 次锁 15 分钟)
@@ -40,6 +41,7 @@ hspace/
 │   └── wrangler.toml   R2 / D1 / KV 绑定、域名与限制阈值
 ├── vscode-extension/   VS Code 插件(命令 / 最近发布视图 / 配置)
 ├── mcp-server/         MCP server(在 AI 对话里直接发布,单篇 + 合集)
+├── clients/            Claude Code 插件(/share 命令 + 自带 MCP 配置)
 ├── docs/               设计文档
 ├── assets/             品牌资源(appicon / favicon / lockup / OG 卡)
 └── .github/workflows/  CI(后端部署 / 插件发布)

@@ -1,0 +1,17 @@
+{
+  "name": "hspace",
+  "owner": {
+    "name": "agentx1boss",
+    "email": "mengmajiang@gmail.com"
+  },
+  "description": "HSpace — targeted sharing for AI-built HTML/Markdown: link + password, view receipts, revoke anytime.",
+  "plugins": [
+    {
+      "name": "hspace",
+      "source": "./clients/claude-code",
+      "description": "Ship your AI-built demo to exactly the right people — /share publishes HTML/Markdown as a private link + password.",
+      "category": "productivity",
+      "keywords": ["share", "publish", "html", "markdown", "private", "password"]
+    }
+  ]
+}

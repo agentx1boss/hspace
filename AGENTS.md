@@ -18,6 +18,7 @@ Slogan:中「稿出即递,点开即读,心里有数。」/ 英「Ship to one, no
 backend/           Cloudflare Worker(TS):发布 API + 子域服务 + 密码门 + 落地/法务/埋点
 vscode-extension/  VS Code / Cursor 插件(TS)
 mcp-server/        MCP server(在 AI 对话里发布)
+clients/           Claude Code 插件(/share + 自带 MCP 配置;根 .claude-plugin/marketplace.json 使本仓库即 marketplace)
 docs/              见 docs/README.md;positioning.md 是文案权威
 assets/            品牌资源 + promo/(推广册子源文件:中 q0i7otn / 英 aqm3anv)
 .github/workflows/ CI(见下)
@@ -35,6 +36,7 @@ npm run compile && npx @vscode/vsce package
 # 发版 = 改 package.json version → git tag v<x> → push tag(CI 自动发双市场)
 # MCP(cd mcp-server):npm run build
 # MCP 发布 = 改 mcp-server/package.json version → git tag mcp-v<x> → push tag(CI 自动发 npm;需 secret NPM_TOKEN)
+# Claude Code 插件发版 = 改 clients/claude-code/.claude-plugin/plugin.json version → 推 main(版本 pin,无 tag/registry;改前跑 claude plugin validate)
 ```
 
 ## CI/CD

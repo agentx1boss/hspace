@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hspace": {
+      "command": "npx",
+      "args": ["-y", "hspace-mcp"]
+    }
+  }
+}

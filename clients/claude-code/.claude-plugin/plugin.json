@@ -1,0 +1,14 @@
+{
+  "name": "hspace",
+  "displayName": "HSpace",
+  "description": "Ship your AI-built demo to exactly the right people — /share publishes HTML/Markdown as a private link + password.",
+  "version": "0.1.0",
+  "author": {
+    "name": "agentx1boss",
+    "url": "https://github.com/agentx1boss"
+  },
+  "homepage": "https://hspace.zhanjian.space",
+  "repository": "https://github.com/agentx1boss/hspace",
+  "license": "MIT",
+  "keywords": ["share", "publish", "html", "markdown", "private", "password"]
+}
