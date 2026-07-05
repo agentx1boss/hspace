@@ -31,6 +31,15 @@
 - 暗色 accent 微调 `#F0784F → #E87048`(更沉稳)
 - Logo 箭头候选(如决定重启)
 
+## 2026-07-05 · Claude Code 插件化 + 多客户端安装引导
+
+**决策:把 `/share` 从"手动两步"升级为一键插件,并让本仓库自身即 marketplace。**
+- 背景:原先 Claude Code 用户要 `claude mcp add` + `curl` 拉命令文件两步;插件机制能收敛成一次安装。
+- 落地:`clients/claude-code/` 变插件根(`.claude-plugin/plugin.json` + `.mcp.json` 自带 MCP + `commands/share.md`);仓库根 `.claude-plugin/marketplace.json` 使本仓库即 marketplace。装法 = `claude plugin marketplace add agentx1boss/hspace` → `claude plugin install hspace@hspace`(得 `hspace@hspace`,自带 `/share` + MCP)。`claude plugin validate` 双绿。
+- 版本 pin:改 `plugin.json` version 推 main 即更新,**无 tag / 无 registry**(区别于插件市场的 `v*`、MCP 的 `mcp-v*`)。已记入 AGENTS.md 命令区。
+- 客户端边界厘清:**插件仅 Claude Code 独有**;Cursor/Codex/Desktop 走 MCP(Cursor 另可装 Open VSX 的 VS Code 插件)。
+- 一致性:落地页 AI 发布区重排为"一家一卡"(Claude Code 一键装 → Cursor → Codex → Desktop),hero 加「Claude Code plugin」次级按钮跳 `#ai`;`mcp-server/README` 同序对齐;三处口径统一。
+
 ## 度量前置(已就绪)
 
 第一方埋点已接:落地页 `/e` beacon → D1 `metrics`(pv/install/try/gh/vsx,按天+语言)。查询见 [operations.md](operations.md)。用于验证"英文默认"假设(pv 中英占比)与安装转化。
