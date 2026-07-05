@@ -9,7 +9,10 @@ const OPENVSX = "https://open-vsx.org/extension/agentx1boss/hspace";
 const MCP_README = "https://github.com/agentx1boss/hspace/tree/main/mcp-server";
 const MCP_CONFIG = `{
   "mcpServers": {
-    "hspace": { "command": "npx", "args": ["-y", "hspace-mcp"] }
+    "hspace": {
+      "command": "npx",
+      "args": ["-y", "hspace-mcp"]
+    }
   }
 }`;
 const PLUGIN_INSTALL = `claude plugin marketplace add agentx1boss/hspace
@@ -118,13 +121,18 @@ const L: Record<Lang, Record<string, string>> = {
     f5t: "Callable by AI", f5b: "An MCP server lets Claude / Cursor publish inside the chat; an OpenAPI spec plugs into GPT Actions and agents.",
     f6t: "Edge password gate", f6b: "Passwords verified at the edge, signed cookie remembers for 24h, brute-force locked out.",
     mcpH: "Publish straight from your AI chat",
-    mcpSub: "In Claude Code, the HSpace plugin hands you a /share command. In Claude Desktop / Cursor / Codex, add the MCP server — then just say “publish this as a password link”.",
-    pluginCap: "Claude Code · one plugin, /share ready",
-    pluginNote: "Two commands install the command and the publisher together. Then run",
-    mcpCap: "Claude Desktop · Cursor · other MCP clients",
-    mcpNote: "No install needed — npx pulls the latest. Full setup in the",
+    mcpSub: "Wherever your content is born — pick your client, add HSpace once, then just say “publish this as a password link”.",
+    icRec: "1-click",
+    ccSub: "One plugin bundles the publisher and the /share command.",
+    ccNote: "Then run <code>/share</code> — or just ask.",
+    cuSub: "Settings → MCP → Add, then ask in chat:",
+    cuNote: "Prefer the editor? Install the <b>VS Code extension</b> from Open VSX — same one-click panel.",
+    cxSub: "One command (or a TOML block in <code>~/.codex/config.toml</code>):",
+    cxNote: "Restart Codex, then ask it to publish.",
+    cdSub: "Settings → Developer → Edit Config, add:",
+    cdNote: "Restart the app, then ask it to publish.",
+    mcpNote: "No install needed — npx pulls the latest. Full setup & self-hosting in the",
     mcpReadme: "MCP README",
-    mcpCodex: "Using Codex CLI? Run",
     faqH: "You might ask",
     faqQ1: "Will it get indexed by search engines?", faqA1: "No. Every shared page is noindex and requires a password — even if the link is forwarded, without the password it's a wall.",
     faqQ2: "Where is content stored, and for how long?", faqA2: "Content is sent over HTTPS and stored at Cloudflare's edge (R2); passwords are stored only as one-way hashes, never plaintext. Every link expires — by design: anonymous links last up to 3 days (one-shot, no renewal), signed-in links up to 30 and can be renewed before they lapse. There are no permanent links, and you can delete anytime — the link goes dark immediately.",
@@ -187,13 +195,18 @@ const L: Record<Lang, Record<string, string>> = {
     f4t: "访问回执", f4b: "在面板里看到每个链接被打开了多少次——对方到底看没看,一目了然。",
     f5t: "AI 可直接调用", f5b: "MCP server 让 Claude / Cursor 在对话里直接发布;OpenAPI 规范接入 GPT Actions 等。",
     mcpH: "在 AI 对话里直接发布",
-    mcpSub: "Claude Code 装上 HSpace 插件即得 /share 命令;Claude Desktop / Cursor / Codex 加 MCP server 后,对 AI 说「把这个发成带密码的链接」即可。",
-    pluginCap: "Claude Code · 一个插件,/share 开箱即用",
-    pluginNote: "两条命令,同时装好命令与发布器。然后运行",
-    mcpCap: "Claude Desktop · Cursor · 其他 MCP 客户端",
-    mcpNote: "无需安装,npx 自动拉取最新版。完整配置见",
+    mcpSub: "内容在哪诞生,分享就在哪发生——选你的客户端,装一次 HSpace,然后对 AI 说「把这个发成带密码的链接」即可。",
+    icRec: "一键装",
+    ccSub: "一个插件,同时装好发布器与 /share 命令。",
+    ccNote: "然后运行 <code>/share</code>——或直接说一声。",
+    cuSub: "设置 → MCP → Add,之后在对话里说:",
+    cuNote: "更爱编辑器?从 Open VSX 装 <b>VS Code 插件</b>——同样的一键面板。",
+    cxSub: "一条命令(或写进 <code>~/.codex/config.toml</code> 的 TOML):",
+    cxNote: "重启 Codex,然后让它发布。",
+    cdSub: "设置 → Developer → Edit Config,加入:",
+    cdNote: "重启应用,然后让它发布。",
+    mcpNote: "无需安装,npx 自动拉取最新版。完整配置与自建部署见",
     mcpReadme: "MCP 说明",
-    mcpCodex: "用 Codex CLI?运行",
     f6t: "边缘密码网关", f6b: "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。",
     faqH: "你可能想问",
     faqQ1: "内容会被搜索引擎收录吗?", faqA1: "不会。所有分享页面都带 noindex,且必须输入密码才能看到内容——链接被转发也没关系,没有密码就是一堵墙。",
@@ -394,6 +407,24 @@ ${FAVICON_LINK}
   .mcp-note{color:var(--muted);font-size:13px;margin:16px 0 0}
   .mcp-note a{color:var(--accent)}
   .mcp-note code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
+  /* per-client install cards */
+  .iclients{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:54rem;margin:8px auto 0;text-align:left}
+  .ic{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;display:flex;flex-direction:column}
+  .ic.hot{border-color:var(--accent);box-shadow:0 10px 30px rgba(226,96,60,.10)}
+  .ic h3{font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ic .pill{font:700 10.5px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;
+       color:#fff;background:var(--accent);border-radius:999px;padding:4px 9px}
+  .ic .icsub{color:var(--muted);font-size:13px;margin:0 0 13px}
+  .ic pre{background:var(--ink);color:#e8e6e3;border-radius:10px;padding:12px 14px;overflow-x:auto;margin:0 0 auto;
+       font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ic pre code{background:none;color:inherit;padding:0}
+  .ic pre .k{color:#8b909c}
+  .ic .icnote{color:var(--muted);font-size:12.5px;margin:11px 0 0}
+  .ic .icnote a{color:var(--accent)}
+  .ic .icnote code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
+  .ic-foot{color:var(--muted);font-size:13px;margin:24px 0 0;text-align:center}
+  .ic-foot a{color:var(--accent)}
+  .ic-foot code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
   .faqs{max-width:44rem;margin:0 auto}
   .faqs details{border:1px solid var(--border);border-radius:12px;background:var(--card);margin:10px 0;padding:0 18px}
   .faqs summary{cursor:pointer;padding:15px 0;font-weight:600;font-size:15.5px;list-style:none;position:relative}
@@ -416,7 +447,7 @@ ${FAVICON_LINK}
   .mxc .y{color:var(--accent);font-weight:700;font-size:15px}
   .mxc .n{opacity:.35}
   @media(max-width:720px){.mxl{padding:11px 12px;font-size:13px}.mxc{font-size:12.5px;padding:11px 6px}}
-  @media(max-width:720px){.grid3,.steps,.feats,.shots{grid-template-columns:1fr}.hero{padding:52px 0 44px}}
+  @media(max-width:720px){.grid3,.steps,.feats,.shots,.iclients{grid-template-columns:1fr}.hero{padding:52px 0 44px}}
   /* 小屏:藏掉页内锚点导航,保留 Install / GitHub / 语言切换 */
   @media(max-width:640px){.nav a[href^="#"]{display:none}}
 </style></head>
@@ -538,13 +569,34 @@ ${FAVICON_LINK}
   <section id="ai" class="band"><div class="wrap" style="text-align:center">
     <h2>${s.mcpH}</h2>
     <p class="sec-sub">${s.mcpSub}</p>
-    <p class="mcp-cap">${s.pluginCap}</p>
-    <pre class="mcp"><code>${PLUGIN_INSTALL}</code></pre>
-    <p class="mcp-note">${s.pluginNote} <code>/share</code></p>
-    <p class="mcp-cap" style="margin-top:30px">${s.mcpCap}</p>
-    <pre class="mcp"><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
-    <p class="mcp-note">${s.mcpCodex} <code>codex mcp add hspace -- npx -y hspace-mcp</code></p>
-    <p class="mcp-note">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
+    <div class="iclients">
+      <div class="ic hot">
+        <h3>Claude Code <span class="pill">${s.icRec}</span></h3>
+        <p class="icsub">${s.ccSub}</p>
+        <pre><code>${PLUGIN_INSTALL}</code></pre>
+        <p class="icnote">${s.ccNote}</p>
+      </div>
+      <div class="ic">
+        <h3>Cursor</h3>
+        <p class="icsub">${s.cuSub}</p>
+        <pre><code><span class="k">Command</span>  npx
+<span class="k">Args</span>     -y hspace-mcp</code></pre>
+        <p class="icnote">${s.cuNote}</p>
+      </div>
+      <div class="ic">
+        <h3>Codex CLI</h3>
+        <p class="icsub">${s.cxSub}</p>
+        <pre><code>codex mcp add hspace -- npx -y hspace-mcp</code></pre>
+        <p class="icnote">${s.cxNote}</p>
+      </div>
+      <div class="ic">
+        <h3>Claude Desktop</h3>
+        <p class="icsub">${s.cdSub}</p>
+        <pre><code>${MCP_CONFIG.replace(/</g, "&lt;")}</code></pre>
+        <p class="icnote">${s.cdNote}</p>
+      </div>
+    </div>
+    <p class="ic-foot">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
   </div></section>
 
   <section><div class="wrap">
