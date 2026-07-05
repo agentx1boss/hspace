@@ -800,7 +800,7 @@ function htmlResp(body: string, status: number): Response {
 async function recordEvent(url: URL, env: Env, ctx: ExecutionContext): Promise<Response> {
   const noStore = { "Cache-Control": "no-store", "Content-Type": "text/plain" };
   const n = url.searchParams.get("n") || "";
-  if (!["pv", "install", "try", "gh", "vsx"].includes(n)) return new Response(null, { status: 204, headers: noStore });
+  if (!["pv", "install", "try", "gh", "vsx", "ref"].includes(n)) return new Response(null, { status: 204, headers: noStore });
   const l = url.searchParams.get("l");
   const lang = l === "zh" || l === "en" ? l : "";
   const day = new Date().toISOString().slice(0, 10);
@@ -841,7 +841,8 @@ function pickLang(request: Request): "en" | "zh" {
 /** 落地页响应:英文默认;?lang=zh 或浏览器 Accept-Language 为中文则出中文 */
 function landingResp(request: Request): Response {
   const lang = pickLang(request);
-  return new Response(landingPage(lang), {
+  const referred = new URL(request.url).searchParams.get("ref") === "shared";
+  return new Response(landingPage(lang, referred), {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",

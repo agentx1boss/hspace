@@ -79,6 +79,8 @@ const L: Record<Lang, Record<string, string>> = {
     ogTitle: "HSpace — Ship to one, not to all.",
     ogDesc: "One link + password: see who opened it, revoke anytime, iterate without changing the link.",
     navHow: "How it works", navFeat: "Features", navCompare: "Compare", navFaq: "FAQ", navConsole: "Console", install: "Install",
+    refBanner: "Someone shared a page with you through HSpace — a link + password, only for the people meant to see it.",
+    refCta: "Send your own →",
     heroTag: "Built for AI coding · Targeted sharing, not public hosting",
     heroH1: `Ship <span class="hl">to one</span>, not to all.`,
     heroLead: "The HTML demo or Markdown doc Cursor / Claude Code just wrote — turn it into a link + password for teammates and clients: see who opened it, revoke anytime, iterate without changing the link.",
@@ -155,6 +157,8 @@ const L: Record<Lang, Record<string, string>> = {
     ogTitle: "HSpace — 稿出即递,点开即读,心里有数",
     ogDesc: "一键变成「链接 + 密码」:谁看了有回执,发错了随时撤回,链接不变可迭代。",
     navHow: "如何使用", navFeat: "功能", navCompare: "对比", navFaq: "FAQ", navConsole: "控制台", install: "安装插件",
+    refBanner: "有人通过 HSpace 把一个页面分享给了你——链接 + 密码,只给该看的人。",
+    refCta: "你也发一个 →",
     heroTag: "为 AI 编程而生 · 定向分享,不是公开托管",
     heroH1: `<span class="hl">稿出即递</span>,点开即读,心里有数`,
     heroLead: "Cursor / Claude Code 刚出的稿——HTML demo、Markdown 方案,一键变成「链接 + 密码」发给同事和客户。Markdown 自动排成阅读页、HTML 原样能跑,对方点开就能看;谁看了有回执,发错了随时撤回,链接不变可迭代。",
@@ -226,7 +230,7 @@ const L: Record<Lang, Record<string, string>> = {
   },
 };
 
-export function landingPage(lang: Lang = "en"): string {
+export function landingPage(lang: Lang = "en", referred = false): string {
   const s = L[lang];
   const other = lang === "en" ? "?lang=zh" : "?lang=en";
   const canonical = lang === "zh" ? `${SITE}/?lang=zh` : `${SITE}/`;
@@ -448,6 +452,10 @@ ${FAVICON_LINK}
   .ic-foot{color:var(--muted);font-size:13px;margin:24px 0 0;text-align:center}
   .ic-foot a{color:var(--accent)}
   .ic-foot code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
+  .refbar{background:var(--ring);text-align:center;font-size:13.5px;line-height:1.5;
+       padding:10px 20px;border-bottom:1px solid var(--border)}
+  .refbar span{color:var(--muted)}
+  .refbar a{color:var(--accent);font-weight:600;white-space:nowrap;margin-left:4px;border-bottom:none}
   .ic.wide{grid-column:1 / -1}
   .icrow{display:flex;gap:24px;align-items:flex-start}
   .icrow pre{flex:0 1 26rem;min-width:0}
@@ -484,6 +492,7 @@ ${FAVICON_LINK}
   @media(max-width:640px){.nav a[href^="#"]{display:none}}
 </style></head>
 <body>
+  ${referred ? `<div class="refbar">👋 <span>${s.refBanner}</span> <a href="#ai">${s.refCta}</a></div>` : ""}
   <header><div class="wrap">
     <a class="logo" href="/"><span class="tile">${MARK}</span>HSpace</a>
     <nav class="nav">
@@ -704,7 +713,7 @@ ${FAVICON_LINK}
     if(navigator.doNotTrack==='1'||window.doNotTrack==='1'||navigator.msDoNotTrack==='1')return;
     var L='${lang}';
     function e(n){try{navigator.sendBeacon('/e?n='+n+'&l='+L)}catch(_){}}
-    e('pv');
+    e('pv');${referred ? "e('ref');" : ""}
     document.addEventListener('click',function(ev){
       var a=ev.target.closest&&ev.target.closest('a');if(!a)return;var h=a.href||'';
       if(h.indexOf('marketplace.visualstudio.com')>-1)e('install');

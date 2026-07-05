@@ -5,6 +5,8 @@ export const FAVICON_LINK = '<link rel="icon" type="image/png" href="data:image/
 
 // 落地页:各页页脚的品牌署名指向这里(增长闭环,新标签打开)
 const LANDING = "https://hspace.zhanjian.space";
+// 页脚署名带来源标记,落地页据此显示「你是被分享过来的?」引导并统计飞轮流入
+const FOOT_HREF = LANDING + "?ref=shared";
 // 统一页脚署名:密码页 / 阅读页 / 目录页 / 合集导航 / 404 一律用英文 slogan(品牌 tagline)
 const FOOT_SIG = "HSpace · Ship to one, not to all.";
 
@@ -103,7 +105,7 @@ export function passwordPage(error = false, lang: "en" | "zh" = "en", expiresAt:
     <button type="submit">${t.btn}</button>
     ${error ? `<p class="err" role="alert">${t.err}</p>` : ""}
   </form>
-  <div class="foot"><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a></div>${expLine}
+  <div class="foot"><span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></div>${expLine}
 </body></html>`;
 }
 
@@ -202,7 +204,7 @@ export function readingPage(title: string, articleHtml: string, nav?: Collection
   ${nav ? sidebar(nav) : ""}
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
-    <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
+    <footer><span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
   </div>
 </body></html>`;
 }
@@ -233,7 +235,7 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): 
     <div class="meta">${esc(meta)}</div>
     <div class="list">${rows}</div>
   </main>
-  <footer><span class="dot"></span><a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a></footer>
+  <footer><span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></footer>
 </body></html>`;
 }
 
@@ -298,7 +300,7 @@ function collectionNavWidget(nav: CollectionNav): string {
       <div class="hd"><span class="t">${esc(nav.collectionTitle)}</span><span class="x" id="x" aria-label="关闭">×</span></div>
       <div class="list">${items}</div>
       ${pn}
-      <a class="brand" href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a>
+      <a class="brand" href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>
     </div>`;
   const json = JSON.stringify(markup).replace(/</g, "\\u003c");
   return `<div id="hspace-nav-host"></div><script>(function(){try{` +
@@ -331,5 +333,5 @@ export function notFoundPage(): string {
 <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;display:flex;flex-direction:column;gap:14px;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#17181c;color:#888;text-align:center}
 a{color:#8b8b90;text-decoration:none;font-size:13px}a:hover{color:#F0784F}</style>
 </head><body><div><h1>404</h1><p>该页面不存在、已删除或已过期。</p></div>
-<a href="${LANDING}" target="_blank" rel="noopener">${FOOT_SIG}</a></body></html>`;
+<a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></body></html>`;
 }

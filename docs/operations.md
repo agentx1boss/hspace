@@ -50,7 +50,9 @@ npx wrangler d1 execute html-share --remote --command \
 
 ## 落地页埋点(第一方,无 Cookie/PII)
 
-事件写入 D1 `metrics` 表(`pv` 浏览 / `install` 装插件点击 / `try` 体验入口 / `gh` GitHub / `vsx` Open VSX),按天、按语言聚合。尊重 DNT。
+事件写入 D1 `metrics` 表(`pv` 浏览 / `install` 装插件点击 / `try` 体验入口 / `gh` GitHub / `vsx` Open VSX / `ref` 从分享页署名回流的访问),按天、按语言聚合。尊重 DNT。
+
+> `ref` = 飞轮流入:接收方在分享页页脚点「HSpace · Ship to one…」(链接带 `?ref=shared`)回到落地页,落地页顶部随之显示「你是被分享过来的?」引导。看飞轮健康度:`ref` 相对 `pv` 的占比。
 
 ```bash
 cd backend
