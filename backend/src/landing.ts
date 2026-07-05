@@ -229,23 +229,45 @@ const L: Record<Lang, Record<string, string>> = {
 export function landingPage(lang: Lang = "en"): string {
   const s = L[lang];
   const other = lang === "en" ? "?lang=zh" : "?lang=en";
+  const canonical = lang === "zh" ? `${SITE}/?lang=zh` : `${SITE}/`;
+  const ld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "HSpace",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Web, VS Code, Cursor, Claude Code",
+    url: SITE,
+    description: s.desc,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    author: { "@type": "Organization", name: "HSpace", url: SITE },
+  });
   return `<!doctype html>
 <html lang="${lang}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${s.title}</title>
 ${FAVICON_LINK}
-<link rel="canonical" href="${SITE}/">
+<link rel="canonical" href="${canonical}">
+<link rel="alternate" hreflang="x-default" href="${SITE}/">
+<link rel="alternate" hreflang="en" href="${SITE}/">
+<link rel="alternate" hreflang="zh-Hans" href="${SITE}/?lang=zh">
 <meta name="description" content="${s.desc}">
+<meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141519" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="HSpace">
+<meta property="og:locale" content="${lang === "zh" ? "zh_CN" : "en_US"}">
+<meta property="og:locale:alternate" content="${lang === "zh" ? "en_US" : "zh_CN"}">
 <meta property="og:title" content="${s.ogTitle}">
 <meta property="og:description" content="${s.ogDesc}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="${SITE}/">
+<meta property="og:url" content="${canonical}">
 <meta property="og:image" content="${SITE}/og-card.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${s.ogTitle}">
+<meta name="twitter:description" content="${s.ogDesc}">
 <meta name="twitter:image" content="${SITE}/og-card.png">
+<script type="application/ld+json">${ld}</script>
 <style>
   :root{--bg:#faf9f7;--fg:#1d1d1f;--muted:#6a6a70;--accent:#E2603C;--card:#fff;
         --border:#e7e4df;--soft:#f2f0ec;--ink:#1A1D24;--ring:rgba(226,96,60,.14)}

@@ -84,6 +84,8 @@ export default {
       const auth = await handleAuth(url, request, env);
       if (auth) return auth;
       if (url.pathname === "/console") return serveConsole(url, request, env);
+      if (url.pathname === "/robots.txt") return robotsResp(true, env);
+      if (url.pathname === "/sitemap.xml") return sitemapResp(env);
       const asset = await serveBrandAsset(url.pathname, env);
       if (asset) return asset;
       const site = await serveSitePage(url.pathname, request, env);
@@ -95,6 +97,8 @@ export default {
 
     // ── 路由：用户内容子域 → 提供页面 ──
     if (host.endsWith("." + env.USERCONTENT_DOMAIN)) {
+      // 内容子域全是 noindex 密码页,robots 显式全禁(与响应头 X-Robots-Tag 双保险)
+      if (url.pathname === "/robots.txt") return robotsResp(false, env);
       const slug = host.slice(0, host.length - env.USERCONTENT_DOMAIN.length - 1);
       return servePage(slug, url.pathname, request, env, ctx);
     }
@@ -851,6 +855,37 @@ function landingResp(request: Request): Response {
 
 const siteHtml = (body: string, status = 200) =>
   new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8", "X-Content-Type-Options": "nosniff" } });
+
+/** robots.txt:落地域允许抓取(并指向 sitemap);内容子域全禁 */
+function robotsResp(landing: boolean, env: Env): Response {
+  const site = `https://hspace.${env.USERCONTENT_DOMAIN}`;
+  const body = landing
+    ? `User-agent: *\nAllow: /\nDisallow: /console\n\nSitemap: ${site}/sitemap.xml\n`
+    : `User-agent: *\nDisallow: /\n`;
+  return new Response(body, {
+    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+  });
+}
+
+/** sitemap.xml:仅收录可索引的第一方页面(落地含中英 hreflang、隐私、条款) */
+function sitemapResp(env: Env): Response {
+  const site = `https://hspace.${env.USERCONTENT_DOMAIN}`;
+  const body = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>${site}/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${site}/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="${site}/?lang=zh"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${site}/"/>
+  </url>
+  <url><loc>${site}/privacy</loc></url>
+  <url><loc>${site}/terms</loc></url>
+</urlset>
+`;
+  return new Response(body, {
+    headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+  });
+}
 
 /** 法务/举报页(隐私、条款、举报)。命中返回响应,否则 null */
 async function serveSitePage(path: string, request: Request, env: Env): Promise<Response | null> {
