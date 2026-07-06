@@ -9,5 +9,6 @@
 | [design-collections.md](design-collections.md) | 📁 设计记录 | 文档合集(✅ v0.2.x) |
 | [design-per-recipient.md](design-per-recipient.md) | 📁 设计记录 | 每人一链 / 多口令(✅ v0.3.0) |
 | [design-versioning.md](design-versioning.md) | 📁 设计记录 | 内容版本化(✅ v0.4.0) |
+| [design-save.md](design-save.md) | 📋 设计定稿 | 保存:读者收藏/另存副本(未实施,排在上量闸门后) |
 
 改定位/文案:只改 positioning.md(需走评审)。历史评审与计划原稿见 git 历史。

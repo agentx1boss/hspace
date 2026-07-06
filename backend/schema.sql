@@ -81,3 +81,19 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    INTEGER NOT NULL,   -- epoch 秒
   last_login_at INTEGER NOT NULL
 );
+
+-- 读者收藏(一期:引用型收藏):读者把收到的稿存进自己账号,不复制内容、不发新链接。
+-- 打开时凭「钥匙引用」重验源稿当前口令是否仍有效(撤回照常生效):
+--   grant_id 非空 = 保存时走的访问人口令,重验 = 该 grant 仍未撤销;
+--   grant_id 空且 key_hash 非空 = 保存时走的共享密码,重验 = key_hash 仍等于源稿当前 password_hash;
+--   两者皆空 = 保存时源稿无口令,打开直接跳转(源稿若后来加了口令,自动回落密码门)。
+CREATE TABLE IF NOT EXISTS saves (
+  owner_id    TEXT NOT NULL,        -- 收藏者(users.owner_id)
+  slug        TEXT NOT NULL,        -- 源稿(天然 lineage,二期快照复用)
+  grant_id    TEXT,                 -- 保存时所用访问人 id;共享密码/无口令为 NULL
+  key_hash    TEXT,                 -- 共享密码保存时的 password_hash 快照;grant/无口令为 NULL
+  title       TEXT,                 -- 冗余存标题,源稿失效后仍可显示
+  created_at  INTEGER NOT NULL,     -- epoch 秒
+  PRIMARY KEY (owner_id, slug)
+);
+CREATE INDEX IF NOT EXISTS idx_saves_owner ON saves(owner_id);
