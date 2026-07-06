@@ -70,23 +70,33 @@ export async function serveConsole(url: URL, request: Request, env: Env, ctx: Ex
   if (saveToken) bumpMetric(env, ctx, "sclk");
   const pending = saveToken || readCookie(request, SAVE_COOKIE);
   if (pending) {
-    let saved = false;
+    let outcome: "saved" | "expired" | "full" = "expired";
     const v = await verifyScopedToken(env.COOKIE_SIGNING_SECRET, "save", pending);
     if (v) {
       // 仅当源稿此刻仍存在才入库:令牌过期/伪造,或稿已删,都不建收藏、不谎报成功
       const p = await env.DB.prepare("SELECT filename, password_hash FROM pages WHERE slug = ?")
         .bind(v.slug).first<{ filename: string | null; password_hash: string | null }>();
       if (p) {
-        const keyHash = v.grantId ? null : (p.password_hash ?? null);
-        await env.DB.prepare(
-          "INSERT OR REPLACE INTO saves (owner_id, slug, grant_id, key_hash, title, created_at) VALUES (?, ?, ?, ?, ?, ?)"
-        ).bind(ownerId, v.slug, v.grantId || null, keyHash, p.filename || v.slug, now()).run();
-        bumpMetric(env, ctx, "save");
-        saved = true;
+        // 配额:仅新收藏受限(重存已有条目是幂等覆盖,不占新额度)。到顶不谎报,引导先移除
+        const already = await env.DB.prepare("SELECT 1 FROM saves WHERE owner_id = ? AND slug = ?")
+          .bind(ownerId, v.slug).first();
+        const cnt = already ? 0 : ((await env.DB.prepare("SELECT COUNT(*) AS c FROM saves WHERE owner_id = ?")
+          .bind(ownerId).first<{ c: number }>())?.c ?? 0);
+        if (!already && cnt >= Number(env.SAVE_MAX)) {
+          outcome = "full";
+        } else {
+          const keyHash = v.grantId ? null : (p.password_hash ?? null);
+          await env.DB.prepare(
+            "INSERT OR REPLACE INTO saves (owner_id, slug, grant_id, key_hash, title, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+          ).bind(ownerId, v.slug, v.grantId || null, keyHash, p.filename || v.slug, now()).run();
+          bumpMetric(env, ctx, "save");
+          outcome = "saved";
+        }
       }
     }
-    // 清 URL 令牌 + 清暂存 cookie,重定向到干净的 console;仅真正入库才带 saved=1(否则不谎报)
-    const rh = new Headers({ Location: saved ? "/console?saved=1" : "/console?save_expired=1" });
+    // 清 URL 令牌 + 清暂存 cookie,重定向到干净的 console;按结果分流(不谎报成功)
+    const flag = outcome === "saved" ? "saved=1" : outcome === "full" ? "save_full=1" : "save_expired=1";
+    const rh = new Headers({ Location: `/console?${flag}` });
     rh.append("Set-Cookie", `${SAVE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
     return new Response(null, { status: 302, headers: rh });
   }
@@ -115,22 +125,35 @@ export async function serveConsole(url: URL, request: Request, env: Env, ctx: Ex
      FROM pages WHERE owner_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 200`
   ).bind(ownerId).all<PageRowLite>();
 
-  // 收藏列表:LEFT JOIN 源稿判定状态(源稿失效/过期后仍留墓碑,标题冗余存于 saves)
+  // 收藏列表:LEFT JOIN 源稿判定状态(源稿失效/过期后仍留墓碑,标题冗余存于 saves)。
+  // 上限 == SAVE_MAX,故取满不截断(配额保证行数 ≤ SAVE_MAX,列表不会静默藏行)
   const { results: saveRows } = await env.DB.prepare(
     `SELECT s.slug, s.title, s.created_at,
             p.status AS pstatus, p.expires_at, p.owner_id AS powner, p.hits
      FROM saves s LEFT JOIN pages p ON p.slug = s.slug
-     WHERE s.owner_id = ? ORDER BY s.created_at DESC LIMIT 200`
-  ).bind(ownerId).all<SaveJoinRow>();
+     WHERE s.owner_id = ? ORDER BY s.created_at DESC LIMIT ?`
+  ).bind(ownerId, Number(env.SAVE_MAX)).all<SaveJoinRow>();
   const anonMaxHits = Number(env.ANON_MAX_HITS);
   const ts = now();
-  const saves: SaveView[] = (saveRows ?? []).map((r) => {
-    let status: SaveView["status"] = "ok";
-    if (r.pstatus !== "active") status = "gone";                          // 已删/已下架/源稿不存在
-    else if (r.expires_at != null && r.expires_at < ts) status = "expired";
-    else if (r.powner == null && (r.hits ?? 0) >= anonMaxHits) status = "gone"; // 匿名稿访问量封顶
-    return { slug: r.slug, title: r.title || r.slug, created_at: r.created_at, status };
-  });
+
+  // 惰性回收:源稿已彻底消失(deleted 终态 / 页面行不存在)的收藏是纯垃圾,永不可打开,
+  // 顺手清掉(非阻塞),既不占配额也不留墓碑。过期/下架保留(前者可续期复活、后者是审核态)。
+  const deadSlugs = (saveRows ?? []).filter((r) => r.pstatus == null || r.pstatus === "deleted").map((r) => r.slug);
+  if (deadSlugs.length) {
+    ctx.waitUntil(env.DB.prepare(
+      `DELETE FROM saves WHERE owner_id = ? AND slug IN (${deadSlugs.map(() => "?").join(",")})`
+    ).bind(ownerId, ...deadSlugs).run());
+  }
+
+  const saves: SaveView[] = (saveRows ?? [])
+    .filter((r) => !(r.pstatus == null || r.pstatus === "deleted")) // 与惰性回收一致,不渲染已消失的
+    .map((r) => {
+      let status: SaveView["status"] = "ok";
+      if (r.pstatus !== "active") status = "gone";                        // 已下架(不泄露细节)
+      else if (r.expires_at != null && r.expires_at < ts) status = "expired";
+      else if (r.powner == null && (r.hits ?? 0) >= anonMaxHits) status = "gone"; // 匿名稿访问量封顶
+      return { slug: r.slug, title: r.title || r.slug, created_at: r.created_at, status };
+    });
 
   const html = consolePage({
     githubLogin: user?.github_login ?? ownerId,
@@ -141,6 +164,8 @@ export async function serveConsole(url: URL, request: Request, env: Env, ctx: Ex
     saves,
     justSaved: url.searchParams.get("saved") === "1",
     saveExpired: url.searchParams.get("save_expired") === "1",
+    saveFull: url.searchParams.get("save_full") === "1",
+    saveMax: Number(env.SAVE_MAX),
     domain: env.USERCONTENT_DOMAIN,
   });
   return new Response(html, { status: 200, headers });
@@ -228,6 +253,8 @@ interface ConsoleData {
   saves: SaveView[];
   justSaved: boolean;
   saveExpired: boolean;
+  saveFull: boolean;
+  saveMax: number;
   domain: string;
 }
 
@@ -302,6 +329,7 @@ function consolePage(d: ConsoleData): string {
   ${d.fromVscode ? `<div class="tip">Copy your API key below, then paste it back into the editor.</div>` : ""}
   ${d.justSaved ? `<div class="fresh">Saved to your account — find it under Saved below.</div>` : ""}
   ${d.saveExpired ? `<div class="tip">That save link expired or was invalid. Open the shared page again and tap “Save” to retry.</div>` : ""}
+  ${d.saveFull ? `<div class="tip">Your saved list is full (${d.saveMax}). Remove a few below, then save again.</div>` : ""}
   <div class="bar">
     <h1>HSpace Console</h1>
     <form method="post" action="/auth/logout"><button class="btn plain">Sign out</button></form>
