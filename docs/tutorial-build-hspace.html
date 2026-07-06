@@ -9,7 +9,7 @@
   @media(prefers-color-scheme:dark){:root{--bg:#141519;--fg:#e8e6e3;--muted:#9a9aa0;--accent:#f0784f;--border:#2c2e35;--soft:#23252c;--ink:#0f1014;--card:#1b1d22}}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:720px;margin:0 auto;padding:56px 22px 90px}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 22px 90px}
   .tag{display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:var(--accent);margin-bottom:10px}
   h1{font-size:29px;line-height:1.25;margin:0 0 8px;letter-spacing:-.01em}
   .lead{color:var(--muted);font-size:16.5px;margin:0 0 6px}
@@ -23,11 +23,6 @@
   code{background:var(--soft);padding:.12em .4em;border-radius:5px;font:13.5px ui-monospace,Menlo,Consolas,monospace}
   pre{position:relative;background:var(--ink);color:#e8e6e3;border-radius:12px;padding:16px 18px;overflow-x:auto;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;margin:16px 0}
   pre code{background:none;padding:0;color:inherit;font-size:inherit}
-  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
-  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{font-weight:650;color:var(--muted);font-size:12.5px;letter-spacing:.03em}
-  tbody tr{transition:background .15s}
-  tbody tr:hover{background:var(--soft)}
   .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:13.5px}
   .pill{display:inline-block;background:var(--soft);border:1px solid var(--border);border-radius:999px;padding:3px 11px;font-size:12.5px;color:var(--muted);margin:3px 5px 3px 0;transition:transform .15s,border-color .15s,color .15s}
   .pill:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
@@ -43,7 +38,7 @@
   .rise.in{opacity:1;transform:none}
   @media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
   /* copy */
-  .cp{position:absolute;top:8px;right:8px;font:600 11px/1 -apple-system,sans-serif;padding:5px 9px;border-radius:7px;border:1px solid #3a3d45;background:#26282f;color:#cfd0d4;cursor:pointer;opacity:0;transition:opacity .18s,background .18s}
+  .cp{position:absolute;top:8px;right:8px;font:600 13px/1 -apple-system,sans-serif;padding:5px 9px;border-radius:7px;border:1px solid #3a3d45;background:#26282f;color:#cfd0d4;cursor:pointer;opacity:0;transition:opacity .18s,background .18s}
   pre:hover .cp,.cp.done{opacity:1}
   .cp:hover{background:#33363f}
   .cp.done{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -58,6 +53,25 @@
   .gate.open .reveal{display:inline;animation:fadeIn .55s ease}
   .gate.open .hint{display:none}
   @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  /* architecture diagram */
+  .arch{width:100%;height:auto;margin:18px 0;display:block}
+  .arch .b{fill:var(--card);stroke:var(--border);stroke-width:1.5}
+  .arch .w{fill:var(--ink);stroke:var(--accent);stroke-width:2}
+  .arch .s{fill:var(--soft);stroke:var(--border);stroke-width:1.5}
+  .arch .t{font-size:12px;font-weight:650;fill:var(--fg)}
+  .arch .sub{font-size:9.5px;fill:var(--muted)}
+  .arch .wt{font-size:13px;font-weight:700;fill:#fff}
+  .arch .wsub{font-size:9.5px;fill:#c9cbd2}
+  .arch .flow{fill:none;stroke:var(--accent);stroke-width:1.7;stroke-dasharray:5 7;opacity:.5;animation:flow 1s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-24}}
+  @media(prefers-reduced-motion:reduce){.arch .flow{animation:none}}
+  /* tech-stack cards */
+  .stack{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin:16px 0}
+  .scard{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 14px;transition:transform .16s,border-color .16s,box-shadow .16s}
+  .scard:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 9px 22px rgba(0,0,0,.07)}
+  .scard .ic{font-size:19px;line-height:1}
+  .scard .k{display:block;font-size:11px;color:var(--muted);letter-spacing:.02em;margin:8px 0 2px}
+  .scard .v{font-size:13.5px;font-weight:600}
   /* checklist */
   .ckbar{position:sticky;top:6px;z-index:40;background:var(--card);display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:9px 13px;border:1px solid var(--border);border-radius:10px;font-size:13.5px}
   .ckbar .track{flex:1;height:7px;border-radius:99px;background:var(--soft);overflow:hidden}
@@ -96,34 +110,57 @@
   <li><strong>强制密码</strong>是产品身份——不做公开画廊。</li>
   <li><strong>没有永久链接</strong>:所有链接都会过期(匿名 3 天、登录 30 天/期可续)。</li>
   <li><strong>内容页 <code>noindex</code> + 密码门</strong>——唯一可被索引的只有落地页。</li>
-  <li><strong>自包含页面</strong>:CSS/JS/SVG 全内联,零外部资源。<em>(这一页就是证据——动画、清单、切换全在文件里。)</em></li>
+  <li><strong>自包含页面</strong>:CSS/JS/SVG 全内联,零外部资源。<em>(这一页就是证据——下面的图、卡片、动画、切换全在文件里。)</em></li>
 </ul>
 
 <h2>架构:一个 Worker 扛下所有</h2>
-<pre><code>*.zhanjian.space  →  &lt;slug&gt;.zhanjian.space   内容页 + 密码门
-                     hspace.…              落地 / 法务 / 埋点 / openapi
-                     *.workers.dev         发布 API
-
-存储:  R2 = 内容对象(明文)
-        D1 = 元数据 / 版本 / 每人一链 / 回执 / 举报
-        KV = 频率限制计数</code></pre>
-<p>每篇分享都是一个独立子域 <code>&lt;slug&gt;.zhanjian.space</code>,靠一条通配路由 + 通配 DNS 全部接住。</p>
+<svg class="arch" viewBox="0 0 620 300" role="img" aria-label="架构图:三类域名 → 一个 Worker → R2/D1/KV">
+  <path class="flow" d="M160,56 C205,56 205,150 250,150"/>
+  <path class="flow" d="M160,150 H250"/>
+  <path class="flow" d="M160,244 C205,244 205,150 250,150"/>
+  <path class="flow" d="M390,150 C435,150 435,56 480,56"/>
+  <path class="flow" d="M390,150 H480"/>
+  <path class="flow" d="M390,150 C435,150 435,244 480,244"/>
+  <rect class="b" x="10" y="32" width="150" height="48" rx="10"/>
+  <text class="t" x="85" y="53" text-anchor="middle">&lt;slug&gt;.zhanjian.space</text>
+  <text class="sub" x="85" y="69" text-anchor="middle">内容页 · 密码门</text>
+  <rect class="b" x="10" y="126" width="150" height="48" rx="10"/>
+  <text class="t" x="85" y="147" text-anchor="middle">hspace.…</text>
+  <text class="sub" x="85" y="163" text-anchor="middle">落地 · openapi</text>
+  <rect class="b" x="10" y="220" width="150" height="48" rx="10"/>
+  <text class="t" x="85" y="241" text-anchor="middle">*.workers.dev</text>
+  <text class="sub" x="85" y="257" text-anchor="middle">发布 API</text>
+  <rect class="w" x="250" y="104" width="140" height="92" rx="14"/>
+  <text class="wt" x="320" y="146" text-anchor="middle">Cloudflare</text>
+  <text class="wt" x="320" y="164" text-anchor="middle">Worker</text>
+  <text class="wsub" x="320" y="181" text-anchor="middle">一套路由扛下全部</text>
+  <rect class="s" x="480" y="32" width="130" height="48" rx="10"/>
+  <text class="t" x="545" y="52" text-anchor="middle">R2</text>
+  <text class="sub" x="545" y="68" text-anchor="middle">内容 · 明文</text>
+  <rect class="s" x="480" y="126" width="130" height="48" rx="10"/>
+  <text class="t" x="545" y="146" text-anchor="middle">D1</text>
+  <text class="sub" x="545" y="162" text-anchor="middle">元数据 · 版本 · 回执</text>
+  <rect class="s" x="480" y="220" width="130" height="48" rx="10"/>
+  <text class="t" x="545" y="240" text-anchor="middle">KV</text>
+  <text class="sub" x="545" y="256" text-anchor="middle">频率限制</text>
+</svg>
+<p>每篇分享都是一个独立子域 <code>&lt;slug&gt;.zhanjian.space</code>,靠一条通配路由 + 通配 DNS 全部接住。橙线是请求的流向:三类域名进同一个 Worker,再落到三种存储。</p>
 
 <h2>技术栈全景</h2>
-<table><thead><tr><th>层</th><th>选型</th></tr></thead><tbody>
-<tr><td>运行时</td><td>Cloudflare Workers(TypeScript)</td></tr>
-<tr><td>对象存储</td><td>R2 —— HTML/Markdown 原文(明文)</td></tr>
-<tr><td>元数据库</td><td>D1(SQLite)</td></tr>
-<tr><td>计数/限流</td><td>KV</td></tr>
-<tr><td>Markdown</td><td>marked(GFM),边缘渲染</td></tr>
-<tr><td>密码/签名</td><td>Web Crypto —— PBKDF2 哈希 + HMAC Cookie</td></tr>
-<tr><td>登录</td><td>GitHub OAuth</td></tr>
-<tr><td>CLI/部署</td><td>Wrangler</td></tr>
-<tr><td>编辑器插件</td><td>VS Code 扩展(vsce + ovsx)</td></tr>
-<tr><td>AI 调用</td><td>MCP server + OpenAPI 3.0.3</td></tr>
-<tr><td>Claude Code</td><td>插件 + marketplace,自带 /share</td></tr>
-<tr><td>CI/CD</td><td>GitHub Actions</td></tr>
-</tbody></table>
+<div class="stack">
+  <div class="scard"><span class="ic">⚡</span><span class="k">运行时</span><span class="v">Cloudflare Workers</span></div>
+  <div class="scard"><span class="ic">🗄️</span><span class="k">对象存储</span><span class="v">R2(明文)</span></div>
+  <div class="scard"><span class="ic">🧮</span><span class="k">元数据库</span><span class="v">D1 · SQLite</span></div>
+  <div class="scard"><span class="ic">⏱️</span><span class="k">计数 / 限流</span><span class="v">KV</span></div>
+  <div class="scard"><span class="ic">📝</span><span class="k">Markdown</span><span class="v">marked · 边缘渲染</span></div>
+  <div class="scard"><span class="ic">🔐</span><span class="k">密码 / 签名</span><span class="v">Web Crypto</span></div>
+  <div class="scard"><span class="ic">🔑</span><span class="k">登录</span><span class="v">GitHub OAuth</span></div>
+  <div class="scard"><span class="ic">🚀</span><span class="k">CLI / 部署</span><span class="v">Wrangler</span></div>
+  <div class="scard"><span class="ic">🧩</span><span class="k">编辑器插件</span><span class="v">VS Code · vsce/ovsx</span></div>
+  <div class="scard"><span class="ic">🤖</span><span class="k">AI 调用</span><span class="v">MCP · OpenAPI</span></div>
+  <div class="scard"><span class="ic">💬</span><span class="k">Claude Code</span><span class="v">插件 · /share</span></div>
+  <div class="scard"><span class="ic">🔁</span><span class="k">CI/CD</span><span class="v">GitHub Actions</span></div>
+</div>
 <p>边缘密码门:无 Cookie → 401 密码页;提交 → PBKDF2 校验 → HMAC Cookie(24h)→ 303 回到原路径。「每人一链」= 同一链接、每人一个密码,按人统计、可单独即时撤销。</p>
 
 <h2>⭐ 人工步骤(点一下打勾)</h2>
@@ -207,34 +244,57 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
   <li><strong>Mandatory password</strong> is the product's identity — no public gallery.</li>
   <li><strong>No permanent links</strong>: every link expires (anon 3 days, signed-in 30 days/term, renewable).</li>
   <li><strong>Content pages are <code>noindex</code> + gated</strong> — only the landing page is indexable.</li>
-  <li><strong>Self-contained pages</strong>: all CSS/JS/SVG inlined; zero external assets. <em>(This page proves it — the animations, checklist and this language toggle all ship inside the file.)</em></li>
+  <li><strong>Self-contained pages</strong>: all CSS/JS/SVG inlined; zero external assets. <em>(This page proves it — the diagram, cards, animations and toggle all ship inside the file.)</em></li>
 </ul>
 
 <h2>Architecture: one Worker carries everything</h2>
-<pre><code>*.zhanjian.space  →  &lt;slug&gt;.zhanjian.space   content page + password gate
-                     hspace.…              landing / legal / beacon / openapi
-                     *.workers.dev         publish API
-
-Storage:  R2 = content objects (plaintext)
-          D1 = metadata / versions / grants / receipts / reports
-          KV = rate-limit counters</code></pre>
-<p>Every share is its own subdomain <code>&lt;slug&gt;.zhanjian.space</code>, caught by one wildcard route + wildcard DNS.</p>
+<svg class="arch" viewBox="0 0 620 300" role="img" aria-label="Architecture: three host types into one Worker, then R2/D1/KV">
+  <path class="flow" d="M160,56 C205,56 205,150 250,150"/>
+  <path class="flow" d="M160,150 H250"/>
+  <path class="flow" d="M160,244 C205,244 205,150 250,150"/>
+  <path class="flow" d="M390,150 C435,150 435,56 480,56"/>
+  <path class="flow" d="M390,150 H480"/>
+  <path class="flow" d="M390,150 C435,150 435,244 480,244"/>
+  <rect class="b" x="10" y="32" width="150" height="48" rx="10"/>
+  <text class="t" x="85" y="53" text-anchor="middle">&lt;slug&gt;.zhanjian.space</text>
+  <text class="sub" x="85" y="69" text-anchor="middle">content · gate</text>
+  <rect class="b" x="10" y="126" width="150" height="48" rx="10"/>
+  <text class="t" x="85" y="147" text-anchor="middle">hspace.…</text>
+  <text class="sub" x="85" y="163" text-anchor="middle">landing · openapi</text>
+  <rect class="b" x="10" y="220" width="150" height="48" rx="10"/>
+  <text class="t" x="85" y="241" text-anchor="middle">*.workers.dev</text>
+  <text class="sub" x="85" y="257" text-anchor="middle">publish API</text>
+  <rect class="w" x="250" y="104" width="140" height="92" rx="14"/>
+  <text class="wt" x="320" y="146" text-anchor="middle">Cloudflare</text>
+  <text class="wt" x="320" y="164" text-anchor="middle">Worker</text>
+  <text class="wsub" x="320" y="181" text-anchor="middle">one route table</text>
+  <rect class="s" x="480" y="32" width="130" height="48" rx="10"/>
+  <text class="t" x="545" y="52" text-anchor="middle">R2</text>
+  <text class="sub" x="545" y="68" text-anchor="middle">content · plaintext</text>
+  <rect class="s" x="480" y="126" width="130" height="48" rx="10"/>
+  <text class="t" x="545" y="146" text-anchor="middle">D1</text>
+  <text class="sub" x="545" y="162" text-anchor="middle">metadata · versions</text>
+  <rect class="s" x="480" y="220" width="130" height="48" rx="10"/>
+  <text class="t" x="545" y="240" text-anchor="middle">KV</text>
+  <text class="sub" x="545" y="256" text-anchor="middle">rate limits</text>
+</svg>
+<p>Every share is its own subdomain <code>&lt;slug&gt;.zhanjian.space</code>, caught by one wildcard route + wildcard DNS. The orange lines are the request flow: three host types into one Worker, then down to three storage layers.</p>
 
 <h2>The full stack</h2>
-<table><thead><tr><th>Layer</th><th>Choice</th></tr></thead><tbody>
-<tr><td>Runtime</td><td>Cloudflare Workers (TypeScript)</td></tr>
-<tr><td>Object storage</td><td>R2 — raw HTML/Markdown (plaintext)</td></tr>
-<tr><td>Metadata DB</td><td>D1 (SQLite)</td></tr>
-<tr><td>Counters / limits</td><td>KV</td></tr>
-<tr><td>Markdown</td><td>marked (GFM), rendered at the edge</td></tr>
-<tr><td>Password / signing</td><td>Web Crypto — PBKDF2 hash + HMAC cookie</td></tr>
-<tr><td>Sign-in</td><td>GitHub OAuth</td></tr>
-<tr><td>CLI / deploy</td><td>Wrangler</td></tr>
-<tr><td>Editor plugin</td><td>VS Code Extension (vsce + ovsx)</td></tr>
-<tr><td>AI callable</td><td>MCP server + OpenAPI 3.0.3</td></tr>
-<tr><td>Claude Code</td><td>plugin + marketplace, a /share command</td></tr>
-<tr><td>CI/CD</td><td>GitHub Actions</td></tr>
-</tbody></table>
+<div class="stack">
+  <div class="scard"><span class="ic">⚡</span><span class="k">Runtime</span><span class="v">Cloudflare Workers</span></div>
+  <div class="scard"><span class="ic">🗄️</span><span class="k">Object storage</span><span class="v">R2 (plaintext)</span></div>
+  <div class="scard"><span class="ic">🧮</span><span class="k">Metadata DB</span><span class="v">D1 · SQLite</span></div>
+  <div class="scard"><span class="ic">⏱️</span><span class="k">Counters / limits</span><span class="v">KV</span></div>
+  <div class="scard"><span class="ic">📝</span><span class="k">Markdown</span><span class="v">marked · edge-rendered</span></div>
+  <div class="scard"><span class="ic">🔐</span><span class="k">Password / signing</span><span class="v">Web Crypto</span></div>
+  <div class="scard"><span class="ic">🔑</span><span class="k">Sign-in</span><span class="v">GitHub OAuth</span></div>
+  <div class="scard"><span class="ic">🚀</span><span class="k">CLI / deploy</span><span class="v">Wrangler</span></div>
+  <div class="scard"><span class="ic">🧩</span><span class="k">Editor plugin</span><span class="v">VS Code · vsce/ovsx</span></div>
+  <div class="scard"><span class="ic">🤖</span><span class="k">AI callable</span><span class="v">MCP · OpenAPI</span></div>
+  <div class="scard"><span class="ic">💬</span><span class="k">Claude Code</span><span class="v">plugin · /share</span></div>
+  <div class="scard"><span class="ic">🔁</span><span class="k">CI/CD</span><span class="v">GitHub Actions</span></div>
+</div>
 <p>The edge gate: no cookie → 401 password page; submit → PBKDF2 verify → HMAC cookie (24h) → 303 back to the original path. Per-recipient links = one link, a password per recipient, per-person stats, instant isolated revocation.</p>
 
 <h2>⭐ Manual steps (tap to check off)</h2>
@@ -303,12 +363,10 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
 
 <script>
 (function(){
-  // scroll progress
   var bar=document.getElementById('bar');
   function prog(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';}
   addEventListener('scroll',prog,{passive:true});addEventListener('resize',prog);
 
-  // copy buttons (all code blocks, both languages)
   document.querySelectorAll('pre').forEach(function(pre){
     var b=document.createElement('button');b.className='cp';b.textContent='⧉';b.title='copy';
     b.addEventListener('click',function(){
@@ -321,11 +379,9 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
     pre.appendChild(b);
   });
 
-  // reveal on scroll
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.1});
-  document.querySelectorAll('h2,pre,table,blockquote,.gate,.steps h3,ul,.foot').forEach(function(el){el.classList.add('rise');io.observe(el);});
+  document.querySelectorAll('h2,pre,.arch,.stack,.gate,.steps h3,ul,.foot').forEach(function(el){el.classList.add('rise');io.observe(el);});
 
-  // gate easter egg (per doc)
   document.querySelectorAll('.gate').forEach(function(gate){
     var lock=gate.querySelector('.lock');
     lock.addEventListener('click',function(){
@@ -335,16 +391,14 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
     });
   });
 
-  // checklist (per doc, persisted by data-key)
   document.querySelectorAll('.steps').forEach(function(steps){
-    var bar=steps.previousElementSibling; // .ckbar
-    var fill=bar.querySelector('.fill'),nEl=bar.querySelector('.n');
+    var cb=steps.previousElementSibling;
+    var fill=cb.querySelector('.fill'),nEl=cb.querySelector('.n');
     var doneWord=steps.dataset.key==='zh'?' 已完成':' done';
     var KEY='hspace-guide-ck-'+steps.dataset.key;
     var lis=[].slice.call(steps.querySelectorAll('li'));
     var saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
-    function upd(){var d=steps.querySelectorAll('li.done').length,t=lis.length;
-      nEl.textContent=d+' / '+t+doneWord;fill.style.width=(t?d/t*100:0)+'%';}
+    function upd(){var d=steps.querySelectorAll('li.done').length,t=lis.length;nEl.textContent=d+' / '+t+doneWord;fill.style.width=(t?d/t*100:0)+'%';}
     lis.forEach(function(li,i){
       if(saved[i])li.classList.add('done');
       li.addEventListener('click',function(ev){
@@ -358,7 +412,6 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
     upd();
   });
 
-  // language switch (default zh; remembers last choice)
   var docs=[].slice.call(document.querySelectorAll('.doc'));
   var btns=[].slice.call(document.querySelectorAll('.langbtn'));
   function setLang(l){
