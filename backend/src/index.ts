@@ -46,6 +46,7 @@ export interface Env {
   COLLECTION_MAX_SIZE_BYTES: string;
   ANON_MAX_DOCS: string;
   MAX_DOCS: string;
+  SAVE_MAX: string;
 }
 
 /** R2 中合集清单(pages/<slug>/index.json)的结构 */

@@ -50,9 +50,11 @@ npx wrangler d1 execute html-share --remote --command \
 
 ## 落地页埋点(第一方,无 Cookie/PII)
 
-事件写入 D1 `metrics` 表(`pv` 浏览 / `install` 装插件点击 / `try` 体验入口 / `gh` GitHub / `vsx` Open VSX / `ref` 从分享页署名回流的访问),按天、按语言聚合。尊重 DNT。
+事件写入 D1 `metrics` 表(`pv` 浏览 / `install` 装插件点击 / `try` 体验入口 / `gh` GitHub / `vsx` Open VSX / `ref` 从分享页署名回流的访问 / `sclk` 点「保存这份稿」 / `save` 收藏落库成功),按天、按语言聚合。尊重 DNT。
 
 > `ref` = 飞轮流入:接收方在分享页页脚点「HSpace · Ship to one…」(链接带 `?ref=shared`)回到落地页,落地页顶部随之显示「你是被分享过来的?」引导。看飞轮健康度:`ref` 相对 `pv` 的占比。
+
+> `sclk` / `save` = 收藏漏斗(读者收藏一期,见 [design-save.md](design-save.md))。`sclk` = 阅读页点「保存这份稿」(含登录/未登录),`save` = 真正入库(登录 + 令牌有效)。二者都由 console 服务端直接写入(`lang` 恒为空,读者语言未知),不走 `/e` beacon。**核心 kill/keep**:`sclk → save` 转化率(登录门槛的流失),以及 saved 读者→首次发稿转化(飞轮闭环,靠下方 SQL 跨表查)。
 
 ```bash
 cd backend
@@ -65,6 +67,12 @@ npx wrangler d1 execute html-share --remote --command \
 # 转化:安装点击 / 浏览
 npx wrangler d1 execute html-share --remote --command \
   "SELECT name, SUM(count) FROM metrics GROUP BY name"
+# 收藏漏斗:保存点击 → 落库成功(差值 ≈ 登录门槛流失)
+npx wrangler d1 execute html-share --remote --command \
+  "SELECT name, SUM(count) FROM metrics WHERE name IN ('sclk','save') GROUP BY name"
+# 飞轮闭环:收藏过的读者里,有多少人自己也发过稿(saved 读者 → 首次发稿)
+npx wrangler d1 execute html-share --remote --command \
+  "SELECT COUNT(DISTINCT s.owner_id) AS savers, COUNT(DISTINCT p.owner_id) AS savers_who_publish FROM saves s LEFT JOIN pages p ON p.owner_id = s.owner_id"
 ```
 
 ## 定位 / slogan 变更时的同步清单

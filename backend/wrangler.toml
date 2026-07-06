@@ -36,6 +36,8 @@ COLLECTION_MAX_SIZE_BYTES = "5242880"   # 5 MB
 # 合集:篇数上限
 ANON_MAX_DOCS = "3"               # 匿名尝鲜额度;更多→登录
 MAX_DOCS = "50"
+# 读者收藏(引用型)每人条数上限:守"不是网盘"、防无界攒行。到顶需先移除再存;更大额度是将来付费钩子
+SAVE_MAX = "200"
 
 # ── 密钥(用 `wrangler secret put` 设置,勿写进本文件)──
 # COOKIE_SIGNING_SECRET  用于给密码通过后的 Cookie 签名(随机长字符串)

@@ -118,7 +118,10 @@ CREATE TABLE IF NOT EXISTS saves (
 - 阅读页:`readingPage/tocPage` 页脚出「＋ 保存这份稿」(md 单页/合集目录/合集 md 篇目;裸 html 篇目未注入,见下)。
 - 免密开门:`servePage` 收 `?k=` open 令牌 → 验签 + KV 单次消费(`ot:<sha256>`,120s)→ 种正常 `hs_<slug>` 24h Cookie + 303 回裸路径;失效/已用/伪造/过期一律回落密码门。
 - Console:`/console?save=` 收令牌(未登录先 cookie 暂存穿透 OAuth、登录后幂等 upsert 落库);「Saved」卡片渲染状态(saved/expired/no longer available)与移除;`GET /saves/:slug/open`(重验钥匙→签 open 令牌→302)、`DELETE /saves/:slug`;`sclk`/`save` 埋点。
-- 本地验证(wrangler dev):save 链接编码正确;有效 open 令牌→免密进正文;单次/伪造/过期令牌→回落密码门;saves 表 + join 查询通过。
+- 收藏结果分流(不谎报):真入库 `?saved=1`、令牌失效/稿已删 `?save_expired=1`(引导重存)、到配额 `?save_full=1`。
+- 配额:每人 `SAVE_MAX`(wrangler.toml,默认 200)条,仅新收藏受限(重存幂等不占额度);列表 `LIMIT == SAVE_MAX` 故取满不静默截断。守"不是网盘",更大额度是将来付费钩子。
+- 惰性回收:列表渲染时顺手删掉源稿已彻底消失(`deleted` 终态/页面行不存在)的收藏(非阻塞),不占配额、不留死墓碑;过期(可续期复活)与下架(审核态)保留。
+- 本地验证(wrangler dev):save 链接编码正确;有效 open 令牌→免密进正文;单次/伪造/过期令牌→回落密码门;配额到顶→`save_full`;deleted 源稿收藏→惰性回收;saves 表 + join 查询通过。
 
 **一期部署清单**(无凭据未执行,需 founder 跑):
 ```bash
@@ -130,4 +133,4 @@ npx wrangler deploy
 
 **一期已知留白(不阻塞验证)**:裸 HTML 单页 / HTML 合集篇目暂无保存入口(需 Shadow DOM 注入组件,类比 `collectionNavWidget`);md 类内容足以验证「读者是否愿为保存而登录」。
 
-**二期**:allowSave 开关(四端)、快照复制(单页/合集)、私有内容鉴权阅读路径、配额、休眠清理、下架级联、从副本重新发布。约 1–2 周,待一期数据决策。
+**二期**:allowSave 开关(四端)、快照复制(单页/合集)、私有内容鉴权阅读路径、休眠账号清理 cron(比一期惰性回收更彻底:清匿名已过期等终态收藏)、下架级联、从副本重新发布。约 1–2 周,待一期数据决策。
