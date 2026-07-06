@@ -39,7 +39,8 @@
   @media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
   /* copy */
   .cp{position:absolute;top:8px;right:8px;font:600 13px/1 -apple-system,sans-serif;padding:5px 9px;border-radius:7px;border:1px solid #3a3d45;background:#26282f;color:#cfd0d4;cursor:pointer;opacity:0;transition:opacity .18s,background .18s}
-  pre:hover .cp,.cp.done{opacity:1}
+  pre:hover .cp,.cp:focus,.cp.done{opacity:1}
+  .steps li:focus-visible,.lock:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
   .cp:hover{background:#33363f}
   .cp.done{background:var(--accent);border-color:var(--accent);color:#fff}
   /* gate */
@@ -88,6 +89,7 @@
 </head>
 <body>
 <div id="bar"></div>
+<noscript><style>.rise{opacity:1 !important;transform:none !important}.langsw,#bar{display:none}</style></noscript>
 <div class="langsw">
   <button class="langbtn on" data-l="zh">中文</button>
   <button class="langbtn" data-l="en">EN</button>
@@ -224,7 +226,7 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
 </p>
 <p>一个边缘 Worker + R2/D1/KV,就够把「私密分享 AI 内容」做成产品级。最花时间的从来不是代码,而是那些只能人工做一次的账号与授权。</p>
 
-<div class="foot">在线体验 / 源码:<a href="https://hspace.zhanjian.space">hspace.zhanjian.space</a></div>
+<div class="foot">源码:<a href="https://github.com/agentx1boss/hspace">github.com/agentx1boss/hspace</a> · 在线体验:<a href="https://hspace.zhanjian.space">hspace.zhanjian.space</a></div>
 </div></div>
 
 <!-- ============ English ============ -->
@@ -358,7 +360,7 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
 </p>
 <p>An edge Worker plus R2/D1/KV is enough to make private AI-content sharing a real product. The time sink is never the code — it's the account-and-authorization steps that can only be done by hand once.</p>
 
-<div class="foot">Live demo / source: <a href="https://hspace.zhanjian.space">hspace.zhanjian.space</a></div>
+<div class="foot">Source: <a href="https://github.com/agentx1boss/hspace">github.com/agentx1boss/hspace</a> · Live demo: <a href="https://hspace.zhanjian.space">hspace.zhanjian.space</a></div>
 </div></div>
 
 <script>
@@ -368,7 +370,7 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
   addEventListener('scroll',prog,{passive:true});addEventListener('resize',prog);
 
   document.querySelectorAll('pre').forEach(function(pre){
-    var b=document.createElement('button');b.className='cp';b.textContent='⧉';b.title='copy';
+    var b=document.createElement('button');b.className='cp';b.textContent='⧉';b.title='copy';b.setAttribute('aria-label','copy code');
     b.addEventListener('click',function(){
       var t=(pre.querySelector('code')||pre).innerText;
       navigator.clipboard.writeText(t).then(function(){
@@ -384,11 +386,10 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
 
   document.querySelectorAll('.gate').forEach(function(gate){
     var lock=gate.querySelector('.lock');
-    lock.addEventListener('click',function(){
-      if(gate.classList.contains('open'))return;
-      lock.classList.add('shake');
-      setTimeout(function(){lock.textContent='🔓';gate.classList.add('open');lock.classList.remove('shake');},380);
-    });
+    lock.setAttribute('role','button');lock.tabIndex=0;lock.setAttribute('aria-label','unlock the demo / 解锁演示');
+    function open(){if(gate.classList.contains('open'))return;lock.classList.add('shake');setTimeout(function(){lock.textContent='🔓';gate.classList.add('open');lock.classList.remove('shake');},380);}
+    lock.addEventListener('click',open);
+    lock.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault();open();}});
   });
 
   document.querySelectorAll('.steps').forEach(function(steps){
@@ -399,15 +400,18 @@ wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
     var lis=[].slice.call(steps.querySelectorAll('li'));
     var saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
     function upd(){var d=steps.querySelectorAll('li.done').length,t=lis.length;nEl.textContent=d+' / '+t+doneWord;fill.style.width=(t?d/t*100:0)+'%';}
+    function toggle(li){
+      li.classList.toggle('done');li.setAttribute('aria-checked',li.classList.contains('done'));
+      var s={};lis.forEach(function(x,j){if(x.classList.contains('done'))s[j]=1;});
+      try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}
+      upd();
+    }
     lis.forEach(function(li,i){
+      li.setAttribute('role','checkbox');li.tabIndex=0;
       if(saved[i])li.classList.add('done');
-      li.addEventListener('click',function(ev){
-        if(ev.target.tagName==='A'||ev.target.tagName==='CODE')return;
-        li.classList.toggle('done');
-        var s={};lis.forEach(function(x,j){if(x.classList.contains('done'))s[j]=1;});
-        try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}
-        upd();
-      });
+      li.setAttribute('aria-checked',li.classList.contains('done'));
+      li.addEventListener('click',function(ev){if(ev.target.tagName==='A'||ev.target.tagName==='CODE')return;toggle(li);});
+      li.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault();toggle(li);}});
     });
     upd();
   });

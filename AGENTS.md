@@ -53,7 +53,7 @@ npm run compile && npx @vscode/vsce package
 - **不做**:多文件站点托管、构建、公开画廊、广告/数据变现(边界承诺,见 positioning §8)。
 - **Cloudflare 资源名保留 `html-share`**(bucket/D1/worker);品牌名是 HSpace,勿改资源名。
 - **内容明文存 R2**——文案禁止暗示"加密存储"(只可说 HTTPS 传输 / 密码哈希)。
-- **没有永久链接**(产品级不变量):所有链接都有有效期,匿名 7 天 / 登录 30 天/期,到期前可续、弃置即自动过期。API 与插件都产生不了永久页;`expiresIn:null` 只当"续到档内上限"。唯一例外是**第一方置顶内容**(promo 册子/落地演示),靠直接改库 `expires_at=NULL` 手动置顶,不是产品能力。改动别退回"永久"叙事(见 positioning §8)。
+- **没有永久链接**(产品级不变量):所有链接都有有效期,匿名 3 天(一次性、不可续)/ 登录 30 天/期,到期前可续、弃置即自动过期。API 与插件都产生不了永久页;`expiresIn:null` 只当"续到档内上限"。唯一例外是**第一方置顶内容**(promo 册子/落地演示),靠直接改库 `expires_at=NULL` 手动置顶,不是产品能力。改动别退回"永久"叙事(见 positioning §8)。
 - **别公开展示 HSpace 自己的 Free/Pro/Team 价格**——那是未实施的纸面假设(business-model-hypothesis.md);promo demo 用虚构示例定价。
 
 ## 密钥与凭据

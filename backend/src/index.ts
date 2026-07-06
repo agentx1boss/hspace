@@ -262,7 +262,7 @@ async function publish(request: Request, env: Env): Promise<Response> {
     return json({ error: "service_busy" }, 503);
   }
 
-  // 过期：没有永久链接。每档 TTL 钳制在 [60 秒, 该档上限] 内(匿名 7 天 / 登录 30 天),
+  // 过期：没有永久链接。每档 TTL 钳制在 [60 秒, 该档上限] 内(匿名 3 天 / 登录 30 天),
   // expiresIn===null 或缺省都按该档上限处理，不再产生永久页(永久仅限第一方置顶内容，靠直接改库)。
   const maxTtl = Number(ownerId ? env.OWNER_MAX_TTL : env.ANON_DEFAULT_TTL);
   const reqTtl = typeof body.expiresIn === "number" ? body.expiresIn : maxTtl;
