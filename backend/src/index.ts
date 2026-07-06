@@ -743,6 +743,8 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
         clean.searchParams.delete("k");
         const headers = new Headers({ Location: clean.pathname + clean.search });
         headers.append("Set-Cookie", `hs_${slug}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`);
+        // 从 Console 收藏列表免密打开 ⇒ 此稿必已被收藏,种标记 Cookie,让阅读页页脚显示「已收藏」
+        headers.append("Set-Cookie", `hs_sv_${slug}=1; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`);
         return new Response(null, { status: 303, headers });
       }
     }
@@ -817,13 +819,15 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
     );
   }
 
-  // 「保存这份稿」凭证:签入当前归因(共享密码为 ""),读者点击后到 console 收藏时据此重验钥匙。
+  // 「收藏」凭证:签入当前归因(共享密码为 ""),读者点击后到 console 收藏时据此重验钥匙。
   // 1h 有效(留出登录时间);仅 md 阅读页/合集下发,裸 html 篇目一期不注入(见 design-save.md)。
   const saveToken = await signScopedToken(env.COOKIE_SIGNING_SECRET, "save", slug, attributedGrantId, now() + 3600);
+  // 从 Console 免密打开时种下的标记 Cookie ⇒ 页脚显示「已收藏」(内容子域无登录态,只能靠此标记)
+  const alreadySaved = readCookie(request, `hs_sv_${slug}`) === "1";
 
   // 合集：目录页 / 篇目页
   if (page.object_key.endsWith("/index.json")) {
-    return serveCollection(env, page, docPath, saveToken);
+    return serveCollection(env, page, docPath, saveToken, alreadySaved);
   }
 
   const obj = await env.BUCKET.get(page.object_key);
@@ -834,14 +838,14 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
     const md = await obj.text();
     const article = await marked.parse(md, { gfm: true, async: true });
     const updated = page.version > 1 && page.updated_at ? page.updated_at : null;
-    return htmlResp(readingPage(mdTitle(md, page.filename), article, undefined, updated, saveToken), 200);
+    return htmlResp(readingPage(mdTitle(md, page.filename), article, undefined, updated, saveToken, alreadySaved), 200);
   }
 
   return new Response(obj.body, { status: 200, headers: securityHeaders() });
 }
 
 /** 合集分发：docPath "/" → 目录页；"/<n>" → 第 n 篇 */
-async function serveCollection(env: Env, page: PageRow, docPath: string, saveToken?: string): Promise<Response> {
+async function serveCollection(env: Env, page: PageRow, docPath: string, saveToken?: string, alreadySaved?: boolean): Promise<Response> {
   const idxObj = await env.BUCKET.get(page.object_key);
   if (!idxObj) return htmlResp(notFoundPage(), 404);
   const index = JSON.parse(await idxObj.text()) as CollectionIndex;
@@ -855,7 +859,7 @@ async function serveCollection(env: Env, page: PageRow, docPath: string, saveTok
     const date = new Date(page.created_at * 1000).toISOString().slice(0, 10);
     let meta = `${index.docs.length} 篇 · ${date} 分享`;
     if (updated) meta += ` · 更新于 ${new Date(updated * 1000).toISOString().slice(0, 10)}`;
-    return htmlResp(tocPage(index.title, navDocs, meta, saveToken), 200);
+    return htmlResp(tocPage(index.title, navDocs, meta, saveToken, alreadySaved), 200);
   }
 
   const m = path.match(/^\/(\d+)$/);
@@ -870,7 +874,7 @@ async function serveCollection(env: Env, page: PageRow, docPath: string, saveTok
   if (doc.ext === "md") {
     const article = await marked.parse(await obj.text(), { gfm: true, async: true });
     const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
-    return htmlResp(readingPage(doc.title, article, nav, updated, saveToken), 200);
+    return htmlResp(readingPage(doc.title, article, nav, updated, saveToken, alreadySaved), 200);
   }
   // html 篇目:保留原样,注入一个 Shadow DOM 隔离的悬浮导航(目录+翻页,不影响用户页面)
   const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
