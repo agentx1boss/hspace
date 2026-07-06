@@ -1,106 +1,197 @@
 # From Zero to Live: Building a "Targeted Sharing" Tool for AI Content on Cloudflare's Edge (The HSpace Full-Stack Tutorial)
 
-> A build-along tutorial. It lays out the **complete tech stack** behind HSpace and walks you through **cloning the repo and standing up your own instance** — the code is open source, so this is meant to be reproduced, not just read.
+> The **detailed, hands-on** build guide. It shows the real code for the tricky parts (edge password gate, cookies, edge Markdown rendering), the data model, a local-dev loop, and every account/DNS/secret step — enough to clone the repo and stand up your own instance.
+>
+> *(Want the 1-page overview instead? See the interactive "at a glance" HTML in this collection. This doc is the deep version.)*
 >
 > - **Source (clone this):** <https://github.com/agentx1boss/hspace> (MIT)
 > - **Live demo:** <https://hspace.zhanjian.space>
 > - **Prerequisites:** Node ≥ 18, a [Cloudflare](https://dash.cloudflare.com) account with **a domain (zone) on it**, a GitHub account. Budget ~an afternoon.
 
-**A note on scope:** the deep internals (the full Worker source) live in the repo — this guide is the map + the exact manual steps that the code can't do for you (accounts, DNS, secrets). Clone the repo alongside reading.
+**Mini-glossary:** **slug** = short random page id (`a7k2m9x`); **edge** = Cloudflare's nearest-to-user compute; **TTL** = link expiry; **grant** = one recipient's own password record; **PBKDF2 / HMAC** = the password-hashing / cookie-signing algorithms (Web Crypto).
 
-**Mini-glossary** (used throughout): **slug** = the short random page id (`a7k2m9x`); **edge** = Cloudflare's nearest-to-user compute; **TTL** = time-to-live / link expiry; **grant** = one recipient's own password record; **PBKDF2 / HMAC** = the password-hashing / cookie-signing algorithms (both in the Web Crypto API).
+## 0. What it is, and the invariants
 
-## 0. What it is, and why it's built this way
+**HSpace = "targeted sharing" for AI-coding developers**: turn the HTML demo or Markdown doc your AI just wrote into a **link + password**, sent only to the people who should see it — with view receipts, instant revocation, and iteration without changing the link. Positioning: **Ship to one, not to all.**
 
-**HSpace = "targeted sharing" for AI-coding developers**: turn the HTML demo or Markdown doc your AI just wrote into a **link + password**, sent only to the people who should see it — with view receipts, instant revocation, and iteration without changing the link.
+Four invariants shape everything below:
 
-One-line positioning: **Ship to one, not to all.**
+- **Mandatory password** is the product's identity — no public gallery.
+- **No permanent links**: every link expires (anon 3 days, signed-in 30 days/term, renewable). Exception: first-party pinned content (`expires_at=NULL` set directly in the DB — an ops action, not a feature).
+- **Content pages are `noindex` + gated** — only the landing page is indexable.
+- **Self-contained pages**: everything inlines its CSS/JS/SVG; zero external resources.
 
-Design trade-offs that run through this whole piece:
+## 1. Architecture: one Worker, routed by hostname
 
-- **Mandatory password** is the product's identity, not an option — no public gallery.
-- **No permanent links**: every link expires (anonymous 3 days, signed-in 30 days/term, renewable). *(The one exception: first-party pinned content — e.g. the demo — set to `expires_at=NULL` directly in the DB. That's an ops action, not a product feature.)*
-- **Content pages are always `noindex` + password-gated** — so the only thing actually indexable by search engines is the landing page.
-- **Self-contained pages**: reading page / password page / landing page all inline their CSS/JS/SVG, pulling in zero external scripts, fonts, or images (safer CSP, faster loads, better privacy).
+The entire backend is a single Cloudflare Worker. The whole dispatch is "which host did the request hit" — here's the real shape ([`backend/src/index.ts`](https://github.com/agentx1boss/hspace/blob/main/backend/src/index.ts)):
 
-## 1. Architecture: one Worker carries everything
+```ts
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const host = url.hostname;
 
-The most counter-intuitive — and most low-maintenance — decision: **the entire backend is a single Cloudflare Worker.** It routes by "which hostname did the request hit," and one codebase is simultaneously the content host, the landing site, and the API.
+    if (url.pathname === "/e") return recordEvent(url, env, ctx);   // first-party beacon
 
-Inside the one Worker, `host` decides the path: content subdomains fetch the page and pass the password gate; the `hspace.` subdomain serves the landing page, `/privacy`, `/terms`, `/report`, the `/e` beacon, `/openapi.json`, `/robots.txt`, `/sitemap.xml`, the `/console` login UI and `/auth/github*` OAuth routes; everything else is treated as API.
+    // Landing host: hspace.<domain> — landing, legal, console, OAuth, openapi…
+    if (host === "hspace." + env.USERCONTENT_DOMAIN) {
+      const auth = await handleAuth(url, request, env);             // /auth/github*
+      if (auth) return auth;
+      if (url.pathname === "/console") return serveConsole(url, request, env);
+      if (url.pathname === "/robots.txt") return robotsResp(true, env);
+      // …brand assets, /privacy, /terms, "/", /openapi.json → else handleApi()
+    }
 
-> The wildcard subdomain `*.zhanjian.space` is the key: every share is its own subdomain `<slug>.zhanjian.space`, all caught by a single wildcard route + wildcard DNS — no per-share record needed. (See §4, step 4 — this is the step people get stuck on.)
+    // Content host: <slug>.<domain> → serve the page (behind the gate)
+    if (host.endsWith("." + env.USERCONTENT_DOMAIN)) {
+      const slug = host.slice(0, host.length - env.USERCONTENT_DOMAIN.length - 1);
+      return servePage(slug, url.pathname, request, env, ctx);
+    }
 
-## 2. The full stack at a glance
+    // Dev convenience: /p/<slug> serves a page without the wildcard host (see §7)
+    if (url.pathname.startsWith("/p/")) { /* … */ }
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Runtime | **Cloudflare Workers** (TypeScript) | Edge function; one Worker hosts it all |
-| Object storage | **R2** | Raw HTML/Markdown (plaintext; security is HTTPS-in-transit + password hashing, *not* "encrypted storage") |
-| Metadata DB | **D1** (SQLite) | `pages` / `versions` / `grants` / `api_keys` / `users` / `metrics` / `reports` |
-| Counters / limits | **KV** | Per-IP rate counting, brute-force lockout |
-| Markdown | **marked** (GFM) | Rendered into a self-contained reading page at the edge |
-| Password / signing | **Web Crypto** | PBKDF2 password hashing + HMAC-signed cookies |
-| Sign-in | **GitHub OAuth** | Issues API keys, unlocks renewal / larger quotas |
-| CLI / deploy | **Wrangler** | Local dev + deploy |
-| Editor plugin | **VS Code Extension** (`vscode-extension/`) | Packaged with `@vscode/vsce`, published via `ovsx` |
-| AI callable | **MCP server** (`mcp-server/`) + **OpenAPI 3.0.3** | `@modelcontextprotocol/sdk` + `zod`; `/openapi.json` for GPT Actions |
-| Claude Code | **plugin + marketplace** (`clients/claude-code/`) | `plugin.json` + `.mcp.json` + a `/share` command |
-| CI/CD | **GitHub Actions** | Deploy backend, publish plugin, publish npm |
+    return handleApi(url, request, env, ctx);                        // API host
+  },
+};
+```
 
-## 3. Backend breakdown
+One codebase is the content host, the landing site, and the API — chosen by `host`. The wildcard subdomain `*.<domain>` is what lets every share be its own `<slug>.<domain>` with no per-share record.
 
-### 3.1 How the three storage layers divide the work
+## 2. The data model (D1)
 
-- **R2** stores only content: the object-key suffix *is* the type — `pages/<slug>.md`, `pages/<slug>.html`, and a collection is `pages/<slug>/index.json`; versioning writes a numbered key (`pages/<slug>.vN.<ext>`).
-- **D1** stores everything structured (the 7 tables above — full DDL is [`backend/schema.sql`](https://github.com/agentx1boss/hspace/blob/main/backend/schema.sql)). Note: **there is no `receipts` table** — "receipts" are *derived* from `pages.hits` and per-recipient `grants.hits` / `last_seen_at`.
-- **KV** does only the "fast and short-lived" counting: rate limits, brute-force lockout windows.
+Seven tables ([full DDL](https://github.com/agentx1boss/hspace/blob/main/backend/schema.sql)). The two that matter most:
 
-### 3.2 The edge password gate (the core)
+```sql
+CREATE TABLE pages (
+  slug          TEXT PRIMARY KEY,     -- the subdomain id
+  owner_id      TEXT,                 -- 'gh:<id>' when signed-in; NULL when anonymous
+  edit_token_hash TEXT,               -- anonymous edit/delete credential (hashed)
+  object_key    TEXT NOT NULL,        -- where the content lives in R2
+  password_hash TEXT, password_salt TEXT,   -- PBKDF2 (base64); NULL = no password
+  created_at INTEGER, expires_at INTEGER,   -- epoch seconds; expires_at NULL = pinned (first-party only)
+  size_bytes INTEGER, hits INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'active',        -- active | deleted | blocked
+  version INTEGER DEFAULT 1, updated_at INTEGER
+);
 
-Core logic lives in [`backend/src/index.ts`](https://github.com/agentx1boss/hspace/blob/main/backend/src/index.ts) (routing/serving) and [`backend/src/crypto.ts`](https://github.com/agentx1boss/hspace/blob/main/backend/src/crypto.ts) (hashing/signing). When a recipient visits `<slug>.zhanjian.space`:
+CREATE TABLE grants (                  -- "per-recipient links"
+  id TEXT PRIMARY KEY, slug TEXT NOT NULL,
+  label TEXT,                          -- e.g. "Alice"
+  password_hash TEXT NOT NULL, password_salt TEXT NOT NULL,
+  created_at INTEGER, revoked INTEGER DEFAULT 0,
+  hits INTEGER DEFAULT 0, last_seen_at INTEGER   -- per-person receipts
+);
+```
 
-1. No valid cookie → return the **password page** (401).
-2. Submit the password → the edge verifies the hash with **PBKDF2** (plaintext passwords are never stored).
-3. Pass → set an **HMAC-signed cookie** (`<slug>.<grantId>.<exp>.<sig>`), good for 24h; then **303 redirect back to the original path**, so deep links (doc N in a collection) land directly.
-4. "Per-recipient links" = the same link, a separate password (grant) per recipient, with per-person view stats and instant, isolated revocation.
+The rest: `versions` (one row per content update, `object_key` → that version's bytes), `api_keys` (`key_hash` = SHA-256 of the key), `users` (`owner_id='gh:<id>'`), `metrics` (cookieless landing beacon), `reports` (abuse reports). **There is no `receipts` table** — "receipts" are just `pages.hits` and per-grant `grants.hits`/`last_seen_at`.
 
-Anti-abuse is a stack of gates (all tuned via `wrangler.toml` vars): per-IP hourly/daily publish caps, anonymous TTL clamping, brute-force lockout (KV), phishing-pattern regex, a per-page hit cap, and a global daily anonymous-bytes circuit breaker.
+**R2 key scheme** (the suffix *is* the type): `pages/<slug>.md`, `pages/<slug>.html`, a collection is `pages/<slug>/index.json`, and a version is `pages/<slug>.vN.<ext>`. Content is stored **plaintext** — the security model is HTTPS-in-transit + password hashing, never "encrypted storage."
 
-### 3.3 Markdown rendering at the edge
+## 3. The edge password gate (real code)
 
-MD is stored raw in R2 and rendered by `marked` at the edge into a self-contained reading page (inline styles, light/dark auto). Bonus: upgrading the reading template takes effect on **already-published content instantly**.
+This is the core. When a recipient hits `<slug>.<domain>`:
 
-## 4. ⭐ Build your own from scratch
+**1) Passwords are PBKDF2-hashed, never stored in plaintext** ([`backend/src/crypto.ts`](https://github.com/agentx1boss/hspace/blob/main/backend/src/crypto.ts)):
 
-Everything scriptable is in the repo; the steps below are the account/DNS/secret work **only a human can do once**. Commands assume you cloned the repo.
+```ts
+// hashPassword: 100k iterations, SHA-256, 256-bit → base64 {hash, salt}
+const bits = await crypto.subtle.deriveBits(
+  { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+  keyMaterial, 256,
+);
+// verify uses a constant-time compare (timingSafeEqual) to avoid timing leaks
+```
+
+**2) On success, set an HMAC-signed cookie and 303 back to the path:**
+
+```ts
+// cookie value = "<slug>.<grantId>.<exp>.<sig>"   (grantId="" = shared password)
+// sig = HMAC-SHA256( "<slug>.<grantId>.<exp>", COOKIE_SIGNING_SECRET )
+export async function signCookie(secret, slug, grantId, expEpoch) {
+  const payload = `${slug}.${grantId}.${expEpoch}`;
+  const key = await hmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
+  return `${payload}.${bufToB64(sig)}`;
+}
+```
+
+`verifyCookie` re-derives the HMAC and checks: signature valid **and** not expired **and** slug matches. The returned `grantId` is how per-recipient receipts are attributed (empty string = the page's shared password). The old 3-part format `<slug>.<exp>.<sig>` is still accepted for backward-compat.
+
+**Why these choices:**
+- **base36 lowercase slug** — subdomains are DNS-case-insensitive, so a mixed-case base62 slug would collide; `crypto.getRandomValues` over `0-9a-z`.
+- **303 (not 302) back to the original path** — so a deep link (doc N in a collection) lands directly after the gate, and the re-request is a clean GET.
+- **grantId baked into the signed payload** — a forwarded cookie can't be re-pointed to a different recipient, and revoking one grant invalidates only that person.
+
+**The lifecycle, in curl:**
+
+```bash
+# 1. First visit — no cookie → 401 password page
+curl -i https://<slug>.<domain>/            # HTTP/1.1 401
+
+# 2. Submit the password → 303 + Set-Cookie, redirect back
+curl -i -X POST -d 'password=1234' https://<slug>.<domain>/
+# HTTP/1.1 303 … Set-Cookie: hs_<slug>=<slug>...<sig>; …  Location: /
+
+# 3. With the cookie → the rendered page (200)
+curl -i -b 'hs_<slug>=<slug>...<sig>' https://<slug>.<domain>/
+```
+
+Anti-abuse layers around the gate: a brute-force lockout (10 fails / 15 min via KV), plus the publish-side gates in §5.
+
+## 4. Markdown rendering at the edge
+
+Markdown is stored raw in R2 and rendered on read with `marked` — no build step, and template changes apply to already-published content instantly:
+
+```ts
+import { marked } from "marked";
+const article = await marked.parse(md, { gfm: true, async: true });
+return htmlResp(readingPage(mdTitle(md, page.filename), article, nav, updatedAt), 200);
+```
+
+`mdTitle` uses the first `#` heading as the page title. `readingPage` is a self-contained template (inline CSS, light/dark via `prefers-color-scheme`, CJK font stacks). HTML pages are served as-is; in a collection, an HTML doc gets a small floating "← back to contents" button injected.
+
+## 5. Anti-abuse gates (with real thresholds)
+
+All tunable in `wrangler.toml [vars]`; anonymous is deliberately tighter to nudge sign-in:
+
+| Gate | Var | Default | Where |
+|---|---|---|---|
+| Per-IP hourly publishes | `RATE_LIMIT_PER_HOUR` | 20 | KV counter |
+| Per-IP daily publishes (anon) | `RATE_LIMIT_PER_DAY` | 50 | KV counter |
+| Single-file size (anon / signed-in) | `ANON_MAX_SIZE_BYTES` / `MAX_SIZE_BYTES` | 512 KB / 2 MB | publish |
+| Docs per collection (anon / signed-in) | `ANON_MAX_DOCS` / `MAX_DOCS` | 3 / 50 | publish |
+| Per-page hit cap (anon) | `ANON_MAX_HITS` | 10000 | serve |
+| Global daily anon bytes (circuit breaker) | `ANON_DAILY_GLOBAL_BYTES` | 500 MB | publish |
+| Anon TTL clamp | `ANON_DEFAULT_TTL` | 3 days | publish |
+| Brute-force lockout | — | 10 fails / 15 min | gate (KV) |
+
+Plus content scanning (phishing/malicious regex) at publish time.
+
+## 6. ⭐ Build your own — step by step
 
 ### Step 0 — Clone & install
 
 ```bash
 git clone https://github.com/agentx1boss/hspace
-cd hspace/backend
-npm install
-npm i -g wrangler && wrangler login   # opens the browser
+cd hspace/backend && npm install
+npm i -g wrangler && wrangler login      # opens the browser
 ```
 
-### Step 1 — Create the Cloudflare resources
+### Step 1 — Create resources + tables
 
 ```bash
-wrangler r2 bucket create <bucket-name>          # e.g. my-pages
-wrangler d1 create <db-name>                      # copy the returned database_id
-wrangler kv namespace create RATELIMIT            # copy the returned id
+wrangler r2 bucket create <bucket-name>
+wrangler d1 create <db-name>
+# → prints a [[d1_databases]] block; copy its database_id
+wrangler kv namespace create RATELIMIT
+# → prints { binding = "RATELIMIT", id = "…" }; copy the id
+wrangler d1 execute <db-name> --file=./schema.sql   # creates the 7 tables
 ```
 
-Then create the tables (the DDL ships in the repo as `backend/schema.sql`):
+### Step 2 — Fill `wrangler.toml`
 
-```bash
-wrangler d1 execute <db-name> --file=./schema.sql
-```
-
-### Step 2 — Fill in `wrangler.toml`
-
-The **binding names** (`BUCKET` / `DB` / `RATELIMIT`) are fixed — the Worker code reads them by name. Only the resource names/ids and your domain change. Minimal skeleton:
+Binding names (`BUCKET` / `DB` / `RATELIMIT`) are fixed — the Worker reads them by name; only resource names/ids and your domain change.
 
 ```toml
 name = "html-share"
@@ -108,139 +199,91 @@ main = "src/index.ts"
 compatibility_date = "2024-11-01"
 account_id = "<your-account-id>"
 workers_dev = true
-
-routes = [
-  { pattern = "*.<your-domain>/*", zone_name = "<your-domain>" },
-]
+routes = [{ pattern = "*.<your-domain>/*", zone_name = "<your-domain>" }]
 
 [vars]
-API_DOMAIN = "<your-worker>.<sub>.workers.dev"
 USERCONTENT_DOMAIN = "<your-domain>"
-MAX_SIZE_BYTES = "2097152"          # 2 MB (signed-in)
-ANON_MAX_SIZE_BYTES = "524288"      # 512 KB (anonymous)
-ANON_DEFAULT_TTL = "259200"         # 3 days (anonymous, one-shot)
-OWNER_MAX_TTL = "2592000"           # 30 days (signed-in, renewable)
-RATE_LIMIT_PER_HOUR = "20"
-RATE_LIMIT_PER_DAY = "50"
-ANON_MAX_HITS = "10000"
-ANON_DAILY_GLOBAL_BYTES = "524288000"
-COLLECTION_MAX_SIZE_BYTES = "5242880"
-ANON_MAX_DOCS = "3"
-MAX_DOCS = "50"
+ANON_DEFAULT_TTL = "259200"     # 3 days
+OWNER_MAX_TTL   = "2592000"     # 30 days
+# …size/rate/limit vars from §5 (full file in the repo)
 
-[[r2_buckets]]
-binding = "BUCKET"
-bucket_name = "<bucket-name>"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "<db-name>"
-database_id = "<database_id>"
-
-[[kv_namespaces]]
-binding = "RATELIMIT"
-id = "<kv-id>"
+[[r2_buckets]]     { binding = "BUCKET", bucket_name = "<bucket-name>" }
+[[d1_databases]]   { binding = "DB", database_name = "<db-name>", database_id = "<database_id>" }
+[[kv_namespaces]]  { binding = "RATELIMIT", id = "<kv-id>" }
 ```
 
-### Step 3 — DNS + Route (the step people get stuck on)
+*(The `[[...]]` blocks are shown compact here; in real TOML each is a multi-line table — see the repo's `wrangler.toml`.)*
 
-`<slug>.<domain>` reaching your Worker needs **two things**, not one:
+### Step 3 — DNS + Route (the step people get stuck on — both are required)
 
-1. **A proxied wildcard DNS record** so the hostname resolves to Cloudflare's edge. In the dashboard → DNS, add an `AAAA` record: name `*`, content `100::` (a discard address), **Proxy status = Proxied (orange cloud)**. Add a second proxied record for the landing subdomain `hspace` the same way. (You don't point DNS "at a Worker" directly — the proxied record lands the request on Cloudflare, and the *route* binds the Worker.)
-2. **The Workers route** — the `routes` entry in `wrangler.toml` (Step 2) binds `*.<domain>/*` to this Worker.
-
-> Wildcard routes need the zone to be active on Cloudflare. `www`/apex are often taken by other services — that's why the landing page lives on the `hspace.` subdomain.
+1. **A proxied wildcard DNS record** so the hostname resolves to Cloudflare's edge. Dashboard → DNS → add `AAAA`: name `*`, content `100::` (a discard address), **Proxy status = Proxied (orange cloud)**. Add a second proxied record for the `hspace` landing subdomain.
+2. **The Workers route** — the `routes` entry from Step 2 binds `*.<domain>/*` to this Worker. (DNS lands the request on Cloudflare; the route binds the Worker. You never point DNS "at a Worker" directly.)
 
 ### Step 4 — Secrets & GitHub OAuth (never in the toml)
 
 ```bash
-wrangler secret put COOKIE_SIGNING_SECRET   # long random string (password-cookie signing)
-wrangler secret put SESSION_SECRET          # long random string (login session signing)
+wrangler secret put COOKIE_SIGNING_SECRET   # long random string (password-cookie HMAC)
+wrangler secret put SESSION_SECRET          # long random string (login-session HMAC)
 wrangler secret put GITHUB_CLIENT_ID
 wrangler secret put GITHUB_CLIENT_SECRET
 ```
 
-Create the GitHub OAuth App at **github.com → Settings → Developer settings → OAuth Apps → New**:
-
+Create the OAuth App at **GitHub → Settings → Developer settings → OAuth Apps → New**:
 - **Authorization callback URL** (must match exactly): `https://hspace.<your-domain>/auth/github/callback`
-- **Scopes:** none needed (HSpace only reads your public identity).
-- Copy the Client ID / generate a Client Secret into the two secrets above.
+- **Scopes:** none (HSpace only reads your public identity).
 
-The OAuth flow is: `/auth/github` (start) → GitHub → `/auth/github/callback` → session cookie; users manage login and API keys at **`/console`**.
+Flow: `/auth/github` (start) → GitHub → `/auth/github/callback` → session cookie; users manage login + API keys at **`/console`**.
 
-### Step 5 — Deploy
+### Step 5 — Local dev loop (before you deploy)
+
+You don't need the wildcard domain to develop — there's a `/p/<slug>` dev route:
 
 ```bash
-npm run deploy          # = wrangler deploy
+npm run db:init:local                 # apply schema to the local D1
+npm run dev                           # wrangler dev → http://localhost:8787
+# publish against localhost, then open the page via the dev route:
+curl -X POST http://localhost:8787/publish \
+  -H 'Content-Type: application/json' \
+  -d '{"markdown":"# Hello\nlocal","password":"1234"}'
+# open http://localhost:8787/p/<slug>  → the password gate → enter 1234
 ```
 
-### Step 6 — ✅ Verify it works
+### Step 6 — Deploy & ✅ verify
 
 ```bash
-# 1. Health check (API on workers.dev)
-curl https://<your-worker>.<sub>.workers.dev/health
-# → {"ok":true,"service":"hspace"}
-
-# 2. Sign in + get an API key
-open https://hspace.<your-domain>/console       # GitHub login → copy API key
-
-# 3. Publish your first page
-curl -X POST https://<your-worker>.<sub>.workers.dev/publish \
-  -H "Content-Type: application/json" \
+npm run deploy                                          # = wrangler deploy
+curl https://<worker>.<sub>.workers.dev/health          # → {"ok":true,"service":"hspace"}
+open https://hspace.<your-domain>/console               # GitHub login → copy API key
+curl -X POST https://<worker>.<sub>.workers.dev/publish \
+  -H 'Content-Type: application/json' \
   -d '{"markdown":"# Hello\nprivate world","password":"1234"}'
-# → returns { url, passwordProtected: true, ... }
-
-# 4. Open the returned URL → you should hit the password gate. Enter 1234 → the page renders.
+# open the returned url → password gate → enter 1234 → it renders. Done.
 ```
-
-If all four pass, your instance is live.
 
 ### Troubleshooting
 
-- **`<slug>.<domain>` doesn't resolve / 522** → you're missing the proxied wildcard DNS record *or* the Workers route (Step 3 needs **both**).
-- **OAuth "redirect_uri mismatch"** → the callback URL in the GitHub App must byte-for-byte equal `https://hspace.<domain>/auth/github/callback`.
-- **`D1_ERROR` / binding undefined** → the binding must be named `DB` (and `BUCKET`, `RATELIMIT`) exactly; re-check `wrangler.toml` and that `schema.sql` ran.
-- **Publish returns `too_large` / `rate_limited`** → expected anti-abuse; raise the `[vars]` limits or sign in.
+- **`<slug>.<domain>` won't resolve / 522** → missing the proxied wildcard DNS record *or* the Workers route (Step 3 needs **both**).
+- **OAuth `redirect_uri mismatch`** → the callback must byte-for-byte equal `…/auth/github/callback`.
+- **`D1_ERROR` / binding undefined** → the binding must be named `DB` (and `BUCKET`, `RATELIMIT`); confirm `schema.sql` ran.
+- **`too_large` / `rate_limited`** → expected anti-abuse (§5); raise the `[vars]` or sign in.
 
-## 5. Four distribution channels
+## 7. Distribution channels & CI/CD
 
-All four live in the same repo:
+All four channels live in the repo: the VS Code/Cursor extension (`vscode-extension/`), the MCP server (`mcp-server/`, `hspace-mcp`), the Claude Code plugin (`clients/claude-code/`, `/share`), and OpenAPI (`/openapi.json`). Three GitHub Actions pipelines: push `main`(`backend/**`) → deploy + `/health`; tag `v*` → Marketplace + Open VSX; tag `mcp-v*` → `npm publish`. Repo secrets: `CLOUDFLARE_API_TOKEN`, `VSCODE_KEY`, `OPENVSX_KEY`, `NPM_TOKEN` (bypass-2FA).
 
-1. **VS Code / Cursor extension** (`vscode-extension/`): one-click publish; a sidebar manages receipts, recipients, versions.
-2. **MCP server** (`mcp-server/`, published as `hspace-mcp`): inside Claude Desktop / Cursor / Codex, just say "publish this as a password link."
-3. **Claude Code plugin** (`clients/claude-code/`): one command installs the `/share` command + the MCP config.
-4. **OpenAPI**: `/openapi.json` for GPT Actions and agent frameworks.
+## 8. Extending it
 
-> Cursor and Claude Desktop are the same `mcp.json`; the only truly distinct install mechanisms are the Claude Code plugin (`claude plugin …`) and Codex (`codex mcp add`).
+The code is organized so features slot onto the data model:
+- **A new field on a page** → add a column in `schema.sql` + read/write in `patchPage`/`servePage` (`index.ts`).
+- **A new per-recipient behavior** → it hangs off the `grants` table + the `grantId` in the cookie payload.
+- **A new content type** → the object-key suffix convention + a branch in the serve path.
+- **A new AI client** → most reuse the MCP server; only the install wrapper differs.
 
-## 6. CI/CD: three pipelines (once you're shipping)
+## 9. Gotchas & cost
 
-| Trigger | Workflow | Actions |
-|---|---|---|
-| Push `main` (touching `backend/**`) | Deploy Backend | `tsc` → `wrangler deploy` → `/health` smoke test |
-| Push a `v*` tag | Release Extension | verify version → package vsix → publish to Marketplace + Open VSX → GitHub Release |
-| Push an `mcp-v*` tag | Release MCP | verify version → build → `npm publish` |
+- Lowercase base36 slugs; `.gitignore` your `.env` (don't rely on push protection); CI npm publish needs a bypass-2FA token; `npm version --no-git-tag-version` then tag by hand; OpenAPI for GPT Actions uses `nullable: true`.
+- **Cost:** fits Cloudflare Workers Paid ($5/mo) comfortably; the free tier works for light use — watch Workers routes on a custom domain and R2/D1 quotas. No other infra.
 
-The Claude Code plugin uses no tag: bump `version` in `plugin.json` and push `main` (version-pinned). Required repo secrets: `CLOUDFLARE_API_TOKEN`, `VSCODE_KEY`, `OPENVSX_KEY`, `NPM_TOKEN` (use a bypass-2FA automation token).
-
-## 7. Gotchas (real ones we hit)
-
-- **Slug case**: subdomain DNS is case-insensitive, so base62 slugs collide → switch to **lowercase base36** (0-9 + a-z).
-- **`.env` nearly got committed**: `git add -A` sweeps it in → `.gitignore` first; for already-tracked files use `git rm --cached`.
-- **npm 2FA**: CI publishing needs an automation token with bypass-2FA ticked; only manual local publishing uses the OTP.
-- **`npm version` auto-creates a tag**: it can mis-trigger another pipeline → use `npm version <x> --no-git-tag-version`, then tag with the right prefix by hand.
-- **OpenAPI compatibility with GPT Actions**: nullable fields must use `nullable: true`, not `type: [..., "null"]`.
-
-## 8. Cost & product invariants
-
-- **Cost**: fits Cloudflare's Workers Paid ($5/mo) comfortably; the free tier can work for light use, but Workers routes on a custom domain and R2/D1 quotas are the things to watch. No other infra.
-- **No permanent links** — a product promise, not a limitation (except first-party pinned content, set in the DB).
-- **Content is plaintext in R2** — say "HTTPS in transit / password hashing," never "encrypted storage."
-- **Content pages are `noindex` + gated** — paired with `X-Robots-Tag: noindex` and a disallowing `robots.txt`.
-- **Self-contained pages** — everything inlined; no external resources.
-
-## 9. Closing
-
-One edge Worker plus R2/D1/KV is enough to make "privately sharing AI content" a real product. The time sink is never the code; it's the account-and-authorization steps in §4 that **can only be done by hand once.** Clone the repo, walk §4, and you'll have your own instance in an afternoon.
+Clone the repo, walk §6, and you'll have your own instance in an afternoon.
 
 Repo: <https://github.com/agentx1boss/hspace> · Live demo: <https://hspace.zhanjian.space>
