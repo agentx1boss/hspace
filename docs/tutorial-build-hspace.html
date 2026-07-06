@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HSpace — 构建速览 / Build Notes</title>
+<style>
+  :root{--bg:#fbfbf9;--fg:#1c1c1e;--muted:#6b6b70;--accent:#e2603c;--border:#e8e5e0;--soft:#f3f1ec;--ink:#1a1d24;--card:#fff}
+  @media(prefers-color-scheme:dark){:root{--bg:#141519;--fg:#e8e6e3;--muted:#9a9aa0;--accent:#f0784f;--border:#2c2e35;--soft:#23252c;--ink:#0f1014;--card:#1b1d22}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:56px 22px 90px}
+  .tag{display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:var(--accent);margin-bottom:10px}
+  h1{font-size:29px;line-height:1.25;margin:0 0 8px;letter-spacing:-.01em}
+  .lead{color:var(--muted);font-size:16.5px;margin:0 0 6px}
+  h2{font-size:20px;margin:44px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+  h3{font-size:15px;margin:22px 0 6px}
+  p{margin:12px 0}
+  ul,ol{margin:12px 0;padding-left:22px}
+  li{margin:5px 0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:var(--soft);padding:.12em .4em;border-radius:5px;font:13.5px ui-monospace,Menlo,Consolas,monospace}
+  pre{position:relative;background:var(--ink);color:#e8e6e3;border-radius:12px;padding:16px 18px;overflow-x:auto;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;margin:16px 0}
+  pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-weight:650;color:var(--muted);font-size:12.5px;letter-spacing:.03em}
+  tbody tr{transition:background .15s}
+  tbody tr:hover{background:var(--soft)}
+  .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:13.5px}
+  .pill{display:inline-block;background:var(--soft);border:1px solid var(--border);border-radius:999px;padding:3px 11px;font-size:12.5px;color:var(--muted);margin:3px 5px 3px 0;transition:transform .15s,border-color .15s,color .15s}
+  .pill:hover{transform:translateY(-2px);border-color:var(--accent);color:var(--accent)}
+  /* language switch */
+  .langsw{position:fixed;top:12px;right:12px;z-index:70;display:flex;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:99px;padding:3px;box-shadow:0 4px 16px rgba(0,0,0,.10)}
+  .langbtn{border:0;background:none;color:var(--muted);font:600 12.5px/1 -apple-system,sans-serif;padding:6px 13px;border-radius:99px;cursor:pointer;transition:background .15s,color .15s}
+  .langbtn.on{background:var(--accent);color:#fff}
+  .doc[hidden]{display:none}
+  /* scroll progress */
+  #bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:80;transition:width .08s linear}
+  /* reveal */
+  .rise{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+  .rise.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none}}
+  /* copy */
+  .cp{position:absolute;top:8px;right:8px;font:600 11px/1 -apple-system,sans-serif;padding:5px 9px;border-radius:7px;border:1px solid #3a3d45;background:#26282f;color:#cfd0d4;cursor:pointer;opacity:0;transition:opacity .18s,background .18s}
+  pre:hover .cp,.cp.done{opacity:1}
+  .cp:hover{background:#33363f}
+  .cp.done{background:var(--accent);border-color:var(--accent);color:#fff}
+  /* gate */
+  .gate{display:flex;align-items:center;gap:12px;margin:22px 0;padding:14px 16px;border:1px dashed var(--border);border-radius:12px;background:var(--soft)}
+  .lock{font-size:22px;cursor:pointer;user-select:none;transition:transform .2s}
+  .lock:active{transform:scale(.9)}
+  .lock.shake{animation:sh .4s}
+  @keyframes sh{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+  .gate .msg{font-size:14px;color:var(--muted)}
+  .gate .reveal{display:none;color:var(--fg);font-weight:600}
+  .gate.open .reveal{display:inline;animation:fadeIn .55s ease}
+  .gate.open .hint{display:none}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  /* checklist */
+  .ckbar{position:sticky;top:6px;z-index:40;background:var(--card);display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:9px 13px;border:1px solid var(--border);border-radius:10px;font-size:13.5px}
+  .ckbar .track{flex:1;height:7px;border-radius:99px;background:var(--soft);overflow:hidden}
+  .ckbar .fill{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .35s ease}
+  .ckbar .n{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .steps li{list-style:none;position:relative;padding-left:30px;cursor:pointer}
+  .steps ul{padding-left:4px}
+  .steps li::before{content:"";position:absolute;left:0;top:3px;width:17px;height:17px;border:1.6px solid var(--border);border-radius:5px;transition:all .18s}
+  .steps li:hover::before{border-color:var(--accent)}
+  .steps li.done::before{background:var(--accent);border-color:var(--accent)}
+  .steps li.done::after{content:"✓";position:absolute;left:3.5px;top:2px;color:#fff;font-size:12px;font-weight:700}
+  .steps li.done{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border)}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="langsw">
+  <button class="langbtn on" data-l="zh">中文</button>
+  <button class="langbtn" data-l="en">EN</button>
+</div>
+
+<!-- ============ 中文 ============ -->
+<div class="doc" data-l="zh"><div class="wrap">
+<div class="tag">构建速览 · 精华一页</div>
+<h1>HSpace —— 一个跑在 Cloudflare 边缘的私密分享工具</h1>
+<p class="lead">精华:技术栈、架构、以及复刻它需要的人工步骤。<strong>Ship to one, not to all.</strong></p>
+
+<div class="gate">
+  <span class="lock" title="点一下">🔒</span>
+  <span class="msg"><span class="hint">这一页是公开的——但每个 HSpace 分享都要密码。<b>点一下这把锁。</b></span><span class="reveal">🔓 进来了。整个产品,就这一个动作。</span></span>
+</div>
+
+<h2>它是什么</h2>
+<p>把 AI 刚写好的 HTML demo 或 Markdown 文档,变成一个<strong>链接 + 密码</strong>,只发给该看的人——带访问回执、可即时撤回、链接不变还能迭代。</p>
+<ul>
+  <li><strong>强制密码</strong>是产品身份——不做公开画廊。</li>
+  <li><strong>没有永久链接</strong>:所有链接都会过期(匿名 3 天、登录 30 天/期可续)。</li>
+  <li><strong>内容页 <code>noindex</code> + 密码门</strong>——唯一可被索引的只有落地页。</li>
+  <li><strong>自包含页面</strong>:CSS/JS/SVG 全内联,零外部资源。<em>(这一页就是证据——动画、清单、切换全在文件里。)</em></li>
+</ul>
+
+<h2>架构:一个 Worker 扛下所有</h2>
+<pre><code>*.zhanjian.space  →  &lt;slug&gt;.zhanjian.space   内容页 + 密码门
+                     hspace.…              落地 / 法务 / 埋点 / openapi
+                     *.workers.dev         发布 API
+
+存储:  R2 = 内容对象(明文)
+        D1 = 元数据 / 版本 / 每人一链 / 回执 / 举报
+        KV = 频率限制计数</code></pre>
+<p>每篇分享都是一个独立子域 <code>&lt;slug&gt;.zhanjian.space</code>,靠一条通配路由 + 通配 DNS 全部接住。</p>
+
+<h2>技术栈全景</h2>
+<table><thead><tr><th>层</th><th>选型</th></tr></thead><tbody>
+<tr><td>运行时</td><td>Cloudflare Workers(TypeScript)</td></tr>
+<tr><td>对象存储</td><td>R2 —— HTML/Markdown 原文(明文)</td></tr>
+<tr><td>元数据库</td><td>D1(SQLite)</td></tr>
+<tr><td>计数/限流</td><td>KV</td></tr>
+<tr><td>Markdown</td><td>marked(GFM),边缘渲染</td></tr>
+<tr><td>密码/签名</td><td>Web Crypto —— PBKDF2 哈希 + HMAC Cookie</td></tr>
+<tr><td>登录</td><td>GitHub OAuth</td></tr>
+<tr><td>CLI/部署</td><td>Wrangler</td></tr>
+<tr><td>编辑器插件</td><td>VS Code 扩展(vsce + ovsx)</td></tr>
+<tr><td>AI 调用</td><td>MCP server + OpenAPI 3.0.3</td></tr>
+<tr><td>Claude Code</td><td>插件 + marketplace,自带 /share</td></tr>
+<tr><td>CI/CD</td><td>GitHub Actions</td></tr>
+</tbody></table>
+<p>边缘密码门:无 Cookie → 401 密码页;提交 → PBKDF2 校验 → HMAC Cookie(24h)→ 303 回到原路径。「每人一链」= 同一链接、每人一个密码,按人统计、可单独即时撤销。</p>
+
+<h2>⭐ 人工步骤(点一下打勾)</h2>
+<div class="ckbar"><div class="track"><div class="fill"></div></div><span class="n">0 / 0 已完成</span></div>
+<section class="steps" data-key="zh">
+<h3>A · 账号与一次性授权</h3>
+<ul>
+  <li>Cloudflare 账号;<code>npm i -g wrangler</code> → <code>wrangler login</code>。</li>
+  <li>一个托管在 Cloudflare 的域名(通配子域)。</li>
+  <li>GitHub 账号 + 仓库(代码 + Actions)。</li>
+  <li>VS Code publisher(Azure DevOps PAT)、Open VSX token、npm 账号。</li>
+</ul>
+<h3>B · 建 Cloudflare 资源</h3>
+<pre><code>wrangler r2 bucket create &lt;bucket-name&gt;
+wrangler d1 create &lt;db-name&gt;                      # 返回 database_id
+wrangler kv namespace create RATELIMIT            # 返回 id
+wrangler d1 execute &lt;db-name&gt; --file=./schema.sql</code></pre>
+<ul><li>手动填 <code>wrangler.toml</code>:<code>account_id</code>、路由 <code>pattern</code> + <code>zone_name</code>、资源 ID。</li></ul>
+<h3>C · DNS(Cloudflare 面板)</h3>
+<ul>
+  <li>通配 <code>*.&lt;域&gt;</code> → Worker。</li>
+  <li>一个落地页子域(如 <code>hspace.&lt;域&gt;</code>)。</li>
+</ul>
+<h3>D · Worker 密钥(绝不写进 toml)</h3>
+<pre><code>wrangler secret put COOKIE_SIGNING_SECRET
+wrangler secret put SESSION_SECRET
+wrangler secret put GITHUB_CLIENT_ID
+wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
+<ul><li>GitHub OAuth App 需手动创建,回调填登录接口。</li></ul>
+<h3>E · GitHub Actions 仓库 Secrets</h3>
+<ul>
+  <li><code>CLOUDFLARE_API_TOKEN</code> —— CI 部署 Worker。</li>
+  <li><code>VSCODE_KEY</code> —— 发 VS Code Marketplace。</li>
+  <li><code>OPENVSX_KEY</code> —— 发 Open VSX。</li>
+  <li><code>NPM_TOKEN</code> —— 发 npm(勾 bypass-2FA)。</li>
+</ul>
+<h3>F · 发布</h3>
+<ul>
+  <li>后端:推 <code>backend/**</code> 到 <code>main</code>。</li>
+  <li>插件:改版本 → 打 <code>v&lt;x.y.z&gt;</code> tag。</li>
+  <li>MCP:改版本 → 打 <code>mcp-v&lt;x.y.z&gt;</code> tag。</li>
+  <li>Claude Code 插件:改 <code>plugin.json</code> → 推 <code>main</code>。</li>
+</ul>
+</section>
+
+<h2>踩过的坑</h2>
+<ul>
+  <li>子域 DNS 大小写不敏感 → 用<strong>小写 base36</strong> slug。</li>
+  <li><code>.gitignore</code> 掉 <code>.env</code>;别依赖推送保护兜底。</li>
+  <li>CI 发 npm 用勾了 bypass-2FA 的 automation token。</li>
+  <li><code>npm version</code> 会自动打 tag → 用 <code>--no-git-tag-version</code>。</li>
+  <li>OpenAPI 兼容 GPT Actions:用 <code>nullable: true</code>,别用 <code>type: [..., "null"]</code>。</li>
+</ul>
+
+<h2>值得照抄的产品级不变量</h2>
+<p>
+  <span class="pill">没有永久链接</span>
+  <span class="pill">R2 明文存 —— 不说「加密存储」</span>
+  <span class="pill">内容页 noindex + 密码门</span>
+  <span class="pill">自包含页面</span>
+</p>
+<p>一个边缘 Worker + R2/D1/KV,就够把「私密分享 AI 内容」做成产品级。最花时间的从来不是代码,而是那些只能人工做一次的账号与授权。</p>
+
+<div class="foot">在线体验 / 源码:<a href="https://hspace.zhanjian.space">hspace.zhanjian.space</a></div>
+</div></div>
+
+<!-- ============ English ============ -->
+<div class="doc" data-l="en" hidden><div class="wrap">
+<div class="tag">Build notes · at a glance</div>
+<h1>HSpace — a private-sharing tool on Cloudflare's edge</h1>
+<p class="lead">The essentials: the stack, the architecture, and the manual steps to reproduce it. <strong>Ship to one, not to all.</strong></p>
+
+<div class="gate">
+  <span class="lock" title="click">🔒</span>
+  <span class="msg"><span class="hint">This page is public — but every HSpace share needs a password. <b>Tap the lock.</b></span><span class="reveal">🔓 You're in. That's the entire product, in one gesture.</span></span>
+</div>
+
+<h2>What it is</h2>
+<p>Turn the HTML demo or Markdown doc your AI just wrote into a <strong>link + password</strong>, sent only to the people who should see it — with view receipts, instant revocation, and iteration without changing the link.</p>
+<ul>
+  <li><strong>Mandatory password</strong> is the product's identity — no public gallery.</li>
+  <li><strong>No permanent links</strong>: every link expires (anon 3 days, signed-in 30 days/term, renewable).</li>
+  <li><strong>Content pages are <code>noindex</code> + gated</strong> — only the landing page is indexable.</li>
+  <li><strong>Self-contained pages</strong>: all CSS/JS/SVG inlined; zero external assets. <em>(This page proves it — the animations, checklist and this language toggle all ship inside the file.)</em></li>
+</ul>
+
+<h2>Architecture: one Worker carries everything</h2>
+<pre><code>*.zhanjian.space  →  &lt;slug&gt;.zhanjian.space   content page + password gate
+                     hspace.…              landing / legal / beacon / openapi
+                     *.workers.dev         publish API
+
+Storage:  R2 = content objects (plaintext)
+          D1 = metadata / versions / grants / receipts / reports
+          KV = rate-limit counters</code></pre>
+<p>Every share is its own subdomain <code>&lt;slug&gt;.zhanjian.space</code>, caught by one wildcard route + wildcard DNS.</p>
+
+<h2>The full stack</h2>
+<table><thead><tr><th>Layer</th><th>Choice</th></tr></thead><tbody>
+<tr><td>Runtime</td><td>Cloudflare Workers (TypeScript)</td></tr>
+<tr><td>Object storage</td><td>R2 — raw HTML/Markdown (plaintext)</td></tr>
+<tr><td>Metadata DB</td><td>D1 (SQLite)</td></tr>
+<tr><td>Counters / limits</td><td>KV</td></tr>
+<tr><td>Markdown</td><td>marked (GFM), rendered at the edge</td></tr>
+<tr><td>Password / signing</td><td>Web Crypto — PBKDF2 hash + HMAC cookie</td></tr>
+<tr><td>Sign-in</td><td>GitHub OAuth</td></tr>
+<tr><td>CLI / deploy</td><td>Wrangler</td></tr>
+<tr><td>Editor plugin</td><td>VS Code Extension (vsce + ovsx)</td></tr>
+<tr><td>AI callable</td><td>MCP server + OpenAPI 3.0.3</td></tr>
+<tr><td>Claude Code</td><td>plugin + marketplace, a /share command</td></tr>
+<tr><td>CI/CD</td><td>GitHub Actions</td></tr>
+</tbody></table>
+<p>The edge gate: no cookie → 401 password page; submit → PBKDF2 verify → HMAC cookie (24h) → 303 back to the original path. Per-recipient links = one link, a password per recipient, per-person stats, instant isolated revocation.</p>
+
+<h2>⭐ Manual steps (tap to check off)</h2>
+<div class="ckbar"><div class="track"><div class="fill"></div></div><span class="n">0 / 0 done</span></div>
+<section class="steps" data-key="en">
+<h3>A · Accounts &amp; one-time auth</h3>
+<ul>
+  <li>Cloudflare account; <code>npm i -g wrangler</code> → <code>wrangler login</code>.</li>
+  <li>A domain on Cloudflare (wildcard subdomains).</li>
+  <li>GitHub account + repo (code + Actions).</li>
+  <li>VS Code Marketplace publisher (Azure DevOps PAT), Open VSX token, npm account.</li>
+</ul>
+<h3>B · Create Cloudflare resources</h3>
+<pre><code>wrangler r2 bucket create &lt;bucket-name&gt;
+wrangler d1 create &lt;db-name&gt;                      # returns database_id
+wrangler kv namespace create RATELIMIT            # returns id
+wrangler d1 execute &lt;db-name&gt; --file=./schema.sql</code></pre>
+<ul><li>Fill <code>wrangler.toml</code>: <code>account_id</code>, route <code>pattern</code> + <code>zone_name</code>, resource IDs.</li></ul>
+<h3>C · DNS</h3>
+<ul>
+  <li>Wildcard <code>*.&lt;domain&gt;</code> → the Worker.</li>
+  <li>A landing subdomain (e.g. <code>hspace.&lt;domain&gt;</code>).</li>
+</ul>
+<h3>D · Worker secrets (never in the toml)</h3>
+<pre><code>wrangler secret put COOKIE_SIGNING_SECRET
+wrangler secret put SESSION_SECRET
+wrangler secret put GITHUB_CLIENT_ID
+wrangler secret put GITHUB_CLIENT_SECRET</code></pre>
+<ul><li>Create the GitHub OAuth App by hand; callback = your login endpoint.</li></ul>
+<h3>E · GitHub Actions repo secrets</h3>
+<ul>
+  <li><code>CLOUDFLARE_API_TOKEN</code> — CI deploys the Worker.</li>
+  <li><code>VSCODE_KEY</code> — VS Code Marketplace.</li>
+  <li><code>OPENVSX_KEY</code> — Open VSX.</li>
+  <li><code>NPM_TOKEN</code> — npm (bypass-2FA token).</li>
+</ul>
+<h3>F · Releases</h3>
+<ul>
+  <li>Backend: push <code>backend/**</code> to <code>main</code>.</li>
+  <li>Extension: bump version → tag <code>v&lt;x.y.z&gt;</code>.</li>
+  <li>MCP: bump version → tag <code>mcp-v&lt;x.y.z&gt;</code>.</li>
+  <li>Claude Code plugin: bump <code>plugin.json</code> → push <code>main</code>.</li>
+</ul>
+</section>
+
+<h2>Gotchas</h2>
+<ul>
+  <li>Subdomain DNS is case-insensitive → use <strong>lowercase base36</strong> slugs.</li>
+  <li><code>.gitignore</code> your <code>.env</code>; don't rely on push protection.</li>
+  <li>CI npm publish needs a bypass-2FA automation token.</li>
+  <li><code>npm version</code> auto-tags → use <code>--no-git-tag-version</code>.</li>
+  <li>OpenAPI for GPT Actions: use <code>nullable: true</code>, not <code>type: [..., "null"]</code>.</li>
+</ul>
+
+<h2>Product invariants worth copying</h2>
+<p>
+  <span class="pill">No permanent links</span>
+  <span class="pill">Plaintext in R2 — never "encrypted storage"</span>
+  <span class="pill">noindex + gated</span>
+  <span class="pill">Self-contained pages</span>
+</p>
+<p>An edge Worker plus R2/D1/KV is enough to make private AI-content sharing a real product. The time sink is never the code — it's the account-and-authorization steps that can only be done by hand once.</p>
+
+<div class="foot">Live demo / source: <a href="https://hspace.zhanjian.space">hspace.zhanjian.space</a></div>
+</div></div>
+
+<script>
+(function(){
+  // scroll progress
+  var bar=document.getElementById('bar');
+  function prog(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max*100):0)+'%';}
+  addEventListener('scroll',prog,{passive:true});addEventListener('resize',prog);
+
+  // copy buttons (all code blocks, both languages)
+  document.querySelectorAll('pre').forEach(function(pre){
+    var b=document.createElement('button');b.className='cp';b.textContent='⧉';b.title='copy';
+    b.addEventListener('click',function(){
+      var t=(pre.querySelector('code')||pre).innerText;
+      navigator.clipboard.writeText(t).then(function(){
+        b.textContent='✓';b.classList.add('done');
+        setTimeout(function(){b.textContent='⧉';b.classList.remove('done');},1300);
+      });
+    });
+    pre.appendChild(b);
+  });
+
+  // reveal on scroll
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.1});
+  document.querySelectorAll('h2,pre,table,blockquote,.gate,.steps h3,ul,.foot').forEach(function(el){el.classList.add('rise');io.observe(el);});
+
+  // gate easter egg (per doc)
+  document.querySelectorAll('.gate').forEach(function(gate){
+    var lock=gate.querySelector('.lock');
+    lock.addEventListener('click',function(){
+      if(gate.classList.contains('open'))return;
+      lock.classList.add('shake');
+      setTimeout(function(){lock.textContent='🔓';gate.classList.add('open');lock.classList.remove('shake');},380);
+    });
+  });
+
+  // checklist (per doc, persisted by data-key)
+  document.querySelectorAll('.steps').forEach(function(steps){
+    var bar=steps.previousElementSibling; // .ckbar
+    var fill=bar.querySelector('.fill'),nEl=bar.querySelector('.n');
+    var doneWord=steps.dataset.key==='zh'?' 已完成':' done';
+    var KEY='hspace-guide-ck-'+steps.dataset.key;
+    var lis=[].slice.call(steps.querySelectorAll('li'));
+    var saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
+    function upd(){var d=steps.querySelectorAll('li.done').length,t=lis.length;
+      nEl.textContent=d+' / '+t+doneWord;fill.style.width=(t?d/t*100:0)+'%';}
+    lis.forEach(function(li,i){
+      if(saved[i])li.classList.add('done');
+      li.addEventListener('click',function(ev){
+        if(ev.target.tagName==='A'||ev.target.tagName==='CODE')return;
+        li.classList.toggle('done');
+        var s={};lis.forEach(function(x,j){if(x.classList.contains('done'))s[j]=1;});
+        try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}
+        upd();
+      });
+    });
+    upd();
+  });
+
+  // language switch (default zh; remembers last choice)
+  var docs=[].slice.call(document.querySelectorAll('.doc'));
+  var btns=[].slice.call(document.querySelectorAll('.langbtn'));
+  function setLang(l){
+    docs.forEach(function(d){d.hidden=(d.dataset.l!==l);});
+    btns.forEach(function(b){b.classList.toggle('on',b.dataset.l===l);});
+    document.documentElement.lang=(l==='zh'?'zh-Hans':'en');
+    document.querySelectorAll('.doc:not([hidden]) .rise').forEach(function(el){el.classList.add('in');});
+    try{localStorage.setItem('hspace-guide-lang',l);}catch(e){}
+    prog();
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){setLang(b.dataset.l);});});
+  var pref='zh';try{pref=localStorage.getItem('hspace-guide-lang')||'zh';}catch(e){}
+  setLang(pref);
+  prog();
+})();
+</script>
+</body>
+</html>
