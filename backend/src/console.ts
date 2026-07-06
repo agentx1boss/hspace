@@ -70,18 +70,23 @@ export async function serveConsole(url: URL, request: Request, env: Env, ctx: Ex
   if (saveToken) bumpMetric(env, ctx, "sclk");
   const pending = saveToken || readCookie(request, SAVE_COOKIE);
   if (pending) {
+    let saved = false;
     const v = await verifyScopedToken(env.COOKIE_SIGNING_SECRET, "save", pending);
     if (v) {
+      // 仅当源稿此刻仍存在才入库:令牌过期/伪造,或稿已删,都不建收藏、不谎报成功
       const p = await env.DB.prepare("SELECT filename, password_hash FROM pages WHERE slug = ?")
         .bind(v.slug).first<{ filename: string | null; password_hash: string | null }>();
-      const keyHash = v.grantId ? null : (p?.password_hash ?? null);
-      await env.DB.prepare(
-        "INSERT OR REPLACE INTO saves (owner_id, slug, grant_id, key_hash, title, created_at) VALUES (?, ?, ?, ?, ?, ?)"
-      ).bind(ownerId, v.slug, v.grantId || null, keyHash, p?.filename || v.slug, now()).run();
-      bumpMetric(env, ctx, "save");
+      if (p) {
+        const keyHash = v.grantId ? null : (p.password_hash ?? null);
+        await env.DB.prepare(
+          "INSERT OR REPLACE INTO saves (owner_id, slug, grant_id, key_hash, title, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+        ).bind(ownerId, v.slug, v.grantId || null, keyHash, p.filename || v.slug, now()).run();
+        bumpMetric(env, ctx, "save");
+        saved = true;
+      }
     }
-    // 清 URL 令牌 + 清暂存 cookie,重定向到干净的 console(避免刷新重复处理、令牌残留历史)
-    const rh = new Headers({ Location: "/console?saved=1" });
+    // 清 URL 令牌 + 清暂存 cookie,重定向到干净的 console;仅真正入库才带 saved=1(否则不谎报)
+    const rh = new Headers({ Location: saved ? "/console?saved=1" : "/console?save_expired=1" });
     rh.append("Set-Cookie", `${SAVE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
     return new Response(null, { status: 302, headers: rh });
   }
@@ -135,6 +140,7 @@ export async function serveConsole(url: URL, request: Request, env: Env, ctx: Ex
     pages: pages ?? [],
     saves,
     justSaved: url.searchParams.get("saved") === "1",
+    saveExpired: url.searchParams.get("save_expired") === "1",
     domain: env.USERCONTENT_DOMAIN,
   });
   return new Response(html, { status: 200, headers });
@@ -221,6 +227,7 @@ interface ConsoleData {
   pages: PageRowLite[];
   saves: SaveView[];
   justSaved: boolean;
+  saveExpired: boolean;
   domain: string;
 }
 
@@ -294,6 +301,7 @@ function consolePage(d: ConsoleData): string {
   return shell(`<main class="wrap">
   ${d.fromVscode ? `<div class="tip">Copy your API key below, then paste it back into the editor.</div>` : ""}
   ${d.justSaved ? `<div class="fresh">Saved to your account — find it under Saved below.</div>` : ""}
+  ${d.saveExpired ? `<div class="tip">That save link expired or was invalid. Open the shared page again and tap “Save” to retry.</div>` : ""}
   <div class="bar">
     <h1>HSpace Console</h1>
     <form method="post" action="/auth/logout"><button class="btn plain">Sign out</button></form>
