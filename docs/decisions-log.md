@@ -49,6 +49,8 @@
 - **准确性修正**:匿名 TTL 统一为 **3 天**(与 `wrangler.toml ANON_DEFAULT_TTL=259200` 一致)——同步改掉 `index.ts` 注释与 AGENTS.md 里陈旧的「7 天」。澄清 D1 无 receipts 表(回执派生自 hits)。
 - **HTML 无障碍**:清单→`role=checkbox`+`aria-checked`+键盘;锁彩蛋→`role=button`+键盘;复制按钮 `aria-label`+focus 可见;`<noscript>` 兜底(JS 关时内容不隐形)。
 - 暂缓:真实产品截图(需可驱动浏览器截图的环境)。
+- **教程 md 做成深度手把手版**(与 HTML 速览差异化):md 承载真实代码(Worker 按 host 分流骨架、PBKDF2/signCookie)、数据模型(pages/grants DDL)、防滥用阈值表、密码门 curl 走查、本地开发闭环(`/p/<slug>` 无需通配域名)、如何扩展;HTML 保持一页速览并加「详细版看 md」引导。
+- **落地页 demo 换成本教程合集**:用 founder key 经 API 发布为 `omcenj1`(密码 1024),直接改库 `expires_at=NULL` 置顶;中英 `trySlug` 均指向它,文案改「3 篇搭建教程合集」,`'try'` 埋点同步。旧 promo 册子 q0i7otn/aqm3anv 未删,仅不再被落地页引用(见 [operations.md](operations.md) 第一方置顶内容)。
 
 ## 度量前置(已就绪)
 

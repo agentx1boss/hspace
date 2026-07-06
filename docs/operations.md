@@ -74,17 +74,20 @@ npx wrangler d1 execute html-share --remote --command \
 - [ ] 落地页 `backend/src/landing.ts`(`L.en` / `L.zh`)+ OG 卡(`assets/og-card-1200x630.png` → 传 R2)
 - [ ] 插件 `vscode-extension/`:README(中英)、package.json description(发新版)
 - [ ] GitHub About(`gh repo edit --description`)
-- [ ] **推广册子** `assets/promo/`:改完走 PATCH 升版(见该目录 README),线上 q0i7otn 链接/密码不变
+- [ ] **落地页 demo** `omcenj1`(教程合集,源在 `docs/tutorial-build-hspace.*`):涉及定位/文案时,改完 docs 用 founder key 重发并重新置顶(见「第一方置顶内容」)
+- [ ] **推广册子** `assets/promo/`(q0i7otn/aqm3anv,已不作落地 demo,仅营销物料):如仍在用,改完走 PATCH 升版(见该目录 README),线上链接/密码不变
 
 ## 第一方置顶内容(常驻,不过期)
 
-**没有永久链接是产品级不变量**——API 与插件都产生不了永久页(`expiresIn:null` 只当"续到档内上限":匿名 7 天 / 登录 30 天)。唯一例外是我们自己的营销物料(promo 册子 q0i7otn / aqm3anv、落地演示):它们是**第一方置顶内容**,靠直接改库把 `expires_at` 置 NULL 常驻(servePage 把 NULL 当"无到期")。
+**没有永久链接是产品级不变量**——API 与插件都产生不了永久页(`expiresIn:null` 只当"续到档内上限":匿名 3 天 / 登录 30 天)。唯一例外是我们自己的营销物料,它们是**第一方置顶内容**,靠直接改库把 `expires_at` 置 NULL 常驻(servePage 把 NULL 当"无到期"):
+- `omcenj1` —— **落地页「Try it yourself」demo**(全栈教程合集:双语交互 HTML + 中/英深度教程,密码 1024)。用 founder key 经 API 发布后 UPDATE 置顶;是当前落地页 `trySlug` 指向的对象。
+- `q0i7otn` / `aqm3anv` —— 早期 promo 册子(中/英,密码 1024)。**仍置顶留存,但落地页已不再引用**(demo 已换成 omcenj1);作为营销物料源保留。
 
 ```bash
 cd backend
 # 查看置顶状态(NULL = 常驻)
 npx wrangler d1 execute html-share --remote --command \
-  "SELECT slug, expires_at FROM pages WHERE slug IN ('q0i7otn','aqm3anv')"
+  "SELECT slug, expires_at FROM pages WHERE slug IN ('omcenj1','q0i7otn','aqm3anv')"
 # 置顶(仅限第一方营销物料;别拿它给用户页开后门)
 npx wrangler d1 execute html-share --remote --command \
   "UPDATE pages SET expires_at = NULL WHERE slug = '<slug>'"
