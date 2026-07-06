@@ -109,7 +109,7 @@ const L: Record<Lang, Record<string, string>> = {
     c3t: "🔁 The link stays live", c3b: "AI iterates the content, the link stays the same — update after review comments, roll back to any version. No more “final_v3” links.",
     tryH: "Try it yourself",
     trySub: "Below is a real password-gated HSpace collection (Markdown + HTML). Enter the password and you’ve just been a recipient.",
-    tryTh: `A 3-doc collection · password <b>1024</b>`, trySlug: "aqm3anv",
+    tryTh: `A 3-doc build tutorial · password <b>1024</b>`, trySlug: "omcenj1",
     howH: "Three steps to send", howSub: "In your editor, or right in an AI chat.",
     st1t: "Open a file or folder", st1b: "Any .html / .md file, or right-click a folder to publish a collection.",
     st2t: "Publish in one click", st2b: "Click the cloud icon; a 4-digit password is generated and content goes to the edge.",
@@ -187,7 +187,7 @@ const L: Record<Lang, Record<string, string>> = {
     c3t: "🔁 链接是活的", c3b: "稿在改,链接不变——review 意见改完直接更新,历史版本可回滚,不用再发「最终版_v3」。",
     tryH: "亲自体验一次",
     trySub: "下面是一本真实的 HSpace 私密合集(含 Markdown 与 HTML)。输入密码,你就完成了一次接收方的完整体验。",
-    tryTh: `一本 3 篇的册子 · 访问密码 <b>1024</b>`, trySlug: "q0i7otn",
+    tryTh: `一份 3 篇的搭建教程合集 · 密码 <b>1024</b>`, trySlug: "omcenj1",
     howH: "三步发走", howSub: "在编辑器里,或直接在 AI 对话里。",
     st1t: "打开文件或文件夹", st1b: "任意 .html / .md 文件,或右键一个文件夹发布为合集。",
     st2t: "一键发布", st2b: "点云图标,自动生成 4 位密码,内容上传到边缘。",
@@ -718,7 +718,7 @@ ${FAVICON_LINK}
       var a=ev.target.closest&&ev.target.closest('a');if(!a)return;var h=a.href||'';
       if(h.indexOf('marketplace.visualstudio.com')>-1)e('install');
       else if(h.indexOf('open-vsx.org')>-1)e('vsx');
-      else if(h.indexOf('q0i7otn')>-1)e('try');
+      else if(h.indexOf('omcenj1')>-1)e('try');
       else if(h.indexOf('github.com')>-1)e('gh');
     },true);
   }catch(_){}})();</script>
