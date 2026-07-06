@@ -2,11 +2,14 @@
 // 自包含单页(内联 CSS/JS,不引外部资源,项目红线)。
 // 账户区:登录态 + API key(首登自动生成,明文仅出现一次)。
 // 页面区:服务端渲染列表;续期/删除/访问人/版本走既有 API(同源 fetch + 会话 Cookie 认证)。
-import { randomToken, sha256b64 } from "./crypto";
-import { sessionOwner } from "./auth";
+import { randomToken, sha256b64, verifyScopedToken } from "./crypto";
+import { sessionOwner, readCookie } from "./auth";
 import type { Env } from "./index";
 
 const now = () => Math.floor(Date.now() / 1000);
+
+// 未登录点「保存这份稿」时暂存 save 令牌,穿透 GitHub OAuth 回跳后在 /console 落库
+const SAVE_COOKIE = "__Host-hs_save";
 
 interface PageRowLite {
   slug: string;
@@ -18,7 +21,30 @@ interface PageRowLite {
   object_key: string;
 }
 
-export async function serveConsole(url: URL, request: Request, env: Env): Promise<Response> {
+// saves LEFT JOIN pages 的行:据此判定收藏状态(可打开/已过期/已失效)
+interface SaveJoinRow {
+  slug: string;
+  title: string | null;
+  created_at: number;
+  pstatus: string | null;
+  expires_at: number | null;
+  powner: string | null;
+  hits: number | null;
+}
+
+interface SaveView { slug: string; title: string; created_at: number; status: "ok" | "expired" | "gone"; }
+
+/** 第一方埋点计数(与 /e 同表);收藏漏斗:sclk=保存点击,save=落库成功 */
+function bumpMetric(env: Env, ctx: ExecutionContext, name: string): void {
+  const day = new Date().toISOString().slice(0, 10);
+  ctx.waitUntil(
+    env.DB.prepare(
+      "INSERT INTO metrics (day, name, lang, count) VALUES (?, ?, '', 1) ON CONFLICT(day, name, lang) DO UPDATE SET count = count + 1"
+    ).bind(day, name).run()
+  );
+}
+
+export async function serveConsole(url: URL, request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const headers = {
     "Content-Type": "text/html; charset=utf-8",
     "X-Content-Type-Options": "nosniff",
@@ -27,9 +53,37 @@ export async function serveConsole(url: URL, request: Request, env: Env): Promis
   };
 
   const fromVscode = url.searchParams.get("from") === "vscode";
+  const saveToken = url.searchParams.get("save");
   const ownerId = await sessionOwner(request, env);
+
   if (!ownerId) {
-    return new Response(signedOutPage(url.searchParams.get("error"), fromVscode), { status: 200, headers });
+    // 未登录点「保存」:把 save 令牌暂存 cookie(穿透 OAuth 回跳),记一次点击,登录页给出保存提示
+    const respHeaders = new Headers(headers);
+    if (saveToken) {
+      bumpMetric(env, ctx, "sclk");
+      respHeaders.append("Set-Cookie", `${SAVE_COOKIE}=${saveToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`);
+    }
+    return new Response(signedOutPage(url.searchParams.get("error"), fromVscode, !!saveToken), { status: 200, headers: respHeaders });
+  }
+
+  // 已登录:落地任何待办收藏(query 令牌优先,其次 OAuth 前暂存的 cookie),幂等 upsert
+  if (saveToken) bumpMetric(env, ctx, "sclk");
+  const pending = saveToken || readCookie(request, SAVE_COOKIE);
+  if (pending) {
+    const v = await verifyScopedToken(env.COOKIE_SIGNING_SECRET, "save", pending);
+    if (v) {
+      const p = await env.DB.prepare("SELECT filename, password_hash FROM pages WHERE slug = ?")
+        .bind(v.slug).first<{ filename: string | null; password_hash: string | null }>();
+      const keyHash = v.grantId ? null : (p?.password_hash ?? null);
+      await env.DB.prepare(
+        "INSERT OR REPLACE INTO saves (owner_id, slug, grant_id, key_hash, title, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+      ).bind(ownerId, v.slug, v.grantId || null, keyHash, p?.filename || v.slug, now()).run();
+      bumpMetric(env, ctx, "save");
+    }
+    // 清 URL 令牌 + 清暂存 cookie,重定向到干净的 console(避免刷新重复处理、令牌残留历史)
+    const rh = new Headers({ Location: "/console?saved=1" });
+    rh.append("Set-Cookie", `${SAVE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+    return new Response(null, { status: 302, headers: rh });
   }
 
   const user = await env.DB.prepare(
@@ -56,12 +110,31 @@ export async function serveConsole(url: URL, request: Request, env: Env): Promis
      FROM pages WHERE owner_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 200`
   ).bind(ownerId).all<PageRowLite>();
 
+  // 收藏列表:LEFT JOIN 源稿判定状态(源稿失效/过期后仍留墓碑,标题冗余存于 saves)
+  const { results: saveRows } = await env.DB.prepare(
+    `SELECT s.slug, s.title, s.created_at,
+            p.status AS pstatus, p.expires_at, p.owner_id AS powner, p.hits
+     FROM saves s LEFT JOIN pages p ON p.slug = s.slug
+     WHERE s.owner_id = ? ORDER BY s.created_at DESC LIMIT 200`
+  ).bind(ownerId).all<SaveJoinRow>();
+  const anonMaxHits = Number(env.ANON_MAX_HITS);
+  const ts = now();
+  const saves: SaveView[] = (saveRows ?? []).map((r) => {
+    let status: SaveView["status"] = "ok";
+    if (r.pstatus !== "active") status = "gone";                          // 已删/已下架/源稿不存在
+    else if (r.expires_at != null && r.expires_at < ts) status = "expired";
+    else if (r.powner == null && (r.hits ?? 0) >= anonMaxHits) status = "gone"; // 匿名稿访问量封顶
+    return { slug: r.slug, title: r.title || r.slug, created_at: r.created_at, status };
+  });
+
   const html = consolePage({
     githubLogin: user?.github_login ?? ownerId,
     freshKey,
     keyCreatedAt: keyRow.created_at,
     fromVscode,
     pages: pages ?? [],
+    saves,
+    justSaved: url.searchParams.get("saved") === "1",
     domain: env.USERCONTENT_DOMAIN,
   });
   return new Response(html, { status: 200, headers });
@@ -99,8 +172,8 @@ code{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#f0f2f
 .note{color:#666e77;font-size:13px;margin-top:8px}
 .err{color:#c0392b;margin-bottom:14px}
 .tip{background:#fff8e1;border:1px solid #f0e0a0;border-radius:8px;padding:10px 14px;margin-bottom:16px}
-.page{padding:12px 0;border-bottom:1px solid #edf0f2}
-.page:last-child{border-bottom:none;padding-bottom:0}
+.page,.save{padding:12px 0;border-bottom:1px solid #edf0f2}
+.page:last-child,.save:last-child{border-bottom:none;padding-bottom:0}
 .prow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .pmain a{color:inherit;text-decoration:none}
 .pmain a:hover{text-decoration:underline}
@@ -129,11 +202,11 @@ ${inner}
 </body>
 </html>`;
 
-function signedOutPage(error: string | null, fromVscode: boolean): string {
+function signedOutPage(error: string | null, fromVscode: boolean, saving = false): string {
   return shell(`<main class="center">
   <div class="card login">
     <h1>HSpace Console</h1>
-    <p class="sub">Manage your API key and shared pages.</p>
+    <p class="sub">${saving ? "Sign in to save this draft to your account." : "Manage your API key and shared pages."}</p>
     ${error ? `<p class="err">Sign-in failed. Please try again.</p>` : ""}
     <a class="btn gh" href="/auth/github${fromVscode ? "?from=vscode" : ""}">${GH_ICON} Sign in with GitHub</a>
   </div>
@@ -146,6 +219,8 @@ interface ConsoleData {
   keyCreatedAt: number;
   fromVscode: boolean;
   pages: PageRowLite[];
+  saves: SaveView[];
+  justSaved: boolean;
   domain: string;
 }
 
@@ -181,6 +256,33 @@ function pagesSection(pages: PageRowLite[], domain: string): string {
   }).join("\n");
 }
 
+function savesSection(saves: SaveView[], domain: string): string {
+  if (saves.length === 0) {
+    return `<p class="note">Drafts you save from a shared link show up here — open them again without re-entering the password.</p>`;
+  }
+  const label: Record<SaveView["status"], string> = {
+    ok: "", // 用「saved <date>」占位,见下
+    expired: "expired",
+    gone: "no longer available",
+  };
+  return saves.map((s) => {
+    const meta = s.status === "ok" ? `saved ${fmtDate(s.created_at)}` : label[s.status];
+    const cls = s.status === "ok" ? "" : ' class="expired"';
+    return `<div class="save" data-slug="${esc(s.slug)}">
+  <div class="prow">
+    <div class="pmain">
+      <b>${esc(s.title)}</b>
+      <div class="meta">${esc(s.slug)} · <span${cls}>${meta}</span></div>
+    </div>
+    <div class="pacts">${s.status === "ok" ? `
+      <a class="btn sm" href="/saves/${esc(s.slug)}/open" target="_blank" rel="noopener">Open</a>` : ""}
+      <button class="btn sm danger" data-sact="remove">Remove</button>
+    </div>
+  </div>
+</div>`;
+  }).join("\n");
+}
+
 function consolePage(d: ConsoleData): string {
   const date = fmtDate(d.keyCreatedAt);
   const keyBlock = d.freshKey
@@ -191,6 +293,7 @@ function consolePage(d: ConsoleData): string {
 
   return shell(`<main class="wrap">
   ${d.fromVscode ? `<div class="tip">Copy your API key below, then paste it back into the editor.</div>` : ""}
+  ${d.justSaved ? `<div class="fresh">Saved to your account — find it under Saved below.</div>` : ""}
   <div class="bar">
     <h1>HSpace Console</h1>
     <form method="post" action="/auth/logout"><button class="btn plain">Sign out</button></form>
@@ -205,6 +308,10 @@ function consolePage(d: ConsoleData): string {
   <div class="card">
     <h2>Pages</h2>
     <div id="pagelist">${pagesSection(d.pages, d.domain)}</div>
+  </div>
+  <div class="card">
+    <h2>Saved</h2>
+    <div id="savelist">${savesSection(d.saves, d.domain)}</div>
   </div>
 </main>
 <script>
@@ -270,6 +377,19 @@ function consolePage(d: ConsoleData): string {
       api("DELETE", "/pages/" + slug).then(function () { location.reload(); }).catch(alertErr);
     } else if (act === "grants" || act === "versions") {
       toggle(page, act, slug);
+    }
+  });
+
+  // ---- Saved 区(移除收藏;打开是普通链接,走 /saves/<slug>/open 302)----
+  var savelist = document.getElementById("savelist");
+  if (savelist) savelist.addEventListener("click", function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest("button[data-sact]") : null;
+    if (!btn) return;
+    var row = btn.closest(".save");
+    var slug = row.getAttribute("data-slug");
+    if (btn.getAttribute("data-sact") === "remove") {
+      if (!confirm("Remove this from your saved drafts?")) return;
+      api("DELETE", "/saves/" + slug).then(function () { location.reload(); }).catch(alertErr);
     }
   });
 

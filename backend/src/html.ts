@@ -10,6 +10,16 @@ const FOOT_HREF = LANDING + "?ref=shared";
 // 统一页脚署名:密码页 / 阅读页 / 目录页 / 合集导航 / 404 一律用英文 slogan(品牌 tagline)
 const FOOT_SIG = "HSpace · Ship to one, not to all.";
 
+/**
+ * 「保存这份稿」入口:阅读页/目录页页脚渲染,指向 hspace console 的收藏流(带签名 save 令牌)。
+ * 读者点击 → 登录(若未登录)→ 收藏进自己账号。token 为空则不渲染(如无法归因的场景)。
+ */
+function saveLink(token?: string): string {
+  if (!token) return "";
+  // 令牌含 base64 的 +//=,必须 URL 编码,否则 query 解析把 + 变空格导致验签失败
+  return `<a class="save" href="${LANDING}/console?save=${encodeURIComponent(token)}" target="_blank" rel="noopener">＋ 保存这份稿</a><span class="sep">·</span>`;
+}
+
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -142,6 +152,8 @@ const BASE_CSS = `
   footer .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:7px;vertical-align:1px}
   footer a{color:var(--muted);border-bottom:none}
   footer a:hover{color:var(--accent)}
+  footer .save{color:var(--accent);font-weight:600}
+  footer .sep{margin:0 8px;opacity:.45}
   /* 合集侧栏与导航 */
   .side{display:none}
   .crumb{font-size:13.5px;color:var(--muted);margin:-24px 0 32px;padding-bottom:16px;border-bottom:1px solid var(--border)}
@@ -188,8 +200,8 @@ function prevNext(nav: CollectionNav): string {
   return `<nav class="pn">${left}${right}</nav>`;
 }
 
-/** Markdown 阅读页；传入 nav 时渲染合集导航;updatedAt(epoch 秒)非空时页脚显示"更新于" */
-export function readingPage(title: string, articleHtml: string, nav?: CollectionNav, updatedAt?: number | null): string {
+/** Markdown 阅读页；传入 nav 时渲染合集导航;updatedAt(epoch 秒)非空时页脚显示"更新于";saveToken 非空时页脚出「保存这份稿」 */
+export function readingPage(title: string, articleHtml: string, nav?: CollectionNav, updatedAt?: number | null, saveToken?: string): string {
   const pageTitle = nav ? `${title} · ${nav.collectionTitle}` : title;
   const crumb = nav
     ? `<div class="crumb"><a href="/">← 目录</a><span class="sep">·</span>${esc(nav.collectionTitle)}</div>`
@@ -204,13 +216,13 @@ export function readingPage(title: string, articleHtml: string, nav?: Collection
   ${nav ? sidebar(nav) : ""}
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
-    <footer><span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
+    <footer>${saveLink(saveToken)}<span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
   </div>
 </body></html>`;
 }
 
-/** 合集目录页 */
-export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): string {
+/** 合集目录页;saveToken 非空时页脚出「保存这份稿」 */
+export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string, saveToken?: string): string {
   const rows = docs.map(d =>
     `<a class="row" href="/${d.index}"><span class="n">${d.index}</span><span class="t">${esc(d.title)}</span><span class="arw">→</span></a>`
   ).join("");
@@ -235,7 +247,7 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string): 
     <div class="meta">${esc(meta)}</div>
     <div class="list">${rows}</div>
   </main>
-  <footer><span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></footer>
+  <footer>${saveLink(saveToken)}<span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></footer>
 </body></html>`;
 }
 

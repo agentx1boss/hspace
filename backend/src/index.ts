@@ -14,6 +14,8 @@ import {
   verifyPassword,
   signCookie,
   verifyCookie,
+  signScopedToken,
+  verifyScopedToken,
 } from "./crypto";
 import { marked } from "marked";
 import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectCollectionNav, CollectionNav } from "./html";
@@ -83,7 +85,7 @@ export default {
     if (host === "hspace." + env.USERCONTENT_DOMAIN) {
       const auth = await handleAuth(url, request, env);
       if (auth) return auth;
-      if (url.pathname === "/console") return serveConsole(url, request, env);
+      if (url.pathname === "/console") return serveConsole(url, request, env, ctx);
       if (url.pathname === "/robots.txt") return robotsResp(true, env);
       if (url.pathname === "/sitemap.xml") return sitemapResp(env);
       const asset = await serveBrandAsset(url.pathname, env);
@@ -163,12 +165,18 @@ async function handleApi(url: URL, request: Request, env: Env, ctx: ExecutionCon
 
   if (path === "/pages" && request.method === "GET") return listPages(request, env);
 
+  // 读者收藏(引用型):免密开门(签 open 令牌跳内容页) + 移除
+  const openSaveMatch = path.match(/^\/saves\/([a-z0-9]+)\/open$/);
+  if (openSaveMatch && request.method === "GET") return openSave(openSaveMatch[1], request, env);
+  const saveMatch = path.match(/^\/saves\/([a-z0-9]+)$/);
+  if (saveMatch && request.method === "DELETE") return deleteSave(saveMatch[1], request, env);
+
   if (path === "/me" && request.method === "GET") return me(request, env);
   if (path === "/me/api-key" && request.method === "POST") return regenerateApiKey(request, env);
 
   // /console 仅本地 dev 直接服务(localhost 不是 hspace 子域);线上 API 域一律跳转到正主
   if (path === "/console" && request.method === "GET") {
-    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return serveConsole(url, request, env);
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return serveConsole(url, request, env, ctx);
     return Response.redirect(`https://hspace.${env.USERCONTENT_DOMAIN}/console`, 302);
   }
 
@@ -488,6 +496,58 @@ async function listPages(request: Request, env: Env): Promise<Response> {
   return json({ pages: results });
 }
 
+// ============================ 读者收藏(一期:引用型) ============================
+
+interface SaveRow { owner_id: string; slug: string; grant_id: string | null; key_hash: string | null; }
+
+// ---- GET /saves/:slug/open ----(免密开门:重验钥匙仍有效 → 签 60s 单次 open 令牌 → 302 内容页)
+// 钥匙失效/源稿无口令 → 直接跳源稿裸链(自动回落密码门或直接打开),绝不缓存"已通过"状态
+async function openSave(slug: string, request: Request, env: Env): Promise<Response> {
+  const ownerId = await sessionOwner(request, env);
+  const reqUrl = new URL(request.url);
+  const dev = reqUrl.hostname === "localhost" || reqUrl.hostname === "127.0.0.1";
+  const contentBase = dev ? `${reqUrl.origin}/p/${slug}` : `https://${slug}.${env.USERCONTENT_DOMAIN}`;
+  const bare = dev ? contentBase : contentBase + "/";
+  const goBare = () => Response.redirect(bare, 302);
+  if (!ownerId) return Response.redirect(`https://hspace.${env.USERCONTENT_DOMAIN}/console`, 302);
+
+  const save = await env.DB.prepare(
+    "SELECT owner_id, slug, grant_id, key_hash FROM saves WHERE owner_id = ? AND slug = ?"
+  ).bind(ownerId, slug).first<SaveRow>();
+  if (!save) return goBare();
+
+  const page = await getPage(env, slug);
+  if (!page || page.status !== "active") return goBare();
+  if (page.expires_at && page.expires_at < now()) return goBare();
+
+  // 源稿当前是否设门;未设门 → 直接打开(无需令牌)
+  const hasPagePw = !!(page.password_hash && page.password_salt);
+  const gated = hasPagePw || (await hasActiveGrants(env, slug));
+  if (!gated) return goBare();
+
+  // 重验钥匙引用:grant 仍未撤销 / 共享密码仍未变更
+  let grantId: string | null = null;
+  if (save.grant_id) {
+    const g = await getGrant(env, save.grant_id);
+    if (g && g.slug === slug && g.revoked === 0) grantId = save.grant_id;
+  } else if (save.key_hash && hasPagePw && save.key_hash === page.password_hash) {
+    grantId = "";
+  }
+  if (grantId === null) return goBare(); // 钥匙已失效 → 回落密码门
+
+  const tok = await signScopedToken(env.COOKIE_SIGNING_SECRET, "open", slug, grantId, now() + 60);
+  // 令牌含 base64 的 +//=,URL 编码后再进 query,内容页 searchParams 解析才能还原
+  return Response.redirect(`${bare}?k=${encodeURIComponent(tok)}`, 302);
+}
+
+// ---- DELETE /saves/:slug ----(移除收藏)
+async function deleteSave(slug: string, request: Request, env: Env): Promise<Response> {
+  const ownerId = await authOwner(request, env);
+  if (!ownerId) return json({ error: "unauthorized" }, 401);
+  await env.DB.prepare("DELETE FROM saves WHERE owner_id = ? AND slug = ?").bind(ownerId, slug).run();
+  return json({ ok: true });
+}
+
 // ---- GET /me ----(console:当前登录用户信息 + key 状态,不含 key 明文)
 async function me(request: Request, env: Env): Promise<Response> {
   const ownerId = await authOwner(request, env);
@@ -668,6 +728,26 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
   // 匿名页面访问量封顶,防止被当成免费 CDN / 钓鱼分发渠道
   if (!page.owner_id && page.hits >= Number(env.ANON_MAX_HITS)) return htmlResp(notFoundPage(), 404);
 
+  // 收藏「免密开门」:console 签发的 60s 单次 open 令牌 → 种正常密码 Cookie(24h)后 303 回裸路径。
+  // 单次消费(KV 标记),防令牌被复制成可分享的绕门链接;失效则忽略、回落正常密码门。
+  const openTok = new URL(request.url).searchParams.get("k");
+  if (openTok) {
+    const v = await verifyScopedToken(env.COOKIE_SIGNING_SECRET, "open", openTok);
+    if (v && v.slug === slug) {
+      const usedKey = `ot:${await sha256b64(openTok)}`;
+      if (!(await env.RATELIMIT.get(usedKey))) {
+        await env.RATELIMIT.put(usedKey, "1", { expirationTtl: 120 });
+        const value = await signCookie(env.COOKIE_SIGNING_SECRET, slug, v.grantId, now() + 24 * 3600);
+        const clean = new URL(request.url);
+        clean.searchParams.delete("k");
+        const headers = new Headers({ Location: clean.pathname + clean.search });
+        headers.append("Set-Cookie", `hs_${slug}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`);
+        return new Response(null, { status: 303, headers });
+      }
+    }
+    // 无效/已用:落回正常密码门(不特殊处理,继续往下)
+  }
+
   // 密码网关：共享密码 + 多个"访问人"独立密码
   const hasPagePw = !!(page.password_hash && page.password_salt);
   const gated = hasPagePw || (await hasActiveGrants(env, slug));
@@ -736,9 +816,13 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
     );
   }
 
+  // 「保存这份稿」凭证:签入当前归因(共享密码为 ""),读者点击后到 console 收藏时据此重验钥匙。
+  // 1h 有效(留出登录时间);仅 md 阅读页/合集下发,裸 html 篇目一期不注入(见 design-save.md)。
+  const saveToken = await signScopedToken(env.COOKIE_SIGNING_SECRET, "save", slug, attributedGrantId, now() + 3600);
+
   // 合集：目录页 / 篇目页
   if (page.object_key.endsWith("/index.json")) {
-    return serveCollection(env, page, docPath);
+    return serveCollection(env, page, docPath, saveToken);
   }
 
   const obj = await env.BUCKET.get(page.object_key);
@@ -749,14 +833,14 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
     const md = await obj.text();
     const article = await marked.parse(md, { gfm: true, async: true });
     const updated = page.version > 1 && page.updated_at ? page.updated_at : null;
-    return htmlResp(readingPage(mdTitle(md, page.filename), article, undefined, updated), 200);
+    return htmlResp(readingPage(mdTitle(md, page.filename), article, undefined, updated, saveToken), 200);
   }
 
   return new Response(obj.body, { status: 200, headers: securityHeaders() });
 }
 
 /** 合集分发：docPath "/" → 目录页；"/<n>" → 第 n 篇 */
-async function serveCollection(env: Env, page: PageRow, docPath: string): Promise<Response> {
+async function serveCollection(env: Env, page: PageRow, docPath: string, saveToken?: string): Promise<Response> {
   const idxObj = await env.BUCKET.get(page.object_key);
   if (!idxObj) return htmlResp(notFoundPage(), 404);
   const index = JSON.parse(await idxObj.text()) as CollectionIndex;
@@ -770,7 +854,7 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
     const date = new Date(page.created_at * 1000).toISOString().slice(0, 10);
     let meta = `${index.docs.length} 篇 · ${date} 分享`;
     if (updated) meta += ` · 更新于 ${new Date(updated * 1000).toISOString().slice(0, 10)}`;
-    return htmlResp(tocPage(index.title, navDocs, meta), 200);
+    return htmlResp(tocPage(index.title, navDocs, meta, saveToken), 200);
   }
 
   const m = path.match(/^\/(\d+)$/);
@@ -785,7 +869,7 @@ async function serveCollection(env: Env, page: PageRow, docPath: string): Promis
   if (doc.ext === "md") {
     const article = await marked.parse(await obj.text(), { gfm: true, async: true });
     const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
-    return htmlResp(readingPage(doc.title, article, nav, updated), 200);
+    return htmlResp(readingPage(doc.title, article, nav, updated, saveToken), 200);
   }
   // html 篇目:保留原样,注入一个 Shadow DOM 隔离的悬浮导航(目录+翻页,不影响用户页面)
   const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };

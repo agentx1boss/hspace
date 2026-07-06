@@ -141,3 +141,35 @@ export async function verifySession(secret: string, cookie: string): Promise<str
     return null; // 畸形 base64(atob 抛错)一律视为无效
   }
 }
+
+/**
+ * 作用域短令牌(收藏流用):"<scope>.<slug>.<grantId>.<exp>.<sig>"(grantId="" 表示共享密码/无口令)。
+ * scope 前缀隔离用途(save=阅读页→console 的收藏凭证;open=console→内容页的免密开门凭证),
+ * 防止两种令牌被交叉使用。slug/grantId/exp 均不含 ".",base64 签名亦无 ".",故恒为 5 段。
+ */
+export async function signScopedToken(
+  secret: string, scope: string, slug: string, grantId: string, expEpoch: number
+): Promise<string> {
+  const payload = `${scope}.${slug}.${grantId}.${expEpoch}`;
+  const key = await hmacKey(secret);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payload));
+  return `${payload}.${bufToB64(sig)}`;
+}
+
+/** 校验作用域令牌:scope 匹配、未过期、签名有效则返回 {slug, grantId},否则 null */
+export async function verifyScopedToken(
+  secret: string, scope: string, token: string
+): Promise<{ slug: string; grantId: string } | null> {
+  const parts = token.split(".");
+  if (parts.length !== 5) return null;
+  const [sc, slug, grantId, exp, sig] = parts;
+  if (sc !== scope) return null;
+  if (Number(exp) < Math.floor(Date.now() / 1000)) return null;
+  const key = await hmacKey(secret);
+  try {
+    const ok = await crypto.subtle.verify("HMAC", key, b64ToBytes(sig), enc.encode(`${sc}.${slug}.${grantId}.${exp}`));
+    return ok ? { slug, grantId } : null;
+  } catch {
+    return null;
+  }
+}
