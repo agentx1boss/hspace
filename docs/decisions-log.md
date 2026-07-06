@@ -40,6 +40,16 @@
 - 客户端边界厘清:**插件仅 Claude Code 独有**;Cursor/Codex/Desktop 走 MCP(Cursor 另可装 Open VSX 的 VS Code 插件)。
 - 一致性:落地页 AI 发布区重排为"一家一卡"(Claude Code 一键装 → Cursor → Codex → Desktop),hero 加「Claude Code plugin」次级按钮跳 `#ai`;`mcp-server/README` 同序对齐;三处口径统一。
 
+## 2026-07-06 · 免费教程 + 读者视角审阅(教程「做实」)
+
+**决策:出一篇免费全栈教程(中/英 md + 双语交互 HTML),并保留「教程」定位、把它做实——而非降格为「架构解读」。**
+- 产出:`docs/tutorial-build-hspace.{zh,en}.md` + `tutorial-build-hspace.html`(双语切换、默认中文、动画 SVG 架构 + 卡片技术栈、密码门彩蛋/可勾选清单/一键复制,全自包含)。用 `/share` dogfood 发成合集(混排 md+html;匿名合集上限 3 篇,故双语压进一篇 HTML)。
+- 派子代理做**读者视角审阅**,发现要害:标题喊「教程/一个下午复刻」却没代码/仓库链接;`schema.sql` 被引用未给;route+通配 DNS 与 OAuth 回调没讲清;缺「验证成功」与故障排查;术语无定义;HTML 无障碍缺失。
+- **做实**(而非改名):补真实仓库链接 + 克隆步骤 + 最小 `wrangler.toml` 骨架;讲清 **route + 代理通配 DNS 两者都要**、**OAuth 回调精确 URL + `/console`**;加 `curl /health` 验证 + 故障排查 + 术语速查 + 成本/前置;章节重排(从零搭建置于 CI/CD 前)。
+- **准确性修正**:匿名 TTL 统一为 **3 天**(与 `wrangler.toml ANON_DEFAULT_TTL=259200` 一致)——同步改掉 `index.ts` 注释与 AGENTS.md 里陈旧的「7 天」。澄清 D1 无 receipts 表(回执派生自 hits)。
+- **HTML 无障碍**:清单→`role=checkbox`+`aria-checked`+键盘;锁彩蛋→`role=button`+键盘;复制按钮 `aria-label`+focus 可见;`<noscript>` 兜底(JS 关时内容不隐形)。
+- 暂缓:真实产品截图(需可驱动浏览器截图的环境)。
+
 ## 度量前置(已就绪)
 
 第一方埋点已接:落地页 `/e` beacon → D1 `metrics`(pv/install/try/gh/vsx,按天+语言)。查询见 [operations.md](operations.md)。用于验证"英文默认"假设(pv 中英占比)与安装转化。
