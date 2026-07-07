@@ -177,7 +177,7 @@ export function errorMessage(e: unknown): string {
       rate_limited: "Publishing too often — try again shortly.",
       invalid_api_key: "API key is invalid — sign in first, run \"HSpace: Sign in with GitHub\", then republish.",
       login_required: "That's a signed-in feature — per-recipient links and version history need a (free) sign-in. Sign in first — run \"HSpace: Sign in with GitHub\" — then republish.",
-      renew_requires_login: "Renewal needs a (free) sign-in. Anonymous links are one-shot (up to 3 days); sign in first — run \"HSpace: Sign in with GitHub\" — then republish for renewable 30-day links.",
+      renew_requires_login: "Renewal needs a (free) sign-in. Anonymous links are one-shot (up to 7 days); sign in first — run \"HSpace: Sign in with GitHub\" — then republish for renewable 30-day links.",
       expired: "This link has expired and can't be changed — republish to share again.",
       forbidden: "You don't have permission to modify this page.",
       not_found: "Page doesn't exist or was deleted.",

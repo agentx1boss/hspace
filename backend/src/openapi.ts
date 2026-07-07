@@ -374,7 +374,7 @@ export function openapiSpec(origin: string): Record<string, unknown> {
             expiresIn: {
               type: "integer",
               nullable: true,
-              description: "有效期(秒),从现在起算。钳制在 [60, 该档上限]:匿名 3 天、登录 30 天。没有永久链接;null 或省略都取该档上限。",
+              description: "有效期(秒),从现在起算。钳制在 [60, 该档上限]:匿名 7 天、登录 30 天。没有永久链接;null 或省略都取该档上限。",
             },
           },
         },
