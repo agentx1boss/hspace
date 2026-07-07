@@ -11,13 +11,18 @@ const FOOT_HREF = LANDING + "?ref=shared";
 const FOOT_SIG = "HSpace · Ship to one, not to all.";
 
 /**
- * 「保存这份稿」入口:阅读页/目录页页脚渲染,指向 hspace console 的收藏流(带签名 save 令牌)。
- * 读者点击 → 登录(若未登录)→ 收藏进自己账号。token 为空则不渲染(如无法归因的场景)。
+ * 「收藏」入口:阅读页/目录页页脚渲染,指向 hspace console 的收藏流(带签名 save 令牌)。
+ * 读者点击 → 登录(若未登录)→ 收藏进自己账号。
+ * alreadySaved(内容子域的 hs_sv_<slug> 标记 Cookie,在从 Console 免密打开时种下)为真时,
+ * 显示「已收藏」并直接指向 Console 收藏列表(点它看真实收藏,不重复入库)。token 为空则不渲染。
  */
-function saveLink(token?: string): string {
+function saveLink(token?: string, alreadySaved?: boolean): string {
+  if (alreadySaved) {
+    return `<a class="save saved" href="${LANDING}/console" target="_blank" rel="noopener">已收藏</a><span class="sep">·</span>`;
+  }
   if (!token) return "";
   // 令牌含 base64 的 +//=,必须 URL 编码,否则 query 解析把 + 变空格导致验签失败
-  return `<a class="save" href="${LANDING}/console?save=${encodeURIComponent(token)}" target="_blank" rel="noopener">＋ 保存这份稿</a><span class="sep">·</span>`;
+  return `<a class="save" href="${LANDING}/console?save=${encodeURIComponent(token)}" target="_blank" rel="noopener">收藏</a><span class="sep">·</span>`;
 }
 
 function esc(s: string): string {
@@ -153,6 +158,7 @@ const BASE_CSS = `
   footer a{color:var(--muted);border-bottom:none}
   footer a:hover{color:var(--accent)}
   footer .save{color:var(--accent);font-weight:600}
+  footer .save.saved{color:var(--muted);font-weight:400}
   footer .sep{margin:0 8px;opacity:.45}
   /* 合集侧栏与导航 */
   .side{display:none}
@@ -200,8 +206,8 @@ function prevNext(nav: CollectionNav): string {
   return `<nav class="pn">${left}${right}</nav>`;
 }
 
-/** Markdown 阅读页；传入 nav 时渲染合集导航;updatedAt(epoch 秒)非空时页脚显示"更新于";saveToken 非空时页脚出「保存这份稿」 */
-export function readingPage(title: string, articleHtml: string, nav?: CollectionNav, updatedAt?: number | null, saveToken?: string): string {
+/** Markdown 阅读页；传入 nav 时渲染合集导航;updatedAt(epoch 秒)非空时页脚显示"更新于";saveToken/alreadySaved 决定页脚「收藏/已收藏」 */
+export function readingPage(title: string, articleHtml: string, nav?: CollectionNav, updatedAt?: number | null, saveToken?: string, alreadySaved?: boolean): string {
   const pageTitle = nav ? `${title} · ${nav.collectionTitle}` : title;
   const crumb = nav
     ? `<div class="crumb"><a href="/">← 目录</a><span class="sep">·</span>${esc(nav.collectionTitle)}</div>`
@@ -216,13 +222,13 @@ export function readingPage(title: string, articleHtml: string, nav?: Collection
   ${nav ? sidebar(nav) : ""}
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
-    <footer>${saveLink(saveToken)}<span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
+    <footer>${saveLink(saveToken, alreadySaved)}<span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
   </div>
 </body></html>`;
 }
 
-/** 合集目录页;saveToken 非空时页脚出「保存这份稿」 */
-export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string, saveToken?: string): string {
+/** 合集目录页;saveToken/alreadySaved 决定页脚「收藏/已收藏」 */
+export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string, saveToken?: string, alreadySaved?: boolean): string {
   const rows = docs.map(d =>
     `<a class="row" href="/${d.index}"><span class="n">${d.index}</span><span class="t">${esc(d.title)}</span><span class="arw">→</span></a>`
   ).join("");
@@ -247,7 +253,7 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string, s
     <div class="meta">${esc(meta)}</div>
     <div class="list">${rows}</div>
   </main>
-  <footer>${saveLink(saveToken)}<span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></footer>
+  <footer>${saveLink(saveToken, alreadySaved)}<span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></footer>
 </body></html>`;
 }
 
