@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 — 2026-07-07
+
+- 匿名额度放宽:链接有效期 3 天 → 7 天,合集篇数 3 篇 → 5 篇。同步更新相关文案(`defaultExpiryDays` 说明、续期引导提示、README)。
+
 ## 0.7.0 — 2026-07-05
 
 - 新增「HSpace: Sign in with GitHub」:打开浏览器到 console,GitHub 登录后一键复制 API key,回编辑器直接粘贴(粘贴框已自动打开)。
