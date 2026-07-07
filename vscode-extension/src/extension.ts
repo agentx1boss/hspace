@@ -387,7 +387,7 @@ async function renew(context: vscode.ExtensionContext, provider: RecentProvider,
   // 匿名页面(有 editToken)不可续:后端会拒,这里提前给出引导
   if (rec.editToken) {
     const pick = await vscode.window.showInformationMessage(
-      "Anonymous links are one-shot (up to 3 days) and can't be renewed. Sign in (free) and republish to get renewable 30-day links.",
+      "Anonymous links are one-shot (up to 7 days) and can't be renewed. Sign in (free) and republish to get renewable 30-day links.",
       "Sign in"
     );
     if (pick === "Sign in") vscode.commands.executeCommand("hspace.signIn");

@@ -71,7 +71,7 @@ server.registerTool(
       format: z.enum(["html", "markdown"]).describe("内容格式"),
       title: z.string().optional().describe("文件名/标题(可选,用于展示与标题回退)"),
       password: z.string().optional().describe("访问密码(可选;不填则自动生成 4 位数字)"),
-      expiresInDays: z.number().optional().describe("有效天数(可选,1–30;省略用默认:匿名 3 天、登录 30 天。没有永久链接)"),
+      expiresInDays: z.number().optional().describe("有效天数(可选,1–30;省略用默认:匿名 7 天、登录 30 天。没有永久链接)"),
     },
   },
   async (args) => {
@@ -114,7 +114,7 @@ server.registerTool(
         .min(2)
         .describe("合集篇目(至少 2 篇);HTML 与 Markdown 可混排"),
       password: z.string().optional().describe("访问密码(可选;不填则自动生成 4 位数字)"),
-      expiresInDays: z.number().optional().describe("有效天数(可选,1–30;省略用默认:匿名 3 天、登录 30 天。没有永久链接)"),
+      expiresInDays: z.number().optional().describe("有效天数(可选,1–30;省略用默认:匿名 7 天、登录 30 天。没有永久链接)"),
     },
   },
   async (args) => {
