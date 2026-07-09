@@ -1,0 +1,62 @@
+[
+  {
+    "id": "01",
+    "platform": "r/ClaudeAI",
+    "url": "https://www.reddit.com/r/ClaudeAI/comments/1thgbay/how_do_you_share_claude_html_artifacts_with/",
+    "title": "How do you share Claude HTML artifacts with non-technical ..."
+  },
+  {
+    "id": "02",
+    "platform": "r/ClaudeAI",
+    "url": "https://www.reddit.com/r/ClaudeAI/comments/1q55yaf/whats_your_workflow_for_sharing_html_that_claude/",
+    "title": "What's your workflow for sharing HTML that Claude makes?"
+  },
+  {
+    "id": "03",
+    "platform": "r/ClaudeAI",
+    "url": "https://www.reddit.com/r/ClaudeAI/comments/1t1immj/how_do_you_actually_collaborate_with_standalone/",
+    "title": "How do you actually collaborate with standalone HTML ..."
+  },
+  {
+    "id": "04",
+    "platform": "r/ClaudeAI",
+    "url": "https://www.reddit.com/r/ClaudeAI/comments/1u48npi/sharing_a_claude_artifact_vs_hosting_it_myself/",
+    "title": "Sharing a Claude artifact vs hosting it myself"
+  },
+  {
+    "id": "05",
+    "platform": "r/ClaudeAI",
+    "url": "https://www.reddit.com/r/ClaudeAI/comments/1su5crl/anyone_else_frustrated_that_claude_artifacts_html/",
+    "title": "Anyone else frustrated that Claude artifacts html can't be ..."
+  },
+  {
+    "id": "06",
+    "platform": "r/cursor",
+    "url": "https://www.reddit.com/r/cursor/comments/1no44z8/what_should_i_look_for_in_a_web_host/",
+    "title": "What should I look for in a web host?"
+  },
+  {
+    "id": "07",
+    "platform": "r/cursor",
+    "url": "https://www.reddit.com/r/cursor/comments/1sfcxah/deploy_static_sites_from_cursor_no_signup_free/",
+    "title": "Deploy static sites from Cursor, no signup, free"
+  },
+  {
+    "id": "08",
+    "platform": "IndieHackers",
+    "url": "https://www.indiehackers.com/post/how-do-you-host-your-saas-eb894f83ea",
+    "title": "How do you host your SaaS?"
+  },
+  {
+    "id": "09",
+    "platform": "X",
+    "url": "https://x.com/michalmalewicz/status/2059520257828569404",
+    "title": "I literally sent a localhost/ url to a client for a preview"
+  },
+  {
+    "id": "10",
+    "platform": "X",
+    "url": "https://x.com/changloria0816/status/2067924351475986436",
+    "title": "实测：用Claude Code建架构图+交互预览，分享给队友"
+  }
+]

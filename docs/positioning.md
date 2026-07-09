@@ -9,6 +9,9 @@
 
 对外压缩版(给媒体/介绍用):**"AI 编程时代的定向分享:demo 写完,只发给该看的人。"**
 
+对外主判断(英):**"Share what AI writes — without losing control. Private links, passwords, revocable, expiring, with read receipts."**
+对外主判断(中):**"AI 写的稿，发出去也不失控：密码链接、可撤回、会过期、看谁打开了。"**
+
 **反定位**(帮团队做功能取舍):我们不是网盘、不是协作编辑工具、不是建站平台、不是公开画廊。
 
 ## 2. Slogan

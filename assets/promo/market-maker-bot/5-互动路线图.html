@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自动挂单不是赚钱脚本，是订单簿学习路线图</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#05070a;
+    --panel:#0f141b;
+    --panel-2:#121a23;
+    --line:#22303d;
+    --text:#eef5f1;
+    --muted:#91a19a;
+    --soft:#61716a;
+    --green:#44d17d;
+    --green-2:#1d7f50;
+    --amber:#f2b84b;
+    --red:#ff6b6b;
+    --blue:#74a7ff;
+    --shadow:0 24px 70px rgba(0,0,0,.38);
+  }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 14% 2%, rgba(68,209,125,.13), transparent 26%),
+      linear-gradient(180deg,#070b10 0%,#05070a 54%,#080b0f 100%);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    letter-spacing:0;
+  }
+  a{color:var(--green);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .shell{max-width:1120px;margin:0 auto;padding:28px 18px 70px}
+  header{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:stretch;margin-bottom:22px}
+  .hero,.book{
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(18,26,35,.92),rgba(9,13,18,.96));
+    border-radius:8px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .hero{padding:28px}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:20px;color:var(--muted);font-size:13px}
+  .mark{width:30px;height:30px;border:1px solid rgba(68,209,125,.55);border-radius:7px;display:grid;place-items:center;color:var(--green);font-weight:800}
+  h1{font-size:clamp(27px,4.4vw,50px);line-height:1.08;margin:0 0 16px;font-weight:850;letter-spacing:0}
+  h1 span{display:block}
+  .lead{font-size:16px;line-height:1.8;color:#c8d7d0;margin:0 0 22px;max-width:680px}
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#16202a;
+    color:var(--text);
+    padding:10px 14px;
+    font-size:14px;
+    cursor:pointer;
+    min-height:40px;
+  }
+  .btn.primary{background:var(--green);border-color:var(--green);color:#07100b;font-weight:800}
+  .book{padding:18px;display:flex;flex-direction:column;justify-content:space-between}
+  .book-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}
+  .book h2{margin:0;font-size:18px;line-height:1.35}
+  .pill{border:1px solid rgba(68,209,125,.38);color:var(--green);padding:5px 8px;border-radius:999px;font-size:12px;white-space:nowrap}
+  .levels{display:grid;gap:8px}
+  .level{display:grid;grid-template-columns:86px 1fr 44px;gap:10px;align-items:center;color:#cbd9d2;font-size:13px}
+  .bar{height:9px;background:#1d2730;border-radius:99px;overflow:hidden;border:1px solid #273541}
+  .fill{height:100%;width:var(--w);background:linear-gradient(90deg,var(--green),#8ff0b6)}
+  .note{margin-top:16px;color:var(--muted);font-size:13px;line-height:1.7}
+  nav{display:flex;gap:8px;overflow:auto;padding:2px 0 14px;margin-bottom:12px}
+  .tab{
+    border:1px solid var(--line);
+    background:#0d1319;
+    color:#aebdb6;
+    border-radius:7px;
+    padding:10px 12px;
+    white-space:nowrap;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .tab.active{background:#1b2b22;color:#fff;border-color:rgba(68,209,125,.7)}
+  .panel{display:none}
+  .panel.active{display:block}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card,.wide-card{
+    background:rgba(15,20,27,.92);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:18px;
+  }
+  .card h3,.wide-card h3{margin:0 0 10px;font-size:18px;line-height:1.35}
+  .card p,.wide-card p{margin:0;color:#b9c8c1;line-height:1.72;font-size:14px}
+  .tag{display:inline-flex;align-items:center;border:1px solid #2d3b48;color:#aebdb6;border-radius:999px;padding:4px 8px;font-size:12px;margin:0 6px 8px 0}
+  .filters{display:flex;gap:8px;overflow:auto;margin:0 0 14px}
+  .filter{border:1px solid var(--line);background:#0d1319;color:#aebdb6;border-radius:999px;padding:8px 11px;white-space:nowrap;cursor:pointer}
+  .filter.active{background:var(--green);border-color:var(--green);color:#07100b;font-weight:800}
+  .resource-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .resource{background:#101822;border:1px solid var(--line);border-radius:8px;padding:15px}
+  .resource h3{font-size:16px;margin:0 0 8px}
+  .resource p{font-size:13px;line-height:1.65;color:#b9c8c1;margin:0 0 10px}
+  .resource .meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .mini{font-size:11px;color:#a8b8b1;border:1px solid #2a3844;padding:3px 7px;border-radius:999px}
+  .diagram{display:grid;grid-template-columns:1fr 160px 1fr;gap:14px;align-items:center;margin-top:10px}
+  .side{display:grid;gap:8px}
+  .order{display:flex;justify-content:space-between;border:1px solid var(--line);border-radius:7px;padding:9px 10px;background:#101820;font-size:13px}
+  .bid{color:#70e5a0}.ask{color:#ff8b8b}
+  .mid{text-align:center;border:1px dashed #3d4d59;border-radius:8px;padding:16px 10px;background:#0c1117}
+  .mid strong{display:block;font-size:26px;color:#fff;margin-bottom:4px}
+  .path{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px}
+  .step{border:1px solid var(--line);background:#101820;border-radius:8px;padding:12px;min-height:92px}
+  .step b{display:block;color:#fff;margin-bottom:7px;font-size:14px}
+  .step span{color:#aebdb6;font-size:12px;line-height:1.55}
+  .meter{margin-top:14px;background:#0c1117;border:1px solid var(--line);border-radius:8px;padding:16px}
+  .row{display:grid;grid-template-columns:150px 1fr 72px;gap:12px;align-items:center;margin:12px 0}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .result{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .stat{border:1px solid #273642;background:#121a22;border-radius:7px;padding:12px}
+  .stat small{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+  .stat strong{font-size:20px}
+  .checklist{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  label.check{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:#101820;border-radius:8px;padding:12px;color:#cbd9d2;font-size:14px;line-height:1.45}
+  label.check input{margin-top:2px;accent-color:var(--green)}
+  .status{margin-top:14px;border-radius:8px;padding:14px;border:1px solid var(--line);background:#111820;color:#cbd9d2;line-height:1.65}
+  .status.good{border-color:rgba(68,209,125,.75);background:rgba(25,82,51,.28)}
+  .status.warn{border-color:rgba(242,184,75,.7);background:rgba(95,69,18,.26)}
+  .footer{margin-top:22px;color:var(--muted);font-size:13px;line-height:1.75;text-align:center}
+  @media(max-width:860px){
+    header{grid-template-columns:1fr}
+    .grid,.resource-grid,.result,.checklist{grid-template-columns:1fr}
+    .diagram{grid-template-columns:1fr}
+    .path{grid-template-columns:1fr}
+    .row{grid-template-columns:1fr}
+    .hero{padding:22px}
+  }
+</style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <section class="hero">
+        <div class="brand"><div class="mark">MM</div><span>Community Maker 学习路线图</span></div>
+        <h1><span>自动挂单不是赚钱脚本</span><span>是订单簿学习路线图</span></h1>
+        <p class="lead">先看懂规则、订单簿、工具和风险，再考虑 bot。这里不提供实盘参数，不承诺收益，只把你该读的资料和该问的问题放在一张图里。</p>
+        <div class="hero-actions">
+          <button class="btn primary" data-jump="rules">先读规则</button>
+          <button class="btn" data-jump="risk">先看风险</button>
+          <button class="btn" data-jump="ai">AI 能帮什么</button>
+        </div>
+      </section>
+      <aside class="book">
+        <div>
+          <div class="book-title"><h2>一个合格挂单小时, 要经过这几道门</h2><span class="pill">概念图</span></div>
+          <div class="levels">
+            <div class="level"><span>双边挂单</span><div class="bar"><div class="fill" style="--w:100%"></div></div><b>必需</b></div>
+            <div class="level"><span>靠近价格</span><div class="bar"><div class="fill" style="--w:76%"></div></div><b>加权</b></div>
+            <div class="level"><span>在线时间</span><div class="bar"><div class="fill" style="--w:68%"></div></div><b>分层</b></div>
+            <div class="level"><span>单边上限</span><div class="bar"><div class="fill" style="--w:58%"></div></div><b>封顶</b></div>
+            <div class="level"><span>风控能力</span><div class="bar"><div class="fill" style="--w:92%"></div></div><b>生存</b></div>
+          </div>
+        </div>
+        <p class="note">Maker Hours 的真实参数以 StandX 当前 campaign 页面和官方规则为准。本页只解释路径, 不计算收益率。</p>
+      </aside>
+    </header>
+
+    <nav aria-label="路线图标签">
+      <button class="tab active" data-tab="rules">先读规则</button>
+      <button class="tab" data-tab="book">订单簿基础</button>
+      <button class="tab" data-tab="bot">Bot 框架</button>
+      <button class="tab" data-tab="risk">风险清单</button>
+      <button class="tab" data-tab="ai">AI 能帮什么</button>
+    </nav>
+
+    <section id="rules" class="panel active">
+      <div class="grid">
+        <article class="card"><h3>SIP-5A 奖励什么</h3><p>奖励合格的订单簿流动性贡献:双边、在线、靠近 mark price、受每个市场参数约束。不是看谁喊得多, 也不是自动给任何 bot 发钱。</p></article>
+        <article class="card"><h3>Maker Hours 怎么来</h3><p>官方路径是采样、加权、按 tier 选更优结果, 再受每小时上限约束。你先理解路径, 再看具体 campaign 参数。</p></article>
+        <article class="card"><h3>DUSD / token 怎么看</h3><p>奖励资产可以是 DUSD、token allocation 或二者都有。收益展示不等于无风险, 做市风险来自成交后的仓位。</p></article>
+      </div>
+      <div class="wide-card" style="margin-top:14px">
+        <h3>Maker Hours 概念解释器</h3>
+        <p>拖动下面两个滑块, 只看“机制方向”。这里不计算真实收益, 也不代表 StandX 当前参数。</p>
+        <div class="meter">
+          <div class="row"><span>距离 mark price</span><input id="distance" type="range" min="0" max="10" value="5"><b><span id="distanceVal">5</span> bps</b></div>
+          <div class="row"><span>合格在线时间</span><input id="uptime" type="range" min="0" max="60" value="42"><b><span id="uptimeVal">42</span> 分钟</b></div>
+          <div class="result">
+            <div class="stat"><small>Proximity weight</small><strong id="weightVal">140%</strong></div>
+            <div class="stat"><small>Uptime tier</small><strong id="tierVal">Boosted</strong></div>
+            <div class="stat"><small>结论</small><strong id="readVal">路径合格</strong></div>
+          </div>
+        </div>
+        <div class="path">
+          <div class="step"><b>1. 双边挂单</b><span>bid 和 ask 都在场, 单边不算。</span></div>
+          <div class="step"><b>2. 距离合格</b><span>越靠近 mark price, 同样数量越有价值。</span></div>
+          <div class="step"><b>3. 在线时间</b><span>看一个小时内订单持续存在的比例。</span></div>
+          <div class="step"><b>4. 数量封顶</b><span>只看合格范围内、单边 cap 以内的贡献。</span></div>
+          <div class="step"><b>5. Maker Hours</b><span>每天按贡献分配当日奖励池。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="book" class="panel">
+      <div class="wide-card">
+        <h3>双边挂单示意</h3>
+        <p>maker 在买卖两边都放不会立刻成交的限价单。post-only/ALO 的作用, 是避免你的限价单一提交就变成 taker。</p>
+        <div class="diagram">
+          <div class="side">
+            <div class="order bid"><span>Bid 99.90</span><b>10 bps</b></div>
+            <div class="order bid"><span>Bid 99.85</span><b>15 bps</b></div>
+            <div class="order bid"><span>Bid 99.70</span><b>30 bps</b></div>
+          </div>
+          <div class="mid"><strong>100.00</strong><span>Mark price</span></div>
+          <div class="side">
+            <div class="order ask"><span>Ask 100.10</span><b>10 bps</b></div>
+            <div class="order ask"><span>Ask 100.15</span><b>15 bps</b></div>
+            <div class="order ask"><span>Ask 100.30</span><b>30 bps</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:14px">
+        <article class="card"><h3>Maker</h3><p>订单进入订单簿等待成交, 增加可用流动性。</p></article>
+        <article class="card"><h3>Taker</h3><p>立刻吃掉已有订单, 消耗订单簿流动性。</p></article>
+        <article class="card"><h3>ALO / Post-only</h3><p>如果订单会立即成交就拒绝, 让你更明确地只做 maker 行为。</p></article>
+      </div>
+    </section>
+
+    <section id="bot" class="panel">
+      <div class="grid">
+        <article class="card"><h3>Hummingbot</h3><p>适合看成熟 bot 框架如何拆数据、策略、执行、连接器。先读策略文档, 再看 examples。</p></article>
+        <article class="card"><h3>CCXT</h3><p>适合理解统一交易所 API:fetch ticker/order book、create order、cancel order、balance。</p></article>
+        <article class="card"><h3>不要即插即用</h3><p>框架只能教你结构, 不能替你处理 StandX 规则、风控和实盘异常。</p></article>
+      </div>
+      <div class="wide-card" style="margin-top:14px">
+        <h3>一个学习型 bot 至少要拆成 6 个模块</h3>
+        <p><span class="tag">Market data</span><span class="tag">Quote engine</span><span class="tag">Order manager</span><span class="tag">Inventory guard</span><span class="tag">Risk switch</span><span class="tag">Audit log</span></p>
+      </div>
+    </section>
+
+    <section id="risk" class="panel">
+      <div class="wide-card">
+        <h3>能不能开始研究?</h3>
+        <p>全部打勾才适合继续研究 bot。这里说的是“继续学习”, 不是“可以实盘”。</p>
+        <div class="checklist" id="checks">
+          <label class="check"><input type="checkbox">我能解释 maker/taker、post-only/ALO、bps。</label>
+          <label class="check"><input type="checkbox">我知道当前 campaign 参数在哪里看。</label>
+          <label class="check"><input type="checkbox">我知道断线后订单和仓位会怎样。</label>
+          <label class="check"><input type="checkbox">我有最大净仓位和暂停条件。</label>
+          <label class="check"><input type="checkbox">我不用带提现权限的 API key。</label>
+          <label class="check"><input type="checkbox">我能接受奖励为 0, 甚至交易亏损。</label>
+        </div>
+        <div id="status" class="status warn">还不适合继续。先把未勾选的问题补上, 尤其是断线、撤单失败和单边成交。</div>
+      </div>
+    </section>
+
+    <section id="ai" class="panel">
+      <div class="grid">
+        <article class="card"><h3>AI 适合</h3><p>翻译规则、写只读行情脚本、做 paper trading 原型、帮你审查风控 checklist。</p></article>
+        <article class="card"><h3>AI 不适合</h3><p>替你决定杠杆、挂单距离、仓位大小、是否能承受单边成交。</p></article>
+        <article class="card"><h3>最安全起点</h3><p>先让 AI 写一个不会下单的解释器, 只输出“此刻理论上会挂在哪里”。</p></article>
+      </div>
+    </section>
+
+    <section class="wide-card" style="margin-top:14px">
+      <h3>资源筛选</h3>
+      <div class="filters" aria-label="资源筛选">
+        <button class="filter active" data-filter="all">全部</button>
+        <button class="filter" data-filter="官方规则">官方规则</button>
+        <button class="filter" data-filter="基础概念">基础概念</button>
+        <button class="filter" data-filter="工具框架">工具框架</button>
+        <button class="filter" data-filter="风险">风险</button>
+        <button class="filter" data-filter="案例">案例</button>
+      </div>
+      <div class="resource-grid" id="resources"></div>
+    </section>
+
+    <p class="footer">这是一份学习资源包, 不是投资建议, 也不是现成赚钱脚本。由 HSpace 打包成「链接 + 密码」递给你。</p>
+  </main>
+
+<script>
+  const resources = [
+    {tag:"官方规则",title:"StandX SIP-5A",url:"https://docs.standx.com/sip/sip-5a-community-maker-yield",why:"Maker Hours、双边挂单、daily settlement 的权威入口。",risk:"参数以当前 campaign 为准。"},
+    {tag:"官方规则",title:"StandX SIP-5",url:"https://docs.standx.com/sip/sip-5-universal-markets-listing",why:"理解 Universal Markets、Sponsor、Reward Vault 的大框架。",risk:"SIP-5 分阶段推进, 不要把愿景当现成产品。"},
+    {tag:"案例",title:"StandX Maker Bot 社区案例",url:"https://docs.standx.com/blog/articles/my-standx-maker-points-bot-experience-and-maker-uptime-results",why:"展示双边限价、bps、订单刷新和 Maker Hours 结果。",risk:"个人经验, 不是参数模板。"},
+    {tag:"案例",title:"Orderbook, ALO, Maker Points",url:"https://docs.standx.com/blog/articles/orderbook-alo-maker-points-a-traders-field-notes-on-standx",why:"解释为什么 ALO 可以减少意外吃单。",risk:"快行情仍需自己做风控。"},
+    {tag:"基础概念",title:"Binance Academy: Makers and Takers",url:"https://www.binance.com/en/academy/articles/what-are-makers-and-takers",why:"从零理解 maker、taker、spread、order book。",risk:"通用概念, 非 StandX 规则。"},
+    {tag:"基础概念",title:"Coinbase order types",url:"https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/order-types",why:"理解 limit、market、post-only、GTC、IOC。",risk:"不同平台字段和撮合规则不同。"},
+    {tag:"工具框架",title:"Hummingbot Strategies",url:"https://hummingbot.org/strategies/",why:"学习自动交易策略的基本循环和组件。",risk:"框架不保证策略盈利。"},
+    {tag:"工具框架",title:"CCXT Docs",url:"https://docs.ccxt.com/",why:"学习统一交易 API、order book、orders、balances。",risk:"API 统一不等于风控统一。"},
+    {tag:"风险",title:"Hummingbot API security note",url:"https://hummingbot.org/hummingbot-api/",why:"提醒交易 API 是高价值目标, 不应暴露公网。",risk:"远程控制 bot 必须先做访问控制。"}
+  ];
+
+  const panels = document.querySelectorAll(".panel");
+  const tabs = document.querySelectorAll(".tab");
+  function showTab(id){
+    tabs.forEach(t=>t.classList.toggle("active",t.dataset.tab===id));
+    panels.forEach(p=>p.classList.toggle("active",p.id===id));
+    document.getElementById(id)?.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  tabs.forEach(tab=>tab.addEventListener("click",()=>showTab(tab.dataset.tab)));
+  document.querySelectorAll("[data-jump]").forEach(btn=>btn.addEventListener("click",()=>showTab(btn.dataset.jump)));
+
+  const distance = document.getElementById("distance");
+  const uptime = document.getElementById("uptime");
+  function updateMeter(){
+    const d = Number(distance.value);
+    const u = Number(uptime.value);
+    const weight = Math.round((2 - (1.2 * d / 10)) * 100);
+    let tier = "不合格";
+    if(u >= 42) tier = "Boosted";
+    else if(u >= 30) tier = "Standard";
+    const ok = u >= 30 && d <= 10;
+    document.getElementById("distanceVal").textContent = d;
+    document.getElementById("uptimeVal").textContent = u;
+    document.getElementById("weightVal").textContent = weight + "%";
+    document.getElementById("tierVal").textContent = tier;
+    document.getElementById("readVal").textContent = ok ? "路径合格" : "先不合格";
+  }
+  distance.addEventListener("input", updateMeter);
+  uptime.addEventListener("input", updateMeter);
+  updateMeter();
+
+  const status = document.getElementById("status");
+  document.getElementById("checks").addEventListener("change",()=>{
+    const boxes = [...document.querySelectorAll("#checks input")];
+    const done = boxes.filter(b=>b.checked).length;
+    if(done === boxes.length){
+      status.className = "status good";
+      status.textContent = "可以继续学习。下一步仍然建议只读数据、纸面策略、模拟环境, 不要直接实盘。";
+    }else{
+      status.className = "status warn";
+      status.textContent = `还差 ${boxes.length - done} 项。先补齐未勾选的问题, 不要让自动化扩大错误。`;
+    }
+  });
+
+  const container = document.getElementById("resources");
+  function renderResources(filter="all"){
+    container.innerHTML = resources.filter(r=>filter==="all" || r.tag===filter).map(r=>`
+      <article class="resource">
+        <div class="meta"><span class="mini">${r.tag}</span><span class="mini">外部资料</span></div>
+        <h3><a href="${r.url}" target="_blank" rel="noopener">${r.title}</a></h3>
+        <p>${r.why}</p>
+        <p><b>风险提示:</b> ${r.risk}</p>
+      </article>
+    `).join("");
+  }
+  document.querySelectorAll(".filter").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      document.querySelectorAll(".filter").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      renderResources(btn.dataset.filter);
+    });
+  });
+  renderResources();
+</script>
+</body>
+</html>
