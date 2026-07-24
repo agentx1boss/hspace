@@ -1,5 +1,7 @@
 // 内嵌页面模板：密码页 / Markdown 阅读页 / 合集目录页 / 锁定页 / 404
 
+import type { TocItem } from "./render";
+
 // 站点 favicon(32px PNG 内联,所有模板共用)
 export const FAVICON_LINK = '<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAByklEQVR4AexWvU4CQRCevcJYWKiFBQIac4mNUFCZQOIRa30BY0KIlS+hFL6CFYkk8gRqayCRwooCCpuLUf5ipQ2Vhjt3Vvay7t0eF+MFQm7Dx87Mfjvz5QMuaDDlFQmYTQficd1YT+i1WEK3Y0n93O9r4vACcL36eDpgEajZAAbgsuEMh2AoA8U5PDykXBSPYVC4BGBT+fKvIeIhHSimGFsa/AiHYMslINi1/2NFAiIH5tuB10LuoFPItShsihbm8u/H14HMygJwdAs5QwY/E/f9tcU9xitmjwjADR2YosBXCvN+MbuNCYdSwMnWElxmVh3YwJ6O+IR0IJ7z+GJn2WBci1T5EHG3LO1QzJUCmh+fIi+02FfA7v0bnDbfGah9eRn8TNzLz8MS4xFy7KV6NPq6E+tKAZyETiASlUZdBtZllF+GwHhXD1X6UaDd7XGvNuab149P45xtEwUw1h/fNiqN22SlkaYgFGnM5VahCpCHeeWRgMiB2XNAs6AO8iJQkkuY0weOizvomL7/ovGeCJcDvZ5ZB2EgDlE17XfNPOciT7MhLzYPErsE4CUcOOiaBMGGYFEBzkUeE6/gqcqeAlTkMOrzL2CSa98AAAD//6djUEEAAAAGSURBVAMASMzLQVmiCxsAAAAASUVORK5CYII=">';
 
@@ -299,21 +301,46 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string, s
 }
 
 /**
- * 合集中 html 篇目的悬浮导航条(可折叠):目录 + 逐篇 + 上/下篇。
- * 用 Shadow DOM 与用户页面彻底样式隔离——既不被页面 CSS 污染,也不影响页面。
- * 只往 body 追加一个宿主元素 + 一段 IIFE,不改动用户原有 DOM。
+ * 统一悬浮控制器(左下角胶囊 + Shadow DOM 面板):合集篇目 + 当前篇 TOC + 阅读偏好。
+ * 用 Shadow DOM 与页面彻底样式隔离;只往 body 追加一个宿主 + 一段 IIFE。
+ * prefs 段的按钮通过设置 :root 的 --reading-size/--reading-width 变量并写 localStorage 生效
+ * (仅对我们的阅读模板有效,裸 html 篇目传 prefs:false)。
  */
-function collectionNavWidget(nav: CollectionNav): string {
-  const items = nav.docs.map((d) =>
-    `<a class="doc${d.index === nav.current ? " on" : ""}" href="/${d.index}"><i>${d.index}</i><span>${esc(d.title)}</span></a>`
-  ).join("");
-  const prev = nav.current > 1 ? nav.current - 1 : 0;
-  const next = nav.current < nav.docs.length ? nav.current + 1 : 0;
-  const pn =
-    `<div class="pn">` +
-    (prev ? `<a href="/${prev}">← 上一篇</a>` : `<span class="dis">← 上一篇</span>`) +
-    (next ? `<a class="nx" href="/${next}">下一篇 →</a>` : `<span class="dis nx">下一篇 →</span>`) +
-    `</div>`;
+export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs: boolean }): string {
+  const { nav, toc, prefs } = opts;
+  const pos = nav ? ` · ${nav.current}/${nav.docs.length}` : "";
+  const title = nav ? esc(nav.collectionTitle) : "阅读工具";
+
+  const docsSection = nav
+    ? `<div class="sec"><div class="lb">合集</div>` +
+      nav.docs
+        .map(
+          (d) =>
+            `<a class="doc${d.index === nav.current ? " on" : ""}" href="/${d.index}"><i>${d.index}</i><span>${esc(d.title)}</span></a>`,
+        )
+        .join("") +
+      `</div>`
+    : "";
+
+  const tocSection =
+    toc.length >= 3
+      ? `<div class="sec"><div class="lb">目录</div>` +
+        toc
+          .map(
+            (t) =>
+              `<a class="toc l${t.level}" href="#${t.slug}"><span>${esc(t.text)}</span></a>`,
+          )
+          .join("") +
+        `</div>`
+      : "";
+
+  const prefsSection = prefs
+    ? `<div class="sec"><div class="lb">字号</div><div class="seg" data-k="size">` +
+      `<button data-size="s">小</button><button data-size="m">中</button><button data-size="l">大</button></div>` +
+      `<div class="lb">宽度</div><div class="seg" data-k="width">` +
+      `<button data-width="n">窄</button><button data-width="m">中</button><button data-width="w">宽</button></div></div>`
+    : "";
+
   const markup =
     `<style>
       :host{all:initial}
@@ -322,7 +349,7 @@ function collectionNavWidget(nav: CollectionNav): string {
             padding:9px 14px;background:#1A1D24;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:999px;
             box-shadow:0 4px 18px rgba(0,0,0,.32);cursor:pointer;font-size:13px;font-weight:600;line-height:1}
       .pill .dot{width:7px;height:7px;border-radius:50%;background:#F0784F}
-      .panel{position:fixed;left:16px;bottom:64px;z-index:2147483647;width:270px;max-width:calc(100vw - 32px);
+      .panel{position:fixed;left:16px;bottom:64px;z-index:2147483647;width:280px;max-width:calc(100vw - 32px);
              background:#fff;color:#1d1d1f;border:1px solid #e5e2dd;border-radius:14px;overflow:hidden;
              box-shadow:0 16px 44px rgba(0,0,0,.24);display:none;animation:pop .16s ease-out}
       .panel.open{display:block}
@@ -330,51 +357,62 @@ function collectionNavWidget(nav: CollectionNav): string {
       .hd{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e5e2dd;font-weight:700;font-size:13px}
       .hd .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .hd .x{cursor:pointer;color:#6e6e73;font-size:16px;line-height:1}
-      .list{max-height:min(50vh,340px);overflow-y:auto;padding:6px}
-      .doc{display:flex;gap:10px;align-items:baseline;padding:9px 10px;border-radius:8px;color:#1d1d1f;
+      .body{max-height:min(60vh,420px);overflow-y:auto;padding:6px}
+      .sec{padding:4px 4px 8px}
+      .sec+.sec{border-top:1px solid #eee}
+      .lb{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#8b8b90;padding:8px 8px 4px}
+      .doc,.toc{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:8px;color:#1d1d1f;
            text-decoration:none;font-size:13.5px;line-height:1.4;border-left:3px solid transparent}
-      .doc:hover{background:#f2f0ed}
+      .doc:hover,.toc:hover{background:#f2f0ed}
       .doc.on{background:#f2f0ed;border-left-color:#E2603C;font-weight:600}
       .doc i{color:#8b8b90;font-style:normal;font-size:12px;font-variant-numeric:tabular-nums}
-      .doc.on i{color:#E2603C}
-      .pn{display:flex;gap:8px;padding:10px;border-top:1px solid #e5e2dd}
-      .pn a,.pn .dis{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none}
-      .pn a{color:#1d1d1f;background:#f2f0ed}
-      .pn a:hover{background:#e7e4df}
-      .pn .nx{text-align:center}
-      .pn .dis{color:#c4c0b8}
+      .toc.l3{padding-left:22px;font-size:13px}.toc.l4{padding-left:34px;font-size:12.5px;color:#6e6e73}
+      .seg{display:flex;gap:6px;padding:4px 8px 8px}
+      .seg button{flex:1;padding:7px 0;border:1px solid #e5e2dd;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;color:#1d1d1f}
+      .seg button:hover{border-color:#E2603C}
+      .seg button.on{background:#E2603C;border-color:#E2603C;color:#fff}
       .brand{display:block;text-align:center;padding:8px;font-size:11.5px;color:#8b8b90;text-decoration:none;border-top:1px solid #e5e2dd}
       .brand:hover{color:#E2603C}
-      @media(prefers-color-scheme:dark){.brand{border-color:#2e3036}}
       @media(prefers-color-scheme:dark){
         .panel{background:#22242a;color:#e8e6e3;border-color:#2e3036}
-        .hd{border-color:#2e3036}.hd .x{color:#8b8b90}
-        .doc{color:#e8e6e3}.doc:hover,.doc.on{background:#2a2d34}
-        .pn{border-color:#2e3036}.pn a{color:#e8e6e3;background:#2a2d34}.pn a:hover{background:#33373f}.pn .dis{color:#55585f}
+        .hd{border-color:#2e3036}.hd .x{color:#8b8b90}.sec+.sec{border-color:#2e3036}.brand{border-color:#2e3036}
+        .doc,.toc{color:#e8e6e3}.doc:hover,.toc:hover,.doc.on{background:#2a2d34}
+        .toc.l4{color:#8b8b90}
+        .seg button{background:#2a2d34;border-color:#2e3036;color:#e8e6e3}.seg button.on{background:#F0784F;border-color:#F0784F;color:#17181c}
       }
       @media(prefers-reduced-motion:reduce){.panel{animation:none}}
     </style>
-    <button class="pill" id="p" aria-label="打开目录"><span class="dot"></span>目录 · ${nav.current}/${nav.docs.length}</button>
-    <div class="panel" id="n" role="dialog" aria-label="合集导航">
-      <div class="hd"><span class="t">${esc(nav.collectionTitle)}</span><span class="x" id="x" aria-label="关闭">×</span></div>
-      <div class="list">${items}</div>
-      ${pn}
+    <button class="pill" id="p" aria-label="打开阅读工具"><span class="dot"></span>目录${pos}</button>
+    <div class="panel" id="n" role="dialog" aria-label="阅读工具">
+      <div class="hd"><span class="t">${title}</span><span class="x" id="x" aria-label="关闭">×</span></div>
+      <div class="body">${docsSection}${tocSection}${prefsSection}</div>
       <a class="brand" href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>
     </div>`;
+
   const json = JSON.stringify(markup).replace(/</g, "\\u003c");
-  return `<div id="hspace-nav-host"></div><script>(function(){try{` +
+  return (
+    `<div id="hspace-nav-host"></div><script>(function(){try{` +
     `var h=document.getElementById('hspace-nav-host');var r=h.attachShadow({mode:'open'});r.innerHTML=${json};` +
     `var p=r.getElementById('p'),n=r.getElementById('n'),x=r.getElementById('x');` +
     `p.addEventListener('click',function(){n.classList.toggle('open')});` +
     `x.addEventListener('click',function(){n.classList.remove('open')});` +
+    // TOC 点击后收起面板(锚点跳转由 href 原生完成)
+    `r.querySelectorAll('.toc').forEach(function(a){a.addEventListener('click',function(){n.classList.remove('open')})});` +
+    // 偏好:读 localStorage 高亮当前档;点击写入并设置 :root 变量
+    `var SZ={s:'16px',m:'17px',l:'19px'},WD={n:'34rem',m:'42rem',w:'52rem'};` +
+    `function mark(k,v){r.querySelectorAll('.seg[data-k=\"'+k+'\"] button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-'+k)===v)})}` +
+    `var cs=localStorage.getItem('hs-size')||'m',cw=localStorage.getItem('hs-width')||'m';mark('size',cs);mark('width',cw);` +
+    `r.querySelectorAll('.seg[data-k=\"size\"] button').forEach(function(b){b.addEventListener('click',function(){var v=b.getAttribute('data-size');localStorage.setItem('hs-size',v);document.documentElement.style.setProperty('--reading-size',SZ[v]);mark('size',v)})});` +
+    `r.querySelectorAll('.seg[data-k=\"width\"] button').forEach(function(b){b.addEventListener('click',function(){var v=b.getAttribute('data-width');localStorage.setItem('hs-width',v);document.documentElement.style.setProperty('--reading-width',WD[v]);mark('width',v)})});` +
     `}catch(e){var a=document.createElement('a');a.href='/';a.textContent='\\u2190 目录';` +
     `a.style.cssText='position:fixed;left:16px;bottom:16px;z-index:2147483647;background:#1A1D24;color:#fff;padding:9px 14px;border-radius:999px;text-decoration:none;font:600 13px sans-serif';` +
-    `document.body.appendChild(a);}})();</script>`;
+    `document.body.appendChild(a);}})();</script>`
+  );
 }
 
 /** 把合集悬浮导航注入 html 篇目:插到最后一个 </body> 前,缺失则追加 */
 export function injectCollectionNav(html: string, nav: CollectionNav): string {
-  const w = collectionNavWidget(nav);
+  const w = readerWidget({ nav, toc: [], prefs: false });
   const i = html.toLowerCase().lastIndexOf("</body>");
   return i === -1 ? html + w : html.slice(0, i) + w + html.slice(i);
 }
