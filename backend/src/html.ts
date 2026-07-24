@@ -344,6 +344,8 @@ export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs:
   const { nav, toc, prefs } = opts;
   const pos = nav ? ` · ${nav.current}/${nav.docs.length}` : "";
   const title = nav ? esc(nav.collectionTitle) : "阅读工具";
+  // 胶囊标签:合集显示「目录 · n/N」,独立单篇(仅偏好/无篇目)显示「阅读工具」
+  const pillLabel = nav ? `目录${pos}` : "阅读工具";
 
   const docsSection = nav
     ? `<div class="sec"><div class="lb">合集</div>` +
@@ -416,7 +418,7 @@ export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs:
       }
       @media(prefers-reduced-motion:reduce){.panel{animation:none}}
     </style>
-    <button class="pill" id="p" aria-label="打开阅读工具"><span class="dot"></span>目录${pos}</button>
+    <button class="pill" id="p" aria-label="打开阅读工具"><span class="dot"></span>${pillLabel}</button>
     <div class="panel" id="n" role="dialog" aria-label="阅读工具">
       <div class="hd"><span class="t">${title}</span><span class="x" id="x" aria-label="关闭">×</span></div>
       <div class="body">${docsSection}${tocSection}${prefsSection}</div>

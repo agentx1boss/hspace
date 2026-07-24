@@ -1,5 +1,5 @@
 // 边缘渲染:Markdown → 安全 HTML + 标题锚点 + TOC 数据。存原文,渲染即时生效。
-import { marked, Tokens } from "marked";
+import { marked, Tokens, type Token } from "marked";
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
@@ -53,6 +53,17 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+// 从标题的行内 token 递归提取纯文本(剥离 **加粗**、`代码`、[链接](url) 等 markdown
+// 标记),用于 TOC 标签与 slug —— 否则 TOC 会显示原始 markdown 源码。
+function plainText(tokens: Token[]): string {
+  return tokens
+    .map((t) => {
+      const node = t as { text?: string; tokens?: Token[] };
+      return node.tokens ? plainText(node.tokens) : (node.text ?? "");
+    })
+    .join("");
+}
+
 let configured = false;
 function configure(): void {
   if (configured) return;
@@ -92,12 +103,13 @@ export function renderMarkdown(md: string): Rendered {
   marked.walkTokens(tokens, (t) => {
     if (t.type !== "heading") return;
     const h = t as Tokens.Heading & { slug?: string };
-    const base = slugify(h.text) || "section";
+    const text = plainText(h.tokens);
+    const base = slugify(text) || "section";
     const n = seen.get(base) ?? 0;
     seen.set(base, n + 1);
     const slug = n === 0 ? base : `${base}-${n}`;
     h.slug = slug;
-    if (h.depth >= 2 && h.depth <= 4) toc.push({ level: h.depth, text: h.text, slug });
+    if (h.depth >= 2 && h.depth <= 4) toc.push({ level: h.depth, text, slug });
   });
   // marked.lexer()/marked.parser() bypass the automatic walkTokens hook invocation
   // that marked.parse() would normally perform, so extensions like markedHighlight
@@ -105,6 +117,12 @@ export function renderMarkdown(md: string): Rendered {
   // never fire. Invoke the merged extension walkTokens hook ourselves here.
   const extensionWalk = marked.defaults.walkTokens;
   if (extensionWalk) marked.walkTokens(tokens, extensionWalk);
-  const html = marked.parser(tokens);
+  // 设计 §错误处理:高亮/渲染抛错时优雅降级为转义纯文本,而非 500。
+  let html: string;
+  try {
+    html = marked.parser(tokens);
+  } catch {
+    html = `<pre><code>${escapeHtml(md)}</code></pre>`;
+  }
   return { html, toc };
 }
