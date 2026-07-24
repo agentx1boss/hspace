@@ -323,7 +323,7 @@ export function readingPage(o: {
     `document.querySelectorAll('.side .seg[data-k="width"] button').forEach(function(b){b.addEventListener('click',function(){var v=b.getAttribute('data-width');localStorage.setItem('hs-width',v);document.documentElement.style.setProperty('--reading-width',WD[v]);smark('width',v)})});` +
     `}catch(e){}})();</script>`;
   const showSide = !!nav || toc.length >= 3;
-  const widget = readerWidget({ nav, toc, prefs: true });
+  const widget = readerWidget({ nav, toc, prefs: true, deskHidden: true });
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -376,8 +376,8 @@ export function tocPage(collectionTitle: string, docs: NavDoc[], meta: string, s
  * prefs 段的按钮通过设置 :root 的 --reading-size/--reading-width 变量并写 localStorage 生效
  * (仅对我们的阅读模板有效,裸 html 篇目传 prefs:false)。
  */
-export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs: boolean }): string {
-  const { nav, toc, prefs } = opts;
+export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs: boolean; deskHidden?: boolean }): string {
+  const { nav, toc, prefs, deskHidden } = opts;
   const pos = nav ? ` · ${nav.current}/${nav.docs.length}` : "";
   const title = nav ? esc(nav.collectionTitle) : "阅读工具";
   // 胶囊标签:合集显示「目录 · n/N」,独立单篇(仅偏好/无篇目)显示「阅读工具」
@@ -412,6 +412,8 @@ export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs:
       `<div class="lb">宽度</div><div class="seg" data-k="width">` +
       `<button data-width="n">窄</button><button data-width="m">中</button><button data-width="w">宽</button></div></div>`
     : "";
+
+  const deskHide = deskHidden ? "@media(min-width:1100px){.pill,.panel{display:none!important}}" : "";
 
   const markup =
     `<style>
@@ -453,7 +455,7 @@ export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs:
         .seg button{background:#2a2d34;border-color:#2e3036;color:#e8e6e3}.seg button.on{background:#F0784F;border-color:#F0784F;color:#17181c}
       }
       @media(prefers-reduced-motion:reduce){.panel{animation:none}}
-      @media(min-width:1100px){.pill,.panel{display:none!important}}
+      ${deskHide}
     </style>
     <button class="pill" id="p" aria-label="打开阅读工具"><span class="dot"></span>${pillLabel}</button>
     <div class="panel" id="n" role="dialog" aria-label="阅读工具">
