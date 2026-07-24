@@ -27,7 +27,16 @@ describe("readerWidget", () => {
   });
   it("toc <3 时不渲染 TOC 段", () => {
     const out = readerWidget({ toc: [{ level: 2, text: "甲", slug: "jia" }], prefs: true });
-    expect(out).not.toContain('href="#jia"');
+    // 不用带引号的 href="#jia" 形式 —— 返回值经 JSON.stringify 转义后引号变成 \"，
+    // 该原始子串本就永远不会出现，会让断言恒真、测不出回归。
+    // 也不能只查裸 slug "jia"：页脚品牌链接固定含 "zhanjian.space"，其中
+    // "...zhan[jia]n..." 恰好包含子串 "jia"，会导致断言对任何输入都恒假失败
+    // (与 TOC 是否渲染无关,已用临时脚本验证)。改查 "#jia"(锚点 hash 前缀+slug):
+    // 该子串在转义后的 <script> 字符串里原样保留(# 和字母都不被转义),且不会与
+    // 任何 CSS 十六进制色值(如 #1A1D24,全是十六进制数字)或页脚 URL 混淆,
+    // 因此能在 1 条目 TOC 被误渲染时真正失败(已临时把 html.ts 的 >=3 改成 >=1
+    // 验证过:此断言会失败,证明它确实起到回归防护作用)。
+    expect(out).not.toContain("#jia");
   });
   it("prefs 时含字号/宽度按钮", () => {
     const out = readerWidget({ toc: [], prefs: true });
