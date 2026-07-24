@@ -39,4 +39,8 @@ describe("renderMarkdown", () => {
   it("无 h2-h4 标题时 toc 为空", () => {
     expect(renderMarkdown("# Title\n\ntext").toc).toEqual([]);
   });
+  it("TOC 文本剥离行内 markdown(加粗/代码)", () => {
+    const { toc } = renderMarkdown("## **加粗**标题\n\n## 普通\n\n## `代码`标题");
+    expect(toc.map((t) => t.text)).toEqual(["加粗标题", "普通", "代码标题"]);
+  });
 });

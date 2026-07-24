@@ -44,4 +44,12 @@ describe("readerWidget", () => {
     expect(out).toContain('data-size=\\"l\\"');
     expect(out).toContain('data-width=\\"n\\"');
   });
+  it("独立无 nav(仅偏好)时胶囊标签为「阅读工具」而非「目录」", () => {
+    const out = readerWidget({ toc: [], prefs: true });
+    // 精确定位 pill 按钮的标签文本:pill 是唯一以 `<标签></button>` 收尾的元素,
+    // 转义后表现为 `<标签></button>`(`<`→`<`,`>` 不转义)。据此判别 pill
+    // 文案,不会与 catch 兜底链接的「← 目录」或 TOC/篇目段的「目录」标题混淆。
+    expect(out).not.toContain("目录\\u003c/button>"); // pill 不应再是「目录」
+    expect(out).toContain("阅读工具\\u003c/button>"); // 无 nav 时 pill 应为「阅读工具」
+  });
 });
