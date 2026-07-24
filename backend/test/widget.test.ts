@@ -52,4 +52,9 @@ describe("readerWidget", () => {
     expect(out).not.toContain("目录\\u003c/button>"); // pill 不应再是「目录」
     expect(out).toContain("阅读工具\\u003c/button>"); // 无 nav 时 pill 应为「阅读工具」
   });
+  it("桌面(≥1100px)隐藏悬浮胶囊", () => {
+    const out = readerWidget({ toc: [], prefs: true });
+    // Shadow <style> 内应有桌面隐藏规则;该子串唯一,不与面板默认 display:none 混淆
+    expect(out).toContain("@media(min-width:1100px){.pill,.panel{display:none");
+  });
 });
