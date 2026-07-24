@@ -249,24 +249,58 @@ function prevNext(nav: CollectionNav): string {
   return `<nav class="pn">${left}${right}</nav>`;
 }
 
-/** Markdown 阅读页；传入 nav 时渲染合集导航;updatedAt(epoch 秒)非空时页脚显示"更新于";saveToken 非空时页脚出「保存这份稿」 */
-export function readingPage(title: string, articleHtml: string, nav?: CollectionNav, updatedAt?: number | null, saveToken?: string): string {
+/** Markdown 阅读页;nav 时渲染合集导航;updatedAt 非空显示"更新于";saveToken 非空出「保存这份稿」 */
+export function readingPage(o: {
+  title: string;
+  articleHtml: string;
+  toc: TocItem[];
+  nav?: CollectionNav;
+  updatedAt?: number | null;
+  saveToken?: string;
+}): string {
+  const { title, articleHtml, toc, nav, updatedAt, saveToken } = o;
   const pageTitle = nav ? `${title} · ${nav.collectionTitle}` : title;
   const crumb = nav
     ? `<div class="crumb"><a href="/">← 目录</a><span class="sep">·</span>${esc(nav.collectionTitle)}</div>`
     : "";
   const upd = updatedAt ? ` · 更新于 ${new Date(updatedAt * 1000).toISOString().slice(0, 10)}` : "";
+  // 偏好早应用(防止字号/宽度切换时的闪烁):在 body 渲染前读 localStorage 设 :root 变量
+  const earlyPrefs =
+    `<script>(function(){try{var SZ={s:'16px',m:'17px',l:'19px'},WD={n:'34rem',m:'42rem',w:'52rem'};` +
+    `var s=localStorage.getItem('hs-size'),w=localStorage.getItem('hs-width');var r=document.documentElement;` +
+    `if(SZ[s])r.style.setProperty('--reading-size',SZ[s]);if(WD[w])r.style.setProperty('--reading-width',WD[w]);}catch(e){}})();</script>`;
+  // 页面级交互:进度条 / 代码块 chrome+复制 / 锚点复制 / 图片 lightbox
+  const pageJs =
+    `<script>(function(){try{` +
+    `var pi=document.querySelector('.progress>i');` +
+    `if(pi)addEventListener('scroll',function(){var d=document.documentElement;var m=d.scrollHeight-d.clientHeight;pi.style.width=(m>0?(d.scrollTop/m*100):0)+'%';},{passive:true});` +
+    `document.querySelectorAll('main pre').forEach(function(pre){var code=pre.querySelector('code');if(!code)return;` +
+    `var mm=(code.className||'').match(/language-([\\w-]+)/);` +
+    `var w=document.createElement('div');w.className='cb-wrap';pre.parentNode.insertBefore(w,pre);w.appendChild(pre);` +
+    `var bar=document.createElement('div');bar.className='cb-bar';if(mm)bar.innerHTML='\\u003cspan class="cb-lang"\\u003e'+mm[1]+'\\u003c/span\\u003e';` +
+    `if(navigator.clipboard){var b=document.createElement('button');b.type='button';b.className='cb-copy';b.textContent='复制';` +
+    `b.addEventListener('click',function(){navigator.clipboard.writeText(code.textContent).then(function(){b.textContent='已复制';setTimeout(function(){b.textContent='复制'},1200)})});bar.appendChild(b);}` +
+    `w.appendChild(bar);});` +
+    `document.querySelectorAll('.anchor').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var u=location.href.split('#')[0]+a.getAttribute('href');history.replaceState(null,'',u);navigator.clipboard&&navigator.clipboard.writeText(u);})});` +
+    `var lb=document.createElement('div');lb.className='lb';var li=document.createElement('img');lb.appendChild(li);document.body.appendChild(lb);` +
+    `document.querySelectorAll('main img').forEach(function(img){img.addEventListener('click',function(){li.src=img.src;lb.classList.add('open')})});` +
+    `lb.addEventListener('click',function(){lb.classList.remove('open')});` +
+    `addEventListener('keydown',function(e){if(e.key==='Escape')lb.classList.remove('open')});` +
+    `}catch(e){}})();</script>`;
+  const widget = readerWidget({ nav, toc, prefs: true });
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(pageTitle)}</title>
-<style>${BASE_CSS}</style></head>
+<style>${BASE_CSS}</style>${earlyPrefs}</head>
 <body class="${nav ? "has-side" : ""}">
   ${nav ? sidebar(nav) : ""}
+  <div class="progress"><i></i></div>
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
     <footer>${saveLink(saveToken)}<span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a>${upd}</footer>
   </div>
+  ${widget}${pageJs}
 </body></html>`;
 }
 
