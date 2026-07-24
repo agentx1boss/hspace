@@ -17,7 +17,7 @@ import {
   signScopedToken,
   verifyScopedToken,
 } from "./crypto";
-import { marked } from "marked";
+import { renderMarkdown } from "./render";
 import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectCollectionNav, CollectionNav } from "./html";
 import { openapiSpec } from "./openapi";
 import { landingPage } from "./landing";
@@ -832,9 +832,9 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
   // Markdown:边缘渲染进阅读模板(存原文,模板升级即时生效)
   if (page.object_key.endsWith(".md")) {
     const md = await obj.text();
-    const article = await marked.parse(md, { gfm: true, async: true });
+    const { html: article, toc } = renderMarkdown(md);
     const updated = page.version > 1 && page.updated_at ? page.updated_at : null;
-    return htmlResp(readingPage(mdTitle(md, page.filename), article, undefined, updated, saveToken), 200);
+    return htmlResp(readingPage({ title: mdTitle(md, page.filename), articleHtml: article, toc, updatedAt: updated, saveToken }), 200);
   }
 
   return new Response(obj.body, { status: 200, headers: securityHeaders() });
@@ -868,9 +868,9 @@ async function serveCollection(env: Env, page: PageRow, docPath: string, saveTok
   if (!obj) return htmlResp(notFoundPage(), 404);
 
   if (doc.ext === "md") {
-    const article = await marked.parse(await obj.text(), { gfm: true, async: true });
+    const { html: article, toc } = renderMarkdown(await obj.text());
     const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
-    return htmlResp(readingPage(doc.title, article, nav, updated, saveToken), 200);
+    return htmlResp(readingPage({ title: doc.title, articleHtml: article, toc, nav, updatedAt: updated, saveToken }), 200);
   }
   // html 篇目:保留原样,注入一个 Shadow DOM 隔离的悬浮导航(目录+翻页,不影响用户页面)
   const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
