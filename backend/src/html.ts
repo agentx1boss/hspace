@@ -170,7 +170,7 @@ const BASE_CSS = `
   .pn .t{font-size:14.5px;color:var(--fg);font-weight:600}
   .pn .next{text-align:right}
   @media(min-width:1100px){
-    .has-side .side{display:block;position:fixed;top:0;left:0;bottom:0;width:264px;overflow-y:auto;
+    .has-side .side{display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;width:264px;overflow-y:auto;
          border-right:1px solid var(--border);background:var(--panel);padding:32px 16px}
     .has-side .wrap{padding-left:264px}
     .side .ct{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:0 12px;margin-bottom:12px}
@@ -181,6 +181,16 @@ const BASE_CSS = `
     .side a.on{background:var(--soft);border-left-color:var(--accent);font-weight:600}
     .side .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;padding-top:1px}
     .side a.on .n{color:var(--accent)}
+    .side .stoc{margin-top:18px}
+    .side .stoc a{display:block;padding:6px 12px;border-radius:8px;color:var(--muted);font-size:13px;line-height:1.4;text-decoration:none;border-left:3px solid transparent}
+    .side .stoc a:hover{background:var(--soft);color:var(--fg)}
+    .side .stoc a.l3{padding-left:24px}
+    .side .stoc a.l4{padding-left:36px;font-size:12.5px}
+    .side .prefs{margin-top:auto;padding-top:18px}
+    .side .prefs .seg{display:flex;gap:6px;margin:6px 0 0}
+    .side .prefs .seg button{flex:1;padding:6px 0;border:1px solid var(--border);background:var(--bg);color:var(--fg);border-radius:8px;cursor:pointer;font:inherit;font-size:13px}
+    .side .prefs .seg button:hover{border-color:var(--accent)}
+    .side .prefs .seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
   }
   /* 标题锚点 */
   h2,h3,h4{position:relative}
@@ -229,11 +239,30 @@ const BASE_CSS = `
   }
 `;
 
-function sidebar(nav: CollectionNav): string {
-  const items = nav.docs.map(d =>
-    `<li><a class="${d.index === nav.current ? "on" : ""}" href="/${d.index}"><span class="n">${d.index}</span><span>${esc(d.title)}</span></a></li>`
-  ).join("");
-  return `<nav class="side"><div class="ct">${esc(nav.collectionTitle)}</div><ol>${items}</ol></nav>`;
+function sidebar(o: { nav?: CollectionNav; toc: TocItem[]; prefs: boolean }): string {
+  const { nav, toc, prefs } = o;
+  const docs = nav
+    ? `<div class="ct">${esc(nav.collectionTitle)}</div><ol>` +
+      nav.docs
+        .map(
+          (d) =>
+            `<li><a class="${d.index === nav.current ? "on" : ""}" href="/${d.index}"><span class="n">${d.index}</span><span>${esc(d.title)}</span></a></li>`,
+        )
+        .join("") +
+      `</ol>`
+    : "";
+  const tocBlock =
+    toc.length >= 3
+      ? `<div class="stoc"><div class="ct">本篇目录</div>` +
+        toc.map((t) => `<a class="l${t.level}" href="#${t.slug}">${esc(t.text)}</a>`).join("") +
+        `</div>`
+      : "";
+  const prefsBlock = prefs
+    ? `<div class="prefs"><div class="ct">显示</div>` +
+      `<div class="seg" data-k="size"><button data-size="s">小</button><button data-size="m">中</button><button data-size="l">大</button></div>` +
+      `<div class="seg" data-k="width"><button data-width="n">窄</button><button data-width="m">中</button><button data-width="w">宽</button></div></div>`
+    : "";
+  return `<nav class="side">${docs}${tocBlock}${prefsBlock}</nav>`;
 }
 
 function prevNext(nav: CollectionNav): string {
@@ -267,6 +296,7 @@ export function readingPage(o: {
   // 偏好早应用(防止字号/宽度切换时的闪烁):在 body 渲染前读 localStorage 设 :root 变量
   const earlyPrefs =
     `<script>(function(){try{var SZ={s:'16px',m:'17px',l:'19px'},WD={n:'34rem',m:'42rem',w:'52rem'};` +
+    `window.__hsSZ=SZ;window.__hsWD=WD;` +
     `var s=localStorage.getItem('hs-size'),w=localStorage.getItem('hs-width');var r=document.documentElement;` +
     `if(SZ[s])r.style.setProperty('--reading-size',SZ[s]);if(WD[w])r.style.setProperty('--reading-width',WD[w]);}catch(e){}})();</script>`;
   // 页面级交互:进度条 / 代码块 chrome+复制 / 锚点复制 / 图片 lightbox
@@ -286,15 +316,21 @@ export function readingPage(o: {
     `document.querySelectorAll('main img').forEach(function(img){img.addEventListener('click',function(){li.src=img.src;lb.classList.add('open')})});` +
     `lb.addEventListener('click',function(){lb.classList.remove('open')});` +
     `addEventListener('keydown',function(e){if(e.key==='Escape')lb.classList.remove('open')});` +
+    `var SZ=window.__hsSZ||{s:'16px',m:'17px',l:'19px'},WD=window.__hsWD||{n:'34rem',m:'42rem',w:'52rem'};` +
+    `function smark(k,v){document.querySelectorAll('.side .seg[data-k="'+k+'"] button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-'+k)===v)})}` +
+    `var cs=localStorage.getItem('hs-size')||'m',cw=localStorage.getItem('hs-width')||'m';smark('size',cs);smark('width',cw);` +
+    `document.querySelectorAll('.side .seg[data-k="size"] button').forEach(function(b){b.addEventListener('click',function(){var v=b.getAttribute('data-size');localStorage.setItem('hs-size',v);document.documentElement.style.setProperty('--reading-size',SZ[v]);smark('size',v)})});` +
+    `document.querySelectorAll('.side .seg[data-k="width"] button').forEach(function(b){b.addEventListener('click',function(){var v=b.getAttribute('data-width');localStorage.setItem('hs-width',v);document.documentElement.style.setProperty('--reading-width',WD[v]);smark('width',v)})});` +
     `}catch(e){}})();</script>`;
+  const showSide = !!nav || toc.length >= 3;
   const widget = readerWidget({ nav, toc, prefs: true });
   return `<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">${FAVICON_LINK}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(pageTitle)}</title>
 <style>${BASE_CSS}</style>${earlyPrefs}</head>
-<body class="${nav ? "has-side" : ""}">
-  ${nav ? sidebar(nav) : ""}
+<body class="${showSide ? "has-side" : ""}">
+  ${showSide ? sidebar({ nav, toc, prefs: true }) : ""}
   <div class="progress"><i></i></div>
   <div class="wrap">
     <main>${crumb}${articleHtml}${nav ? prevNext(nav) : ""}</main>
