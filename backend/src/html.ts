@@ -453,6 +453,7 @@ export function readerWidget(opts: { nav?: CollectionNav; toc: TocItem[]; prefs:
         .seg button{background:#2a2d34;border-color:#2e3036;color:#e8e6e3}.seg button.on{background:#F0784F;border-color:#F0784F;color:#17181c}
       }
       @media(prefers-reduced-motion:reduce){.panel{animation:none}}
+      @media(min-width:1100px){.pill,.panel{display:none!important}}
     </style>
     <button class="pill" id="p" aria-label="打开阅读工具"><span class="dot"></span>${pillLabel}</button>
     <div class="panel" id="n" role="dialog" aria-label="阅读工具">
