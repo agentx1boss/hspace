@@ -126,7 +126,9 @@ const BASE_CSS = `
   body{margin:0;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;
        font:17px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
   a{color:var(--accent);text-decoration:none}
-  main{max-width:42rem;margin:0 auto;padding:56px 24px 40px}
+  main{max-width:var(--reading-width,42rem);font-size:var(--reading-size,17px);margin:0 auto;padding:56px 24px 40px}
+  html{scroll-behavior:smooth}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   h1,h2,h3,h4{line-height:1.35;margin:2em 0 .7em;font-weight:700;letter-spacing:-.01em}
   h1{font-size:1.85em;margin-top:0}
   h2{font-size:1.4em;padding-bottom:.3em;border-bottom:1px solid var(--border)}
@@ -177,6 +179,51 @@ const BASE_CSS = `
     .side a.on{background:var(--soft);border-left-color:var(--accent);font-weight:600}
     .side .n{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;padding-top:1px}
     .side a.on .n{color:var(--accent)}
+  }
+  /* 标题锚点 */
+  h2,h3,h4{position:relative}
+  .anchor{position:absolute;left:-.9em;opacity:0;text-decoration:none;color:var(--muted);font-weight:400;padding-right:.2em}
+  h2:hover .anchor,h3:hover .anchor,h4:hover .anchor{opacity:.5}
+  .anchor:hover{opacity:1;color:var(--accent);border-bottom:none}
+  @media(max-width:640px){.anchor{display:none}}
+  /* 代码块 chrome(由 JS 包裹注入) */
+  .cb-wrap{position:relative;margin:1.2em 0}
+  .cb-wrap pre{margin:0}
+  .cb-bar{position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:11.5px;color:var(--muted)}
+  .cb-lang{text-transform:uppercase;letter-spacing:.04em}
+  .cb-copy{cursor:pointer;background:none;border:0;color:var(--muted);font:inherit;font-size:11.5px;padding:2px 6px;border-radius:5px}
+  .cb-copy:hover{color:var(--accent);background:var(--bg)}
+  /* 阅读进度条 */
+  .progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:60;background:transparent;pointer-events:none}
+  .progress>i{display:block;height:100%;width:0;background:var(--accent);transition:width .1s linear}
+  @media(prefers-reduced-motion:reduce){.progress>i{transition:none}}
+  /* 图片 lightbox */
+  main img{cursor:zoom-in}
+  .lb{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;cursor:zoom-out}
+  .lb.open{display:flex}
+  .lb img{max-width:92vw;max-height:92vh;border-radius:8px}
+  /* highlight.js 双主题(CSS 变量,跟随 prefers-color-scheme) */
+  .hljs{color:var(--fg);background:transparent}
+  .hljs-comment,.hljs-quote{color:var(--muted);font-style:italic}
+  .hljs-keyword,.hljs-selector-tag,.hljs-literal,.hljs-section,.hljs-link{color:#c0392b}
+  .hljs-string,.hljs-attr,.hljs-template-tag,.hljs-addition{color:#2e7d32}
+  .hljs-number,.hljs-built_in,.hljs-type,.hljs-meta{color:#8e5cd9}
+  .hljs-title,.hljs-name{color:#1565c0}
+  .hljs-attribute,.hljs-variable,.hljs-deletion{color:#b9530f}
+  @media(prefers-color-scheme:dark){
+    .hljs-keyword,.hljs-selector-tag,.hljs-literal,.hljs-section,.hljs-link{color:#ff6b6b}
+    .hljs-string,.hljs-attr,.hljs-template-tag,.hljs-addition{color:#7ec699}
+    .hljs-number,.hljs-built_in,.hljs-type,.hljs-meta{color:#c58af9}
+    .hljs-title,.hljs-name{color:#6c9eff}
+    .hljs-attribute,.hljs-variable,.hljs-deletion{color:#e0955f}
+  }
+  /* 打印 */
+  @media print{
+    .progress,#hspace-nav-host,footer,.crumb,.pn,.side{display:none!important}
+    .wrap{padding:0!important}
+    main{max-width:none;padding:0}
+    pre,code{white-space:pre-wrap;word-break:break-word}
+    a{color:inherit}
   }
 `;
 
