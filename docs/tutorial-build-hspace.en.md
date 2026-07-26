@@ -17,7 +17,7 @@
 Four invariants shape everything below:
 
 - **Mandatory password** is the product's identity — no public gallery.
-- **No permanent links**: every link expires (anon 3 days, signed-in 30 days/term, renewable). Exception: first-party pinned content (`expires_at=NULL` set directly in the DB — an ops action, not a feature).
+- **No permanent links**: every link expires (anon 7 days, signed-in 30 days/term, renewable). Exception: first-party pinned content (`expires_at=NULL` set directly in the DB — an ops action, not a feature).
 - **Content pages are `noindex` + gated** — only the landing page is indexable.
 - **Self-contained pages**: everything inlines its CSS/JS/SVG; zero external resources.
 
@@ -160,10 +160,10 @@ All tunable in `wrangler.toml [vars]`; anonymous is deliberately tighter to nudg
 | Per-IP hourly publishes | `RATE_LIMIT_PER_HOUR` | 20 | KV counter |
 | Per-IP daily publishes (anon) | `RATE_LIMIT_PER_DAY` | 50 | KV counter |
 | Single-file size (anon / signed-in) | `ANON_MAX_SIZE_BYTES` / `MAX_SIZE_BYTES` | 512 KB / 2 MB | publish |
-| Docs per collection (anon / signed-in) | `ANON_MAX_DOCS` / `MAX_DOCS` | 3 / 50 | publish |
+| Docs per collection (anon / signed-in) | `ANON_MAX_DOCS` / `MAX_DOCS` | 5 / 50 | publish |
 | Per-page hit cap (anon) | `ANON_MAX_HITS` | 10000 | serve |
 | Global daily anon bytes (circuit breaker) | `ANON_DAILY_GLOBAL_BYTES` | 500 MB | publish |
-| Anon TTL clamp | `ANON_DEFAULT_TTL` | 3 days | publish |
+| Anon TTL clamp | `ANON_DEFAULT_TTL` | 7 days | publish |
 | Brute-force lockout | — | 10 fails / 15 min | gate (KV) |
 
 Plus content scanning (phishing/malicious regex) at publish time.
@@ -203,7 +203,7 @@ routes = [{ pattern = "*.<your-domain>/*", zone_name = "<your-domain>" }]
 
 [vars]
 USERCONTENT_DOMAIN = "<your-domain>"
-ANON_DEFAULT_TTL = "259200"     # 3 days
+ANON_DEFAULT_TTL = "604800"     # 7 days
 OWNER_MAX_TTL   = "2592000"     # 30 days
 # …size/rate/limit vars from §5 (full file in the repo)
 

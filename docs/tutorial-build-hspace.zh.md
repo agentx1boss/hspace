@@ -17,7 +17,7 @@
 四条不变量贯穿全文:
 
 - **强制密码**是产品身份——不做公开画廊。
-- **没有永久链接**:所有链接都会过期(匿名 3 天、登录 30 天/期可续)。例外:第一方置顶内容(直接改库 `expires_at=NULL`,运营动作,非产品能力)。
+- **没有永久链接**:所有链接都会过期(匿名 7 天、登录 30 天/期可续)。例外:第一方置顶内容(直接改库 `expires_at=NULL`,运营动作,非产品能力)。
 - **内容页 `noindex` + 密码门**——唯一可被索引的只有落地页。
 - **自包含页面**:全内联 CSS/JS/SVG,零外部资源。
 
@@ -160,10 +160,10 @@ return htmlResp(readingPage(mdTitle(md, page.filename), article, nav, updatedAt)
 | 每 IP 每小时发布 | `RATE_LIMIT_PER_HOUR` | 20 | KV 计数 |
 | 每 IP 每天发布(匿名) | `RATE_LIMIT_PER_DAY` | 50 | KV 计数 |
 | 单文件体积(匿名/登录) | `ANON_MAX_SIZE_BYTES`/`MAX_SIZE_BYTES` | 512 KB / 2 MB | 发布 |
-| 合集篇数(匿名/登录) | `ANON_MAX_DOCS`/`MAX_DOCS` | 3 / 50 | 发布 |
+| 合集篇数(匿名/登录) | `ANON_MAX_DOCS`/`MAX_DOCS` | 5 / 50 | 发布 |
 | 单页访问量上限(匿名) | `ANON_MAX_HITS` | 10000 | 服务 |
 | 全局匿名日流量熔断 | `ANON_DAILY_GLOBAL_BYTES` | 500 MB | 发布 |
-| 匿名 TTL 钳制 | `ANON_DEFAULT_TTL` | 3 天 | 发布 |
+| 匿名 TTL 钳制 | `ANON_DEFAULT_TTL` | 7 天 | 发布 |
 | 暴力破解锁定 | — | 15 分钟错 10 次 | 门(KV) |
 
 外加发布时的内容扫描(钓鱼/恶意特征正则)。
@@ -203,7 +203,7 @@ routes = [{ pattern = "*.<你的域名>/*", zone_name = "<你的域名>" }]
 
 [vars]
 USERCONTENT_DOMAIN = "<你的域名>"
-ANON_DEFAULT_TTL = "259200"     # 3 天
+ANON_DEFAULT_TTL = "604800"     # 7 天
 OWNER_MAX_TTL   = "2592000"     # 30 天
 # …§5 的体积/频率/限额变量(完整文件见仓库)
 

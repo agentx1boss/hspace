@@ -87,7 +87,7 @@ npx wrangler d1 execute html-share --remote --command \
 
 ## 第一方置顶内容(常驻,不过期)
 
-**没有永久链接是产品级不变量**——API 与插件都产生不了永久页(`expiresIn:null` 只当"续到档内上限":匿名 3 天 / 登录 30 天)。唯一例外是我们自己的营销物料,它们是**第一方置顶内容**,靠直接改库把 `expires_at` 置 NULL 常驻(servePage 把 NULL 当"无到期"):
+**没有永久链接是产品级不变量**——API 与插件都产生不了永久页(`expiresIn:null` 只当"续到档内上限":匿名 7 天 / 登录 30 天)。唯一例外是我们自己的营销物料,它们是**第一方置顶内容**,靠直接改库把 `expires_at` 置 NULL 常驻(servePage 把 NULL 当"无到期"):
 - `omcenj1` —— **落地页「Try it yourself」demo**(全栈教程合集:双语交互 HTML + 中/英深度教程,密码 1024)。用 founder key 经 API 发布后 UPDATE 置顶;是当前落地页 `trySlug` 指向的对象。
 - `q0i7otn` / `aqm3anv` —— 早期 promo 册子(中/英,密码 1024)。**仍置顶留存,但落地页已不再引用**(demo 已换成 omcenj1);作为营销物料源保留。
 
