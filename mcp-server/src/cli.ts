@@ -2,8 +2,9 @@
 // HSpace CLI —— 从终端把一份稿递出去,并在终端里管它。
 //
 // 为什么有这个:MCP 要配置、编辑器插件只有编辑器里有,但任何 agent 与任何脚本都会跑
-// shell。`npx hspace publish report.md` 一行,Aider / Codex CLI / Makefile / 自研 agent
-// 即时可用。另外「发完之后」的动作(回执、每人一链、撤回、续期、版本)在终端此前没有
+// shell。一行 `hspace publish report.md`(零安装:npx --package=hspace-mcp hspace …
+// —— npm 上的 `hspace` 是别人的包,别写成 `npx hspace`),Aider / Codex CLI / Makefile /
+// 自研 agent 即时可用。另外「发完之后」的动作(回执、每人一链、撤回、续期、版本)在终端此前没有
 // 出口,只能开 web console。
 //
 // 三条硬约束(见 docs/decisions-log.md 2026-07-28):
@@ -19,6 +20,7 @@ import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import {
   ApiError,
+  ConfigError,
   type Auth,
   type PublishResult,
   apiBase,
@@ -243,16 +245,33 @@ async function cmdPublish(a: ParsedArgs): Promise<void> {
   });
 
   const r = await publish(body, { apiKey: store.apiKey() });
-  store.remember({
-    slug: r.slug,
-    url: r.url,
-    editToken: r.editToken ?? undefined,
-    filename: docs.length === 1 ? docs[0].name : (typeof a.flags.title === "string" ? a.flags.title : "合集"),
-    isCollection: !!r.docs,
-    createdAt: Math.floor(Date.now() / 1000),
-    expiresAt: r.expiresAt,
-  });
+  // 先报结果再落盘:页面已经在线上了,存本机失败绝不能把「链接 + 密码」吞掉。
   reportPublish(r, password, !!a.flags.json);
+  try {
+    store.remember({
+      slug: r.slug,
+      url: r.url,
+      editToken: r.editToken ?? undefined,
+      filename: docs.length === 1 ? docs[0].name : (typeof a.flags.title === "string" ? a.flags.title : "合集"),
+      isCollection: !!r.docs,
+      createdAt: Math.floor(Date.now() / 1000),
+      expiresAt: r.expiresAt,
+    });
+  } catch (e) {
+    // 存不下来就把凭据显式交回用户手上 —— 否则这一页在线上活着,却没人管得了它
+    process.stderr.write(
+      `\n⚠️ 稿已经发出去了,但没能记到本机(${store.statePath()}):${(e as Error).message}\n`,
+    );
+    if (r.editToken) {
+      process.stderr.write(
+        `请**手工存好**这一页的编辑凭据,它只返回这一次,是后续改/删/查回执的唯一钥匙:\n` +
+          `  slug: ${r.slug}\n  editToken: ${r.editToken}\n` +
+          `救回方式:修好上面的问题后,把它写进 ${store.statePath()} 的 pages 里;` +
+          `或者干脆 hspace rm(需要这把 token)重发一次。\n`,
+      );
+    }
+    process.exitCode = 1;
+  }
 }
 
 async function cmdUpdate(a: ParsedArgs): Promise<void> {
@@ -391,9 +410,18 @@ function cmdLogout(): void {
 
 async function cmdWhoami(): Promise<void> {
   out(`API: ${apiBase()}`);
-  out(`状态文件: ${store.statePath()}`);
-  if (process.env.HSPACE_API_KEY) return out("凭据: 环境变量 HSPACE_API_KEY(优先于本机保存的)");
-  out(store.apiKey() ? "凭据: 本机保存的 API key" : "凭据: 未登录(匿名可发,7 天一次性、不可续)");
+  out(`状态文件: ${store.statePath()}(按 API 地址分仓)`);
+  if (process.env.HSPACE_API_KEY) {
+    out("凭据: 环境变量 HSPACE_API_KEY(优先于本机保存的)");
+  } else if (store.apiKey()) {
+    out("凭据: 本机保存的 API key(这个 API 地址下的)");
+  } else {
+    out("凭据: 未登录(匿名可发,7 天一次性、不可续)");
+    // 常见误用:设了 HSPACE_API_BASE 指向别处,却以为还在用官方那把 key。
+    // 凭据不跨地址取用,所以这里只提示,不会把 key 递给当前地址。
+    const others = store.otherOriginsWithKey();
+    if (others.length) out(`  (为其他 API 地址存过 key:${others.join("、")} —— 凭据不跨地址取用)`);
+  }
 }
 
 const HELP = `hspace —— 从终端把一份稿递出去(链接 + 密码,只给该看的人)
@@ -487,7 +515,7 @@ if (isEntrypoint()) {
 }
 
 function reportFailure(e: unknown): void {
-  if (e instanceof UserError) {
+  if (e instanceof UserError || e instanceof ConfigError || e instanceof store.StateCorruptError) {
     process.stderr.write(`${e.message}\n`);
   } else if (e instanceof ApiError) {
     process.stderr.write(`${explain(e)}\n`);

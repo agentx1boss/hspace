@@ -21,7 +21,7 @@ In one line: **others "publish to the world," HSpace does targeted sharing.**
 - ✅ VS Code / Cursor extension: one-click publish `.html` / `.md`, auto 4-digit password, link+password copied
 - ✅ Document collections: right-click a folder / multi-select → a batch of md/html becomes one link + password + index page, with cross-doc nav
 - ✅ MCP server: publish right inside Claude / Cursor conversations (single + collection)
-- ✅ CLI: `npx hspace publish report.md` — ship a draft from any terminal, and manage it there too (receipts, per-recipient links, revoke, renew, versions)
+- ✅ CLI: `npm i -g hspace-mcp` → `hspace publish report.md` — ship a draft from any terminal, and manage it there too (receipts, per-recipient links, revoke, renew, versions). Zero-install form is `npx --package=hspace-mcp hspace publish …` — plain `npx hspace` would fetch an unrelated package of that name
 - ✅ Claude Code plugin: `/plugin marketplace add agentx1boss/hspace` → `/plugin install hspace@hspace` → `/share` (bundles the MCP server)
 - ✅ View receipts: see each link's view count in the panel (`GET /pages/:slug/stats`)
 - ✅ Per-recipient links: one link, a separate password per person, per-person stats, revoke one without affecting others (`/pages/:slug/grants`)
