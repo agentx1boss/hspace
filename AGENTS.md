@@ -49,6 +49,7 @@ npm run compile && npx @vscode/vsce package
 ## 约定与红线
 
 - **自包含页面**:落地页/密码页/阅读页/注入组件一律内联 CSS/JS/SVG,**不引外部脚本/字体/图片**(CSP 安全、加载快、隐私)。
+- **CSP 两档,别混**(`backend/src/headers.ts`):第一方外壳(密码页/md 阅读页/目录页/404)走 `shellHeaders()` 严格档,`script-src 'nonce-…'` —— 给外壳新增内联脚本必须经 `withNonce()`(即经 `htmlResp()`),否则线上不执行;HTML 稿走 `rawHtmlHeaders()`,保「原样能跑」。用户 md 里的原始 HTML 一律过 `src/sanitize.ts` 白名单;外链**图片**是刻意放行的(见 positioning §4/§9)。
 - **文案**:一律取自 positioning.md——用「定向分享」不用「私域分发」;托管物营销叫「稿/Draft」、技术/API 用 `page`;卖结果不卖手段;英文为主(全球开发者画像)。改定位 = 改 positioning.md。
 - **不做**:多文件站点托管、构建、公开画廊、广告/数据变现(边界承诺,见 positioning §8)。
 - **Cloudflare 资源名保留 `html-share`**(bucket/D1/worker);品牌名是 HSpace,勿改资源名。

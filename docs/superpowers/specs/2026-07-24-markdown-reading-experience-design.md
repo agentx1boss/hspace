@@ -20,6 +20,8 @@ HSpace 的 Markdown 稿在边缘渲染:`marked` (GFM) → 注入 `readingPage` �
 - **存原文、边缘渲染**:R2 存 Markdown 原文,模板/渲染升级即时对存量生效。
   高亮、锚点、TOC 均在边缘渲染时产出,**不预处理、不改存储格式**。
 - **CSP 现状**:仅 `frame-ancestors 'none'`,无 `script-src` 限制 → 内联脚本/样式
+  > 已过期(2026-07-28,#19):md 阅读页/密码页改为 `script-src 'nonce-…'`,外壳内联脚本由
+  > `headers.ts` 的 `withNonce()` 统一打 nonce;新增的内联脚本必须走这条路径。HTML 稿档位不变。
   自由(现有合集导航胶囊即依赖此)。新增内联 JS 全部可行。
 - **文案**:取自 `docs/positioning.md`;托管物叫「稿/Draft」,技术层叫 `page`。
 

@@ -39,6 +39,34 @@ describe("renderMarkdown", () => {
   it("无 h2-h4 标题时 toc 为空", () => {
     expect(renderMarkdown("# Title\n\ntext").toc).toEqual([]);
   });
+  it("内嵌原始 HTML:排版标签保留,危险标签/属性剥掉(#19)", () => {
+    const { html } = renderMarkdown(
+      "<b>粗</b> 与 <span onclick=\"alert(1)\">span</span>\n\n<iframe src=\"https://evil.example\"></iframe>",
+    );
+    expect(html).toContain("<b>粗</b>");
+    expect(html).toContain("<span>span</span>");
+    expect(html).not.toContain("onclick");
+    expect(html).not.toContain("<iframe");
+  });
+  it("markdown 链接/图片过协议闸门", () => {
+    expect(renderMarkdown("[x](javascript:alert(1))").html).not.toContain("href");
+    expect(renderMarkdown("[x](https://ok.example)").html).toContain('href="https://ok.example"');
+    expect(renderMarkdown("![图](javascript:alert(1))").html).not.toContain("<img");
+    expect(renderMarkdown("![图](https://cdn.example/a.png)").html).toContain(
+      '<img src="https://cdn.example/a.png" alt="图">',
+    );
+  });
+  it("代码块里的 <script> 只是文字", () => {
+    const { html } = renderMarkdown("```html\n<script>alert(1)</script>\n```");
+    expect(html).not.toContain("<script");
+    expect(html).toContain("&lt;");
+  });
+  it("GFM 任务列表与表格不受净化影响", () => {
+    const { html } = renderMarkdown("- [x] 完成\n- [ ] 待办\n\n| a | b |\n|---|---|\n| 1 | 2 |");
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain("<table>");
+    expect(html).toContain("<td>1</td>");
+  });
   it("TOC 文本剥离行内 markdown(加粗/代码)", () => {
     const { toc } = renderMarkdown("## **加粗**标题\n\n## 普通\n\n## `代码`标题");
     expect(toc.map((t) => t.text)).toEqual(["加粗标题", "普通", "代码标题"]);

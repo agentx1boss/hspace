@@ -89,6 +89,56 @@
 
 **实现排期决定(2026-07-26)**:两项**暂不实现,只登记 issue**——[#18](https://github.com/agentx1boss/hspace/issues/18)(password revision / 撤回语义)、[#19](https://github.com/agentx1boss/hspace/issues/19)(md 净化 + 真 CSP)。经确认后按「公开 issue + 完整技术细节」披露(权衡过:公开仓库 + 线上服务,#19 属未修复弱点,公开描述会给出滥用线索;选择开源透明优先)。文案侧的下修已完成,因此定位修订不被这两项阻塞。
 
+## 2026-07-28 · CLI 客户端评估(⏳ 已决方向,未排期实现)
+
+**结论:做,但作为现有 `hspace-mcp` npm 包上的一个 `bin`(命令名 `hspace`),不新增第五个「产品面」。**
+
+判断依据(对照 §7 主画像与四支柱):
+
+1. **CLI 是 agent 集成的最小公分母**。MCP 要配置、插件只有 Claude Code 有,但任何 agent 都能跑 bash——`npx hspace publish report.md` 一行即用于 Aider / Codex CLI / Cline / 自研 agent / Makefile / 脚本,杠杆高于再写一个 host 专属插件。
+2. **终端画像目前是空白**。VS Code/Cursor 插件有全生命周期(14 命令),MCP 只有 `publish`/`publish_collection`;grants、撤回、stats、版本、续期在终端**没有出口**,只能开 web console——缺口正压在 🎯「收得回」与 🔁「链接是活的」两根支柱上。
+3. **匿名 `editToken` 现在是丢的**。匿名发布返回的 editToken 是后续查回执/改内容的唯一凭据([index.ts:301](../backend/src/index.ts) / `authorize()`),插件存进 `hspace.recent`,MCP 只打印一行就没了。CLI 存一份 `~/.config/hspace/pages.json`,匿名不登录也能 `hspace stats <slug>`——纯增量能力。
+
+成本:复用 `hspace-mcp` 已有的包与 `mcp-v*` 发版流水线,**不新增市场上架、不新增 CI workflow、不新增品牌面**;顺带把散在 `mcp-server/src/index.ts` 与 `vscode-extension/src/api.ts` 的两份 API client 收成一份。
+
+**三条必须钉住的约束(实现时逐条对照)**:
+
+- **不给 CI 自动发布留示范**。有了 CLI,「每次 push 发一版文档」是最自然的用法,而链接 7/30 天就过期——既撞 §8「不做站点托管 / 没有永久链接」,又制造垃圾页。口径一律是"从终端递一稿",迭代走 `hspace update <slug>`(链接不变)。
+- **密码不进 argv/日志**。shell history 与 CI log 都留痕:密码默认自动生成、只写 stdout(或 `--json`),不接受明文位置参数。
+- **继承一等公民客户端的不变量**:一律自动生成 4 位密码,**不提供 `--public` 快捷入口**(§8:裸 API 的自由度留给 API,不留给客户端)。
+
+**排期**:不插到 [#19](https://github.com/agentx1boss/hspace/issues/19)(md 净化 + 真 CSP)前面——那是"私密"叙事的软肋,CLI 只是给已有能力多开一个入口。串行顺序 **#19 → CLI → [#18](https://github.com/agentx1boss/hspace/issues/18)**。
+
+## 2026-07-28 · #19 收敛:md 净化 + 阅读页真 CSP(已实现)
+
+positioning §9 第 2 项落地。两个显式决策先行(#19 原文要求「远程 `<img>` 与 HTML 稿档位必须是明确决策」):
+
+| 决策点 | 选择 | 理由 |
+|---|---|---|
+| md 里的外链图片 | **允许 https 外链**(`img-src 'self' https: data:`) | 不破坏已发布的老稿(badge/图床截图);代价是接收方 IP/UA 仍会泄给图片主机,因此"无任何第三方请求"永久禁用 |
+| HTML 稿(.html)的 CSP | **这轮不动**(仍只有 `frame-ancestors 'none'`) | 卖点是「原样能跑」,收紧会当场打断用 CDN 的 AI demo。分档写进代码注释与 §4,不是默认全开的疏漏 |
+
+实现(全在 `backend/`):
+
+- **`src/sanitize.ts`(新)**:白名单净化 + URL 协议闸门。输出是「重建」出来的 —— 未命中白名单的 `<` 一律转义,`<scr<script>ipt>` 这类嵌套截断拼不回标签;`script/style/iframe/svg/math/object/textarea/…` 连内容一起吃掉(只丢标签会把脚本正文当正文显示);`on*` 与 `style` 属性一律剥掉;`href/src/cite` 过协议闸门(挡 `javascript:`/`vbscript:`/`data:text/html`,含大小写、空白、`&#106;`/`&Tab;` 实体变形;`data:` 只放行 base64 位图,svg+xml 不放行);`target=_blank` 一律补 `rel=noopener noreferrer`;`id` 不许用 `hspace-` 前缀(防 DOM clobbering 把悬浮导航的宿主抢走)。
+- **`src/render.ts`**:覆写 marked 的 `html`(块级与行内原始 HTML 都路由到这里,一处封住整条注入路径)、`link`、`image` —— marked 的 `cleanUrl` 只做 `encodeURI`,**不看协议**,`javascript:` 链接必须自己挡。
+- **`src/headers.ts`(新,从 index.ts 抽出以便测试)**:`rawHtmlHeaders()` = HTML 稿档(不变);`shellHeaders(nonce)` = 第一方外壳档(`default-src 'none'`、`script-src 'nonce-…'`、`connect-src 'none'`、`base-uri 'none'`、`form-action 'self'`、`img-src 'self' https: data:`);`withNonce()` 给外壳自己的内联 `<script>` 打 nonce。**`style-src` 保留 `'unsafe-inline'`**:悬浮导航把 `<style>` 塞进 Shadow DOM(innerHTML),拿不到 nonce;而净化后的 md 既无 `<style>` 也无 style 属性,且 CSS 能引的远程资源(背景图)本就在 `img-src` 放行范围内,不构成新增出口。脚本侧保持严格 nonce。
+- **测试**:`test/sanitize.test.ts`(22)+ `test/headers.test.ts`(17,含整页级对抗测试)+ `test/render.test.ts` 补 4 例;全仓 61 例绿,`tsc --noEmit` 干净。整页断言"每个 `<script>` 都带 nonce"= 没有裸脚本能被 CSP 放过。
+- **本地冒烟**(`wrangler dev` + 恶意稿):脚本/iframe/onerror/`javascript:` 全部消失,外链图片按决策保留;任务框、表格、hljs、左栏 TOC、代码块复制、Shadow DOM 悬浮导航全部照常工作,浏览器控制台零 CSP 报错;HTML 稿响应头仍是 `frame-ancestors 'none';`,自带脚本照跑。
+
+### 同日 · Codex 对抗式评审 → 两处净化器边界缺陷(已修)
+
+实现完成后跑了一轮 Codex 对抗式评审(working tree diff),报 2 medium,复核**两条都属实**、都是净化器自身的边界问题(不是 CSP 侧):
+
+| 评审发现 | 复核 | 处置 |
+|---|---|---|
+| **空元素把后文吃光**:`source`/`meta`/`link`/`base`/`embed` 是空元素,永远等不到 `</x>`,却被放进"连内容一起吃"的表里 → 游标直接推到结尾。`<div><picture><source><img></picture><p>AFTER</p></div>` 只剩 `<div>`。因为内容是**存原文动态渲染**,这等于一部署就悄悄截断已发布的老稿 | 属实,且比报告更普遍 —— 任何**缺闭合标签**的容器(`<option>甲<option>乙`、未闭合的 `<noscript>`)都会触发同一截断 | 不只修空元素:① 空元素从表里移出(落到"未命中白名单 → 只丢标签"的兜底);② 缺闭合时的规则改为**只丢标签、内容照常净化**,仅 `RAW_TEXT_TAGS`(script/style/textarea/title/xmp/plaintext/listing)例外才吃到结尾(避免把 JS/CSS 源码当正文倒出来)。整类"静默截断"从此不可能发生 |
+| **正文自带 class 可劫持外壳**:正文与阅读页共用全局 CSS,`<a class="lb open">` 直接套上图片 lightbox 的 `position:fixed;inset:0;z-index:2147483646`,变成盖满全屏的可点击外链;CSP 不拦导航,可用于钓鱼或挡读 | 属实([html.ts:214](../backend/src/html.ts) 的 `.lb` / `.lb.open` 正是该样式) | `class` 从全局属性白名单里删除 —— 用户内容里的 `<style>` 与 style 属性早已被剥掉,class 对作者没有任何用处,纯粹是撞外壳样式的口子。同时补**整页级**回归测试(不只是净化器字符串测试):断言正文零 `class=`、`.lb/.side/.progress/.pill` 在整页里各不超过一份、`hspace-nav-host` 只有一个 |
+
+复核后测试 61 例绿;本地 `wrangler dev` 用「对抗稿」实跑复验:伪装链接退化成普通行内链接(`main` 内零 `position:fixed`、零高 z-index 元素)、`AFTER-PICTURE`/`AFTER-META`/`甲乙` 全部保留、外链图片仍在、控制台零报错。
+
+**口径放宽(按 §9 规则:补一项放宽一项,只改事实边界表 + §9)**:可以说「md 阅读页不执行第三方脚本」;仍不可说「无任何第三方请求」(外链图片);讲 HTML 稿时不套用这句。同步闸门现在只余 §9 第 1 项([#18](https://github.com/agentx1boss/hspace/issues/18) instant revoke)。
+
 ## 度量前置(已就绪)
 
 第一方埋点已接:落地页 `/e` beacon → D1 `metrics`(pv/install/try/gh/vsx,按天+语言)。查询见 [operations.md](operations.md)。用于验证"英文默认"假设(pv 中英占比)与安装转化。
