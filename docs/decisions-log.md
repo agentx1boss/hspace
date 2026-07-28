@@ -95,7 +95,7 @@
 
 判断依据(对照 §7 主画像与四支柱):
 
-1. **CLI 是 agent 集成的最小公分母**。MCP 要配置、插件只有 Claude Code 有,但任何 agent 都能跑 bash——`npx hspace publish report.md` 一行即用于 Aider / Codex CLI / Cline / 自研 agent / Makefile / 脚本,杠杆高于再写一个 host 专属插件。
+1. **CLI 是 agent 集成的最小公分母**。MCP 要配置、插件只有 Claude Code 有,但任何 agent 都能跑 bash——一行 `hspace publish report.md` 即用于 Aider / Codex CLI / Cline / 自研 agent / Makefile / 脚本,杠杆高于再写一个 host 专属插件。
 2. **终端画像目前是空白**。VS Code/Cursor 插件有全生命周期(14 命令),MCP 只有 `publish`/`publish_collection`;grants、撤回、stats、版本、续期在终端**没有出口**,只能开 web console——缺口正压在 🎯「收得回」与 🔁「链接是活的」两根支柱上。
 3. **匿名 `editToken` 现在是丢的**。匿名发布返回的 editToken 是后续查回执/改内容的唯一凭据([index.ts:301](../backend/src/index.ts) / `authorize()`),插件存进 `hspace.recent`,MCP 只打印一行就没了。CLI 存一份 `~/.config/hspace/pages.json`,匿名不登录也能 `hspace stats <slug>`——纯增量能力。
 
@@ -157,9 +157,20 @@ positioning §9 第 2 项落地。两个显式决策先行(#19 原文要求「�
 
 另外修掉一个实现时踩到的坑:**CLI 模块此前 import 即执行 `main()`**(测试里会打印 help)。改为 `isEntrypoint()` 判断(realpath 比较,兼容 npm bin 软链)。
 
-**验证**:`tsc --noEmit` 干净、23 例单元测试绿(参数解析 / 格式判断 / 目录装配 / 不变量 / store 权限与优先级)。对本地 `wrangler dev` 跑了一遍真实全流程:匿名发单篇+目录合集、`update` 单篇与合集(链接不变)、`passwd`(自动与 stdin)、`stats`、`ls`(匿名/登录两种)、`login`(stdin)、`grant`×2 → `grants` → `revoke`(其他人不受影响)、`renew`、`versions` → `restore`、stdin 发布、`--json`、`rm` 后再查报「已删除」;登录专属能力在匿名下报的是人话而非 403 原文。
+**验证**:`tsc --noEmit` 干净、30 例单元测试绿(参数解析 / 格式判断 / 目录装配 / 不变量 / API 地址校验与分仓 / store 的权限、原子性、迁移与损坏处理)。对本地 `wrangler dev` 跑了一遍真实全流程:匿名发单篇+目录合集、`update` 单篇与合集(链接不变)、`passwd`(自动与 stdin)、`stats`、`ls`(匿名/登录两种)、`login`(stdin)、`grant`×2 → `grants` → `revoke`(其他人不受影响)、`renew`、`versions` → `restore`、stdin 发布、`--json`、`rm` 后再查报「已删除」;登录专属能力在匿名下报的是人话而非 403 原文。
 
 **顺带的准确性修复**:`backend/src/openapi.ts` 的 `UpdateRequest` 缺 `files`(合集更新)、且把 `html`/`markdown` 写成「仅登录」——实现允许匿名凭 `X-Edit-Token` 更新内容(`patchPage`)。CLI 的 `update` 正依赖这两条,已按实现改正。
+
+### 同日 · Codex 对抗式评审(CLI 分支)→ 四条 high,全部属实并已修
+
+| 评审发现 | 复核 | 处置 |
+|---|---|---|
+| **`npx hspace` 会跑到别人的包** —— npx 把第一个参数当包名,本包叫 `hspace-mcp`,`hspace` 只是 bin 名 | **属实且比报告更严重**:`npm view hspace` 显示该名字**已被占用**(v0.1.2,"Autonomous Trading Agent Manager — Interactive CLI"),我们文档里那条命令会去下载并执行**陌生人的 CLI**。原来的发版冒烟用 `node dist/cli.js` 绕过了这个问题,所以没暴露 | 主推 `npm i -g hspace-mcp` → `hspace …`;零安装形式改为 `npx --package=hspace-mcp hspace …`,并在 README 里直说「别写 `npx hspace`,那是别人的包」。三处文档 + cli.ts 头注释全改。发版冒烟改成**打包 tarball 后按公开命令跑**(`npm pack` → `npx --package=./*.tgz hspace --version`),能抓住 bin 映射 / `files` 白名单 / npx 解析这类只在装包后才暴露的问题 —— 已本地验证通过 |
+| 本机落盘失败会把**已经发出去**的稿变成孤儿(链接与密码都没打印,editToken 丢失) | 属实:`store.remember()` 排在 `reportPublish()` 之前,抛错就走顶层 catch | 顺序反过来:**先报结果再落盘**;落盘失败时把 slug + editToken 显式打到 stderr 并说明救回方式,退出码非零。已用只读目录实测 |
+| 状态文件读-改-写无锁、直接截断原文件、任何读取错误都当空状态 | 属实,且后果最重:editToken 是匿名页的唯一凭据,静默当空再覆盖等于把还活着的页面**永久变成没人管得了** | 原子写(同目录临时文件 → `fsync` → `rename`)+ 文件锁(`O_EXCL`,2s 超时,30s 陈旧锁自动打破);`ENOENT` 才算「空」,解析失败会**备份**并抛 `StateCorruptError`。20 个并发 publish 实测 20 条 token 一条不丢、无残留临时/锁文件 |
+| 保存的凭据没有按 API 地址隔离 —— `HSPACE_API_BASE` 指到任意主机都会带上官方 key | 属实,是自建叙事带进来的信任边界问题 | 状态文件升到 v2:`{version, origins: {<规范化地址>: {apiKey, pages}}}`,v1 扁平格式自动迁到官方地址那一仓(老用户不丢 token);key 与 editToken 都不跨地址取用,`whoami` 只提示「为其他地址存过 key」而不取用。另外**挡掉明文 http**(仅 localhost/127.0.0.1 例外),否则 key 与内容会沿途裸奔 |
+
+测试从 23 → **30 例**(补:地址校验与规范化、分仓隔离、v1 迁移、坏文件不当空文件、陈旧锁恢复、无临时文件残留)。
 
 **未做(留给你决定)**:① 发版 —— 需要 `git tag mcp-v0.2.0 && git push --tags` 才会发 npm;② 落地页/Marketplace/README boilerplate 里的「AI 发布区」还没加 CLI 卡片(那是对外文案,按 positioning §6 走);③ positioning 只做了必要的事实同步(客户端枚举 + 自建可指向,§4/§8)。
 

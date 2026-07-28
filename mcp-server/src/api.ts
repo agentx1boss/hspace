@@ -7,8 +7,42 @@
 
 export const DEFAULT_API_BASE = "https://html-share.kzhan.workers.dev";
 
+/** 本机开发地址:只有这些才允许走明文 http */
+function isLoopback(host: string): boolean {
+  return host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1" || host.endsWith(".localhost");
+}
+
+export class ConfigError extends Error {}
+
+/**
+ * API 地址。自建是一等公民,所以 `HSPACE_API_BASE` 可以随便指 —— 但因此必须挡住
+ * 「明文 http 把 API key 和内容裸奔发出去」:非 loopback 一律要求 https。
+ */
 export function apiBase(): string {
-  return (process.env.HSPACE_API_BASE || DEFAULT_API_BASE).replace(/\/$/, "");
+  const raw = (process.env.HSPACE_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, "");
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new ConfigError(`HSPACE_API_BASE 不是合法 URL:${raw}`);
+  }
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && isLoopback(url.hostname))) {
+    throw new ConfigError(
+      `HSPACE_API_BASE 必须是 https(本机 localhost 可用 http):${raw}\n` +
+        `明文 http 会把 API key、内容和密码沿途暴露。`,
+    );
+  }
+  return raw;
+}
+
+/**
+ * 本机状态按这个键分仓(store.ts)。凭据**不跨 API 地址**取用:
+ * 否则 `HSPACE_API_BASE=https://someone-else hspace ls` 就会把官方 key 递给对方。
+ */
+export function apiBaseKey(): string {
+  const url = new URL(apiBase());
+  const path = url.pathname.replace(/\/+$/, "");
+  return `${url.protocol}//${url.host}${path}`.toLowerCase();
 }
 
 export interface Auth {

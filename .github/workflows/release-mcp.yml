@@ -39,10 +39,15 @@ jobs:
       - run: npm test        # CLI 的参数/装配/不变量测试(密码不进 argv 等)
       - run: npm run build
 
-      - name: 冒烟:两个 bin 都能起来
+      # 用**打包后的 tarball** 跑真实公开命令:能抓住 bin 映射/files 白名单/
+      # npx 解析这类只在装包后才暴露的问题(npm 上的 `hspace` 是别人的包,
+      # 所以零安装形式必须带 --package)
+      - name: 冒烟:打包后按公开命令跑
         run: |
-          node dist/cli.js --version
-          node dist/cli.js help > /dev/null
+          TARBALL="$(npm pack --silent)"
+          npx --yes --package="./$TARBALL" hspace --version
+          npx --yes --package="./$TARBALL" hspace help > /dev/null
+          rm -f "$TARBALL"
 
       - name: 发布到 npm
         run: npm publish --access public

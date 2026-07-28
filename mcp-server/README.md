@@ -6,20 +6,29 @@
 
 | 入口 | 命令 | 用在哪 |
 |---|---|---|
-| CLI | `npx hspace publish report.md` | 终端、脚本、Makefile,以及任何会跑 shell 的 agent(Aider / Codex CLI / 自研) |
+| CLI | `hspace publish report.md`(装法见下) | 终端、脚本、Makefile,以及任何会跑 shell 的 agent(Aider / Codex CLI / 自研) |
 | MCP server | `npx -y hspace-mcp`(写进客户端配置) | Claude Code / Cursor / Codex / Claude Desktop 的对话里 |
 
 ## CLI
 
-零安装试一下(发布无需注册):
+装一下(发布无需注册):
 
 ```bash
-npx hspace publish report.md          # → 链接 + 4 位密码,一行,一次粘贴发走
-npx hspace publish ./方案/            # 目录里的多篇 md/html 自动成合集
-cat report.md | npx hspace publish -  # 管道
+npm i -g hspace-mcp          # 然后直接 hspace <命令>
+hspace publish report.md     # → 链接 + 4 位密码,一行,一次粘贴发走
+hspace publish ./方案/        # 目录里的多篇 md/html 自动成合集
+cat report.md | hspace publish -   # 管道
 ```
 
-装到全局用起来更顺手:`npm i -g hspace-mcp` → 直接 `hspace <命令>`。
+不想装,用 npx 也行,但**必须带 `--package`**:
+
+```bash
+npx --package=hspace-mcp hspace publish report.md
+```
+
+> ⚠️ 别写成 `npx hspace …`。npx 把第一个参数当**包名**,而 npm 上的 `hspace`
+> 是另一个人的包(一个交易 agent CLI),那条命令会去下载并运行它,不是本工具。
+> 本包名是 `hspace-mcp`,`hspace` 只是它的 bin 名。
 
 | 命令 | 作用 |
 |---|---|
@@ -41,7 +50,9 @@ cat report.md | npx hspace publish -  # 管道
 
 - **密码永不通过命令行参数传**。shell history 与 CI 日志都会留痕,所以发布一律自动生成、改密码只从 stdin 读。也没有 `--public`:私密是默认。
 - **没有永久链接**。稿改了就 `hspace update`,**别重新发布**——链接不变,读者不用换书签,你也不会攒下一堆过期页。
-- **匿名发布的 `editToken` 记在 `~/.config/hspace/state.json`(0600)**,它是后续改/删/查回执的唯一凭据。换机器就管不了那一页了(想跨机器管理就登录)。
+- **匿名发布的 `editToken` 记在 `~/.config/hspace/state.json`(0600)**,它是后续改/删/查回执的唯一凭据。换机器就管不了那一页了(想跨机器管理就登录)。写入是原子的(临时文件 + rename)并加文件锁,并发跑不会丢 token;文件若损坏会报错并备份,**不会**当成空状态覆盖掉。
+- **凭据按 API 地址分仓**。`HSPACE_API_BASE` 指到别处时,官方那把 key 不会被带过去。
+- **发布成功但本机没记下**(目录不可写、磁盘满……)时,链接、密码与 `editToken` 会照样打印出来并以非零码退出 —— 页面已经在线上,凭据不能烂在进程里。
 
 ## MCP:提供的工具
 
@@ -118,7 +129,7 @@ args = ["-y", "hspace-mcp"]
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `HSPACE_API_BASE` | 官方托管实例 | 后端 API 地址 |
+| `HSPACE_API_BASE` | 官方托管实例 | 后端 API 地址(自建用)。**必须是 https**,只有 localhost/127.0.0.1 允许 http;本机保存的凭据**按这个地址分仓**,换地址不会把 key 递给新地址 |
 | `HSPACE_API_KEY` | 无 | 可选;登录凭据,解锁更长有效期(30 天/期,可续)与更高配额。CLI 里也可以 `hspace login` 存到本机 |
 | `HSPACE_CONFIG_DIR` | `~/.config/hspace` | 仅 CLI:本机状态目录(认 `XDG_CONFIG_HOME`) |
 

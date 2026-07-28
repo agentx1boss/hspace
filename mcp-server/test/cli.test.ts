@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs, collectDocs, contentBody, publishBody, formatFromName, formatFromContent } from "../src/cli.js";
-import { expiryFromDays, randomPin } from "../src/api.js";
+import { DEFAULT_API_BASE, apiBase, apiBaseKey, expiryFromDays, randomPin } from "../src/api.js";
 
 describe("parseArgs", () => {
   it("拆出命令、位置参数与布尔/取值 flag", () => {
@@ -137,45 +137,128 @@ describe("产品级不变量", () => {
   });
 });
 
+describe("api base 校验与分仓键", () => {
+  const saved = process.env.HSPACE_API_BASE;
+  afterEach(() => {
+    if (saved === undefined) delete process.env.HSPACE_API_BASE;
+    else process.env.HSPACE_API_BASE = saved;
+  });
+
+  it("默认官方地址", () => {
+    delete process.env.HSPACE_API_BASE;
+    expect(apiBase()).toBe(DEFAULT_API_BASE);
+  });
+  it("挡明文 http(本机 localhost 例外)", () => {
+    process.env.HSPACE_API_BASE = "http://evil.example";
+    expect(() => apiBase()).toThrow(/https/);
+    process.env.HSPACE_API_BASE = "http://localhost:8787";
+    expect(apiBase()).toBe("http://localhost:8787");
+    process.env.HSPACE_API_BASE = "http://127.0.0.1:8787";
+    expect(apiBase()).toBe("http://127.0.0.1:8787");
+    process.env.HSPACE_API_BASE = "https://self.example/hspace";
+    expect(apiBase()).toBe("https://self.example/hspace");
+  });
+  it("非法 URL 报错;尾斜杠与大小写归一", () => {
+    process.env.HSPACE_API_BASE = "not a url";
+    expect(() => apiBase()).toThrow(/合法 URL/);
+    process.env.HSPACE_API_BASE = "https://Self.Example/HSpace///";
+    expect(apiBaseKey()).toBe("https://self.example/hspace");
+  });
+});
+
 describe("store(本机状态)", () => {
   let dir: string;
-  beforeEach(() => {
+  let store: typeof import("../src/store.js");
+  const savedBase = process.env.HSPACE_API_BASE;
+
+  beforeEach(async () => {
     dir = mkdtempSync(join(tmpdir(), "hspace-state-"));
     process.env.HSPACE_CONFIG_DIR = dir;
     delete process.env.HSPACE_API_KEY;
+    delete process.env.HSPACE_API_BASE;
+    store = await import("../src/store.js");
   });
   afterEach(() => {
     delete process.env.HSPACE_CONFIG_DIR;
+    delete process.env.HSPACE_API_KEY;
+    if (savedBase === undefined) delete process.env.HSPACE_API_BASE;
+    else process.env.HSPACE_API_BASE = savedBase;
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it("记住 / 取回 / 忘掉 editToken", async () => {
-    const store = await import("../src/store.js");
+  it("记住 / 取回 / 忘掉 editToken", () => {
     expect(store.recall("abc1234")).toBeUndefined();
     store.remember({ slug: "abc1234", url: "https://abc1234.example", editToken: "t0k", createdAt: 1 });
     expect(store.recall("abc1234")?.editToken).toBe("t0k");
     store.forget("abc1234");
     expect(store.recall("abc1234")).toBeUndefined();
   });
-  it("状态文件权限是 0600(里面有 editToken 与 API key)", async () => {
-    const store = await import("../src/store.js");
+  it("状态文件权限是 0600,且不留临时文件", () => {
     store.remember({ slug: "s1", url: "u", createdAt: 1 });
     expect(statSync(store.statePath()).mode & 0o777).toBe(0o600);
+    expect(readdirSync(dir).filter((f) => f.includes(".tmp"))).toEqual([]);
   });
-  it("环境变量的 API key 优先于本机保存的", async () => {
-    const store = await import("../src/store.js");
+  it("环境变量的 API key 优先于本机保存的", () => {
     store.setApiKey("saved-key");
     expect(store.apiKey()).toBe("saved-key");
     process.env.HSPACE_API_KEY = "env-key";
     expect(store.apiKey()).toBe("env-key");
-    delete process.env.HSPACE_API_KEY;
   });
-  it("logout 清 key 但留下 editToken(匿名页还管得了)", async () => {
-    const store = await import("../src/store.js");
+  it("logout 清 key 但留下 editToken(匿名页还管得了)", () => {
     store.setApiKey("k");
     store.remember({ slug: "s2", url: "u", editToken: "t", createdAt: 1 });
     store.setApiKey(undefined);
     expect(store.apiKey()).toBeUndefined();
     expect(store.recall("s2")?.editToken).toBe("t");
+  });
+
+  it("凭据按 API 地址分仓:换地址既取不到 key 也看不到页", () => {
+    store.setApiKey("official-key");
+    store.remember({ slug: "off1", url: "u", editToken: "off-token", createdAt: 1 });
+
+    process.env.HSPACE_API_BASE = "https://someone-else.example";
+    expect(store.apiKey()).toBeUndefined();          // 官方 key 不会被递给别人
+    expect(store.recall("off1")).toBeUndefined();
+    expect(store.listRemembered()).toEqual([]);
+    store.setApiKey("other-key");
+    expect(store.apiKey()).toBe("other-key");
+
+    delete process.env.HSPACE_API_BASE;
+    expect(store.apiKey()).toBe("official-key");     // 各自仓不互相污染
+    expect(store.recall("off1")?.editToken).toBe("off-token");
+    expect(store.otherOriginsWithKey()).toEqual(["https://someone-else.example"]);
+  });
+
+  it("v1 扁平格式迁到官方地址那一仓(老用户的 token 不丢)", () => {
+    writeFileSync(
+      join(dir, "state.json"),
+      JSON.stringify({ apiKey: "legacy-key", pages: { old1: { slug: "old1", url: "u", editToken: "legacy-token", createdAt: 1 } } }),
+      { mode: 0o600 },
+    );
+    expect(store.apiKey()).toBe("legacy-key");
+    expect(store.recall("old1")?.editToken).toBe("legacy-token");
+    // 迁移后写入不该把老数据丢掉
+    store.remember({ slug: "new1", url: "u", createdAt: 2 });
+    expect(store.recall("old1")?.editToken).toBe("legacy-token");
+    expect(JSON.parse(readFileSync(join(dir, "state.json"), "utf8")).version).toBe(2);
+  });
+
+  it("坏文件不当空文件:报错 + 备份,绝不静默覆盖", () => {
+    writeFileSync(join(dir, "state.json"), "{ 这不是 JSON", { mode: 0o600 });
+    expect(() => store.recall("x")).toThrow(store.StateCorruptError);
+    expect(() => store.remember({ slug: "x", url: "u", createdAt: 1 })).toThrow(store.StateCorruptError);
+    // 原文还在,且已备份
+    expect(readFileSync(join(dir, "state.json"), "utf8")).toContain("这不是 JSON");
+    expect(readdirSync(dir).some((f) => f.startsWith("state.json.corrupt-"))).toBe(true);
+  });
+
+  it("陈旧锁不会把人永久挡在外面", () => {
+    const lock = join(dir, "state.json.lock");
+    writeFileSync(lock, "");
+    const old = new Date(Date.now() - 60_000);
+    utimesSync(lock, old, old);
+    store.remember({ slug: "s3", url: "u", createdAt: 1 });
+    expect(store.recall("s3")).toBeDefined();
+    expect(existsSync(lock)).toBe(false); // 用完即释放
   });
 });
