@@ -49,7 +49,7 @@ hspace/
 ├── mcp-server/         MCP server + `hspace` CLI (one npm package, two bins)
 ├── clients/            Claude Code plugin (/share command + bundled MCP config)
 ├── docs/               positioning (the copy authority), business model, design & ops docs
-├── assets/             brand assets (appicon / favicon / lockup / OG card)
+├── assets/             brand assets (appicon / favicon / lockup / OG card) + promo/ sources
 └── .github/workflows/  CI (deploy backend / release extension / release npm)
 ```
 
@@ -99,7 +99,8 @@ Machine-readable **OpenAPI 3 spec** at [`/openapi.json`](https://html-share.kzha
 | Method | Path | Notes | Auth |
 |---|---|---|---|
 | POST | `/publish` | Publish (`html` or `markdown`, or `files` for a collection) | optional Bearer |
-| PATCH | `/pages/:slug` | Update content (new version) / password / expiry | Bearer or `X-Edit-Token` |
+| PATCH | `/pages/:slug` | Update content (new version) / change password | Bearer or `X-Edit-Token` |
+| PATCH | `/pages/:slug` | Renew (`expiresIn`) or remove the password | Bearer only |
 | DELETE | `/pages/:slug` | Delete (link goes dark) | Bearer or `X-Edit-Token` |
 | GET | `/pages/:slug/stats` | Read receipts | Bearer or `X-Edit-Token` |
 | GET | `/pages/:slug/versions` · POST `…/versions/:v/restore` | History, rollback | Bearer |
