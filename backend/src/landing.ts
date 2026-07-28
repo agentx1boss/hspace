@@ -120,11 +120,16 @@ const L: Record<Lang, Record<string, string>> = {
     f2t: "Document collections", f2b: "Bundle a batch of md/html into one link, one password, one table of contents with cross-doc nav.",
     f3t: "Per-recipient links", f3b: "Give each recipient their own password: know who opened it and how often; kick one out without changing everyone else's.",
     f4t: "View receipts", f4b: "See how many times each link was opened, right in the panel — whether they actually looked, at a glance.",
-    f5t: "Callable by AI", f5b: "An MCP server lets Claude / Cursor publish inside the chat; an OpenAPI spec plugs into GPT Actions and agents.",
+    f5t: "Callable by AI", f5b: "An MCP server lets Claude / Cursor publish inside the chat; the <code>hspace</code> CLI does it from any terminal or script; an OpenAPI spec plugs into GPT Actions and agents.",
     f6t: "Edge password gate", f6b: "Passwords verified at the edge, signed cookie remembers for 24h, brute-force locked out.",
-    mcpH: "Publish straight from your AI chat",
-    mcpSub: "Wherever your content is born — pick your client, add HSpace once, then just say “publish this as a password link”.",
+    mcpH: "Publish from your AI chat — or your terminal",
+    mcpSub: "Wherever your content is born, sharing happens there too. Add HSpace once to your client and say “publish this as a password link” — or run one command.",
     icRec: "1-click",
+    cliT: "Terminal · any agent or script",
+    cliSub: "One command ships a draft — and the same tool manages it afterwards. Works anywhere a shell does: Aider, Codex CLI, a Makefile, your own agent.",
+    cliCmt1: "# → link + password, one paste",
+    cliCmt2: "# new content, same link",
+    cliNote: "Receipts, per-recipient links, revoke, renew — all there; run <code>hspace help</code>. Zero-install form: <code>npx --package=hspace-mcp hspace publish …</code> <span class='dim'>(the bare <code>hspace</code> package on npm belongs to someone else, so keep the <code>--package</code>)</span>.",
     ccSub: "One plugin bundles the publisher and the /share command.",
     ccNote: "Then run <code>/share</code> — or just ask.",
     cxSub: "One command (or a TOML block in <code>~/.codex/config.toml</code>):",
@@ -134,7 +139,7 @@ const L: Record<Lang, Record<string, string>> = {
     anyCursor: "<b>Cursor</b> — Settings → MCP → Add <span class='dim'>opens</span> <code>~/.cursor/mcp.json</code>",
     anyDesktop: "<b>Claude Desktop</b> — Settings → Developer → Edit Config",
     anyVsx: "<span class='dim'>Cursor users can also install the <b>VS Code extension</b> from Open VSX — same one-click panel.</span>",
-    mcpNote: "No install needed — npx pulls the latest. Full setup & self-hosting in the",
+    mcpNote: "For the MCP clients above nothing needs installing — npx pulls the latest. Full setup & self-hosting in the",
     mcpReadme: "MCP README",
     faqH: "You might ask",
     faqQ1: "Will it get indexed by search engines?", faqA1: "No. Every shared page is noindex and requires a password — even if the link is forwarded, without the password it's a wall.",
@@ -198,10 +203,15 @@ const L: Record<Lang, Record<string, string>> = {
     f2t: "文档合集", f2b: "一批 md/html 打包成一个链接、一个密码、一个目录页,篇间自由导航。",
     f3t: "每人一链", f3b: "给每个接收者一个专属密码:谁看了、看了几次一清二楚,踢掉一个人不用换所有人的密码。",
     f4t: "访问回执", f4b: "在面板里看到每个链接被打开了多少次——对方到底看没看,一目了然。",
-    f5t: "AI 可直接调用", f5b: "MCP server 让 Claude / Cursor 在对话里直接发布;OpenAPI 规范接入 GPT Actions 等。",
-    mcpH: "在 AI 对话里直接发布",
-    mcpSub: "内容在哪诞生,分享就在哪发生——选你的客户端,装一次 HSpace,然后对 AI 说「把这个发成带密码的链接」即可。",
+    f5t: "AI 可直接调用", f5b: "MCP server 让 Claude / Cursor 在对话里直接发布;<code>hspace</code> CLI 在任何终端或脚本里发布;OpenAPI 规范接入 GPT Actions 等。",
+    mcpH: "在 AI 对话里发布,或在终端里发布",
+    mcpSub: "内容在哪诞生,分享就在哪发生——给你的客户端装一次 HSpace,然后对 AI 说「把这个发成带密码的链接」;或者在终端敲一行。",
     icRec: "一键装",
+    cliT: "终端 · 任何 agent 与脚本",
+    cliSub: "一行把稿递出去,发完之后也用同一个工具管它。任何能跑 shell 的地方都行:Aider、Codex CLI、Makefile、你自研的 agent。",
+    cliCmt1: "# → 链接 + 密码,一次粘贴",
+    cliCmt2: "# 换内容,链接不变",
+    cliNote: "回执、每人一链、撤回、续期都在里面——<code>hspace help</code>。不想装:<code>npx --package=hspace-mcp hspace publish …</code> <span class='dim'>(npm 上那个叫 <code>hspace</code> 的包是别人的,<code>--package</code> 不能省)</span>。",
     ccSub: "一个插件,同时装好发布器与 /share 命令。",
     ccNote: "然后运行 <code>/share</code>——或直接说一声。",
     cxSub: "一条命令(或写进 <code>~/.codex/config.toml</code> 的 TOML):",
@@ -211,7 +221,7 @@ const L: Record<Lang, Record<string, string>> = {
     anyCursor: "<b>Cursor</b> — 设置 → MCP → Add,<span class='dim'>会打开</span> <code>~/.cursor/mcp.json</code>",
     anyDesktop: "<b>Claude Desktop</b> — 设置 → Developer → Edit Config",
     anyVsx: "<span class='dim'>Cursor 用户也可从 Open VSX 装 <b>VS Code 插件</b>——同样的一键面板。</span>",
-    mcpNote: "无需安装,npx 自动拉取最新版。完整配置与自建部署见",
+    mcpNote: "上面这些 MCP 客户端都无需安装,npx 自动拉取最新版。完整配置与自建部署见",
     mcpReadme: "MCP 说明",
     f6t: "边缘密码网关", f6b: "密码在边缘校验,签名 Cookie 24 小时免重输,防暴力破解。",
     faqH: "你可能想问",
@@ -239,7 +249,7 @@ export function landingPage(lang: Lang = "en", referred = false): string {
     "@type": "SoftwareApplication",
     name: "HSpace",
     applicationCategory: "DeveloperApplication",
-    operatingSystem: "Web, VS Code, Cursor, Claude Code",
+    operatingSystem: "Web, VS Code, Cursor, Claude Code, CLI",
     url: SITE,
     description: s.desc,
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -446,6 +456,7 @@ ${FAVICON_LINK}
   .ic pre{background:var(--ink);color:#e8e6e3;border-radius:10px;padding:12px 14px;overflow-x:auto;margin:0 0 auto;
        font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .ic pre code{background:none;color:inherit;padding:0}
+  .ic pre .cmt{color:#8b8b90}
   .ic .icnote{color:var(--muted);font-size:12.5px;margin:11px 0 0}
   .ic .icnote a{color:var(--accent)}
   .ic .icnote code{background:var(--soft);padding:.1em .4em;border-radius:5px;font-size:.92em}
@@ -624,6 +635,14 @@ ${FAVICON_LINK}
         <p class="icnote">${s.cxNote}</p>
       </div>
       <div class="ic wide">
+        <h3>${s.cliT}</h3>
+        <p class="icsub">${s.cliSub}</p>
+        <pre><code>npm i -g hspace-mcp
+hspace publish report.md          <span class="cmt">${s.cliCmt1}</span>
+hspace update &lt;slug&gt; report.md    <span class="cmt">${s.cliCmt2}</span></code></pre>
+        <p class="icnote">${s.cliNote}</p>
+      </div>
+      <div class="ic wide">
         <h3>${s.anyT}</h3>
         <p class="icsub">${s.anySub}</p>
         <div class="icrow">
@@ -636,7 +655,7 @@ ${FAVICON_LINK}
         </div>
       </div>
     </div>
-    <p class="ic-foot">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a> · <code>npm i -g hspace-mcp</code></p>
+    <p class="ic-foot">${s.mcpNote} <a href="${MCP_README}" target="_blank" rel="noopener">${s.mcpReadme}</a></p>
   </div></section>
 
   <section><div class="wrap">

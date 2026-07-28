@@ -172,7 +172,11 @@ positioning §9 第 2 项落地。两个显式决策先行(#19 原文要求「�
 
 测试从 23 → **30 例**(补:地址校验与规范化、分仓隔离、v1 迁移、坏文件不当空文件、陈旧锁恢复、无临时文件残留)。
 
-**未做(留给你决定)**:① 发版 —— 需要 `git tag mcp-v0.2.0 && git push --tags` 才会发 npm;② 落地页/Marketplace/README boilerplate 里的「AI 发布区」还没加 CLI 卡片(那是对外文案,按 positioning §6 走);③ positioning 只做了必要的事实同步(客户端枚举 + 自建可指向,§4/§8)。
+**发版**:2026-07-28 已发 —— tag `mcp-v0.2.0` → Release MCP 绿灯 → npm `hspace-mcp@0.2.0`(两个 bin 都在)。发版后用 registry 上的真包做过冒烟:按文档命令跑 `--version`、MCP bin 空 stdin 即退、打生产 API 发一稿→查回执→删除(404),冒烟稿未留存。
+
+**落地页 CLI 卡片**:2026-07-28 已加(`backend/src/landing.ts`)。`#ai` 区从「在 AI 对话里发布」扩为「在 AI 对话里发布,或在终端里发布」,在 Codex 卡之后插入一张 wide 卡「终端 · 任何 agent 与脚本」:`npm i -g hspace-mcp` + `publish` + `update <slug>`(注释随语言切换),说明里带回执/每人一链/撤回/续期与**零安装形式必须带 `--package`**(并直说 npm 上的 `hspace` 是别人的包)。原 `ic-foot` 尾部重复的 `npm i -g hspace-mcp` 去掉;功能卡 f5「AI 可直接调用」与 schema.org `operatingSystem` 同步加 CLI。**没加新埋点事件**(卡片无外链,不需要动 `/e` 白名单)。
+
+**未做(留给你决定)**:① Marketplace 描述 / GitHub About 的 boilerplate 还没提 CLI(按 positioning §6 走);② positioning 只做了必要的事实同步(客户端枚举 + 自建可指向,§4/§8),没有把 CLI 写进电梯稿。
 
 ## 度量前置(已就绪)
 
