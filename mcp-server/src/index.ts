@@ -8,40 +8,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+// API 客户端与 CLI(cli.ts)共用一份,省得两处各写一遍 fetch/鉴权/钳制
+import { type PublishResult, expiryFromDays, publish as callPublishApi, randomPin } from "./api.js";
 
-const API_BASE = (process.env.HSPACE_API_BASE || "https://html-share.kzhan.workers.dev").replace(/\/$/, "");
 const API_KEY = process.env.HSPACE_API_KEY;
 
-interface PublishResult {
-  slug: string;
-  url: string;
-  expiresAt: string | null;
-  passwordProtected: boolean;
-  editToken: string | null;
-  docs?: { index: number; title: string }[];
-}
-
-/** 随机 4 位数字密码——私密分享是产品默认,未指定就自动生成 */
-function randomPin(): string {
-  let s = "";
-  for (let i = 0; i < 4; i++) s += Math.floor(Math.random() * 10);
-  return s;
-}
-
-async function callPublish(body: Record<string, unknown>): Promise<PublishResult> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (API_KEY) headers["Authorization"] = `Bearer ${API_KEY}`;
-  const res = await fetch(`${API_BASE}/publish`, { method: "POST", headers, body: JSON.stringify(body) });
-  const data = (await res.json().catch(() => ({}))) as any;
-  if (!res.ok) throw new Error(data?.error ? `${res.status} ${data.error}` : `HTTP ${res.status}`);
-  return data as PublishResult;
-}
-
-function expiryFromDays(days?: number): number | undefined {
-  if (days === undefined) return undefined;      // 用后端默认(匿名 7 天 / 登录 30 天)
-  // 没有永久链接:钳在 [1, 30] 天,后端再按登录/匿名档二次钳制
-  return Math.min(Math.max(1, Math.floor(days)), 30) * 86400;
-}
+const callPublish = (body: Record<string, unknown>): Promise<PublishResult> =>
+  callPublishApi(body, { apiKey: API_KEY });
 
 function resultText(r: PublishResult, password: string): string {
   const lines = [

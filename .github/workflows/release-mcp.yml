@@ -36,7 +36,13 @@ jobs:
           fi
 
       - run: npm ci
+      - run: npm test        # CLI 的参数/装配/不变量测试(密码不进 argv 等)
       - run: npm run build
+
+      - name: 冒烟:两个 bin 都能起来
+        run: |
+          node dist/cli.js --version
+          node dist/cli.js help > /dev/null
 
       - name: 发布到 npm
         run: npm publish --access public

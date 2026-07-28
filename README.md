@@ -12,7 +12,7 @@ Regular hosts (tiiny.host / Netlify Drop / Pages) all compete on the **public li
 
 - **Private by default, not public.** Every publish gets a random password; link and password land on your clipboard together. No password, no access. Never indexed, safe against forwarding — the link is an asset you control, revocable if you sent it wrong.
 - **Finished content, not a site, not collab editing.** You share *one thing to look at* — a demo, report, proposal, visualization. No multi-file, no build, no config — just "send it."
-- **Built for the AI coding workflow.** Content is born in your editor and AI chats; sharing should happen there too — one-click from the editor today, publish-from-chat (MCP) too.
+- **Built for the AI coding workflow.** Content is born in your editor and AI chats; sharing should happen there too — one-click from the editor, publish-from-chat (MCP), or one command in the terminal (CLI).
 
 In one line: **others "publish to the world," HSpace does targeted sharing.**
 
@@ -21,6 +21,7 @@ In one line: **others "publish to the world," HSpace does targeted sharing.**
 - ✅ VS Code / Cursor extension: one-click publish `.html` / `.md`, auto 4-digit password, link+password copied
 - ✅ Document collections: right-click a folder / multi-select → a batch of md/html becomes one link + password + index page, with cross-doc nav
 - ✅ MCP server: publish right inside Claude / Cursor conversations (single + collection)
+- ✅ CLI: `npx hspace publish report.md` — ship a draft from any terminal, and manage it there too (receipts, per-recipient links, revoke, renew, versions)
 - ✅ Claude Code plugin: `/plugin marketplace add agentx1boss/hspace` → `/plugin install hspace@hspace` → `/share` (bundles the MCP server)
 - ✅ View receipts: see each link's view count in the panel (`GET /pages/:slug/stats`)
 - ✅ Per-recipient links: one link, a separate password per person, per-person stats, revoke one without affecting others (`/pages/:slug/grants`)
@@ -32,7 +33,7 @@ In one line: **others "publish to the world," HSpace does targeted sharing.**
 hspace/
 ├── backend/            Cloudflare Worker (publish API + subdomain serving + password gate)
 ├── vscode-extension/   VS Code / Cursor extension
-├── mcp-server/         MCP server (publish from an AI chat)
+├── mcp-server/         MCP server + `hspace` CLI (publish from an AI chat or a terminal)
 ├── clients/            Claude Code plugin (/share command + bundled MCP config)
 ├── docs/               positioning, business model, design & ops docs
 ├── assets/             brand assets (appicon / favicon / lockup / OG card)
