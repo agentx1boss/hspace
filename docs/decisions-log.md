@@ -178,6 +178,22 @@ positioning §9 第 2 项落地。两个显式决策先行(#19 原文要求「�
 
 **未做(留给你决定)**:① Marketplace 描述 / GitHub About 的 boilerplate 还没提 CLI(按 positioning §6 走);② positioning 只做了必要的事实同步(客户端枚举 + 自建可指向,§4/§8),没有把 CLI 写进电梯稿。
 
+## 2026-07-28 · 两份根 README 重写(md-first 口径**先于** positioning 评审落地)
+
+**决定:让 README 先按 2026-07-26 的 md-first 修订稿写,不等 positioning 评审。** 这与 §6 原定的同步顺序(评审通过 → 落地页 → Marketplace/About → README)不一致,是经确认的取舍,留痕如下:
+
+- **positioning.md 本身不动**,头部的「⏳ 待评审」标注保留 —— 改那页仍需走评审。**若定稿口径与现在写进 README 的有出入,README 要再对一遍**(这是这条留痕存在的唯一目的)。
+- 只改 `README.md` + `README.zh-CN.md`;Marketplace 描述 / GitHub About / 社媒 bio 仍按 §6 顺序另走。
+
+改动两类:
+
+1. **定位框架**:开头改成 md 领衔(「私密 Markdown 分享」,HTML 副位);章节「不是又一个 HTML 托管 / Not another HTML host」→「不是又一个公开分享链接」,对照面从 tiiny.host / Netlify Drop 换为 Notion 分享链接 / HackMD / Gist;补四支柱表(🚀/📖/🎯/🔁);开源作为兑付凭证各只提一次;中文那份把「没有永久链接」从表格里的一行提为独立段落。
+2. **事实同步**:CLI(含**零安装必须带 `--package`**、npm 上 `hspace` 是别人的包)、md 阅读页、读者收藏一期、#19 的净化 + 真 CSP(带外链图片与 HTML 稿两处例外的如实限定)、`mcp-v*` npm 流水线(CI 三条写全)、结构树补 `render/sanitize/headers/auth/console/landing/pages/openapi`、API 表补 versions/restore/grants/pages、匿名 vs 登录数值对 `wrangler.toml` 重新对账(补上合集 5 MB)。
+
+**顺手修掉三处存量口径错误**(§4 事实边界表):① 两份开头都写着无限定的「谁看了 / see who opened it」→ 改成「被打开几次」,「谁看了」只留在每人一链语境;② 无限定的「随时撤回 / revoke anytime」→ 改成「踢掉某个访问人即时生效 / 改共享密码挡住后续访问(已验证浏览器还有 24h Cookie)」;③ 英文的「Every publish gets a random password」→ 改成「所有一等公民客户端默认自动生成」(密码门不是协议级强制)。
+
+**验证**:禁用语扫描零命中(裸 `npx hspace`、「无任何第三方请求」、instant revoke、「所有页面都有密码」、「加密存储」);「永久/permanent」仅出现在否定句;数值逐项对过 `wrangler.toml`;README 里所有相对链接 `test -e` 通过;`npx --package=hspace-mcp hspace --version` → 0.2.0、`npm view hspace-mcp bin` 两个 bin 都在。
+
 ## 度量前置(已就绪)
 
 第一方埋点已接:落地页 `/e` beacon → D1 `metrics`(pv/install/try/gh/vsx,按天+语言)。查询见 [operations.md](operations.md)。用于验证"英文默认"假设(pv 中英占比)与安装转化。
