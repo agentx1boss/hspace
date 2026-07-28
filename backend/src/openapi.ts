@@ -391,9 +391,16 @@ export function openapiSpec(origin: string): Record<string, unknown> {
           type: "object",
           properties: {
             password: { type: "string", nullable: true, description: "新密码;null 或空串=移除密码(仅登录)" },
-            expiresIn: { type: "integer", nullable: true, description: "续期:把有效期从现在起重设为该秒数(钳制在档内上限,登录 30 天);null=续到上限。没有永久。" },
-            html: { type: "string", description: "覆盖内容(仅登录、非合集、类型需一致)" },
-            markdown: { type: "string", description: "覆盖内容(仅登录、非合集、类型需一致)" },
+            expiresIn: { type: "integer", nullable: true, description: "续期:把有效期从现在起重设为该秒数(钳制在档内上限,登录 30 天);null=续到上限。没有永久。仅登录。" },
+            html: { type: "string", description: "覆盖单页内容并升一版(匿名凭 X-Edit-Token 也可;类型需与原页面一致)" },
+            markdown: { type: "string", description: "覆盖单页内容并升一版(匿名凭 X-Edit-Token 也可;类型需与原页面一致)" },
+            files: {
+              type: "array",
+              minItems: 2,
+              description: "覆盖合集全部篇目并升一版(只能更新合集,不能把单页变合集)",
+              items: { $ref: "#/components/schemas/CollectionFile" },
+            },
+            title: { type: "string", description: "合集标题(仅随 files 更新时用)" },
           },
         },
         PublishResult: {

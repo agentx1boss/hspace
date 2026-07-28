@@ -139,6 +139,30 @@ positioning §9 第 2 项落地。两个显式决策先行(#19 原文要求「�
 
 **口径放宽(按 §9 规则:补一项放宽一项,只改事实边界表 + §9)**:可以说「md 阅读页不执行第三方脚本」;仍不可说「无任何第三方请求」(外链图片);讲 HTML 稿时不套用这句。同步闸门现在只余 §9 第 1 项([#18](https://github.com/agentx1boss/hspace/issues/18) instant revoke)。
 
+## 2026-07-28 · CLI 实现(已完成,未发版)
+
+按同日评估结论落地:**`hspace` 作为 `hspace-mcp` 包的第二个 bin**,不新增仓库目录、不新增 CI workflow、不新增市场上架(`mcp-v*` tag 一条流水线同时发 MCP 与 CLI)。包版本 0.1.3 → **0.2.0**。
+
+- **`mcp-server/src/api.ts`(新)** —— MCP 与 CLI 共用的 API 客户端(鉴权两条路:Bearer key / `X-Edit-Token`;`randomPin()`、`expiryFromDays()` 钳制也在这里)。`index.ts` 里那份手写 fetch 已收敛掉。*(说明:`vscode-extension/src/api.ts` 没并进来 —— 那是独立的包与构建,强行共享要引入 workspace,收益不抵成本。)*
+- **`mcp-server/src/store.ts`(新)** —— `~/.config/hspace/state.json`(0600,认 `XDG_CONFIG_HOME`/`HSPACE_CONFIG_DIR`)。存匿名 `editToken` 与登录 key,**不存密码**。这补上的正是评估里那条「终端用户此前没有任何地方存 editToken」。
+- **`mcp-server/src/cli.ts`(新)** —— `publish`(文件/目录→合集/stdin)、`update`(链接不变)、`passwd`、`ls`、`stats`、`grant`/`grants`/`revoke`、`renew`、`versions`/`restore`、`rm`、`login`/`logout`/`whoami`;`--json` 给脚本用。后端错误码翻成人话并给下一步动作。
+
+三条约束的落实方式(不是靠自觉):
+
+| 约束 | 怎么落的 |
+|---|---|
+| 密码不进 argv | 密码只在导出的 `publishBody()` 里生成,**调用方连传的入口都没有**;`passwd` 只从 stdin 读;`login` 也只从 stdin 读 key。有测试断言传 `{password:…}` 进去不被采纳 |
+| 不给 CI 自动发布留示范 | 无「按 commit 发布」的示例;`publish` 的输出末行固定引导 `hspace update <slug>`(链接不变);help 里明写「稿改了就 update,别重新发布」 |
+| 无 `--public` | 命令表里没有这个 flag;发布路径无条件带密码 |
+
+另外修掉一个实现时踩到的坑:**CLI 模块此前 import 即执行 `main()`**(测试里会打印 help)。改为 `isEntrypoint()` 判断(realpath 比较,兼容 npm bin 软链)。
+
+**验证**:`tsc --noEmit` 干净、23 例单元测试绿(参数解析 / 格式判断 / 目录装配 / 不变量 / store 权限与优先级)。对本地 `wrangler dev` 跑了一遍真实全流程:匿名发单篇+目录合集、`update` 单篇与合集(链接不变)、`passwd`(自动与 stdin)、`stats`、`ls`(匿名/登录两种)、`login`(stdin)、`grant`×2 → `grants` → `revoke`(其他人不受影响)、`renew`、`versions` → `restore`、stdin 发布、`--json`、`rm` 后再查报「已删除」;登录专属能力在匿名下报的是人话而非 403 原文。
+
+**顺带的准确性修复**:`backend/src/openapi.ts` 的 `UpdateRequest` 缺 `files`(合集更新)、且把 `html`/`markdown` 写成「仅登录」——实现允许匿名凭 `X-Edit-Token` 更新内容(`patchPage`)。CLI 的 `update` 正依赖这两条,已按实现改正。
+
+**未做(留给你决定)**:① 发版 —— 需要 `git tag mcp-v0.2.0 && git push --tags` 才会发 npm;② 落地页/Marketplace/README boilerplate 里的「AI 发布区」还没加 CLI 卡片(那是对外文案,按 positioning §6 走);③ positioning 只做了必要的事实同步(客户端枚举 + 自建可指向,§4/§8)。
+
 ## 度量前置(已就绪)
 
 第一方埋点已接:落地页 `/e` beacon → D1 `metrics`(pv/install/try/gh/vsx,按天+语言)。查询见 [operations.md](operations.md)。用于验证"英文默认"假设(pv 中英占比)与安装转化。

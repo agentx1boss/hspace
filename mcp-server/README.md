@@ -1,8 +1,49 @@
-# HSpace MCP Server
+# HSpace CLI + MCP Server
 
-在 Claude / Cursor 等支持 MCP 的客户端里,**直接在对话中**把 AI 生成的 HTML / Markdown 私密发布成「链接 + 密码」。内容在哪诞生,分享就在哪发生。
+把 AI 生成的 HTML / Markdown 私密发布成「链接 + 密码」——**在 AI 对话里**(MCP),或**在终端里**(CLI)。内容在哪诞生,分享就在哪发生。
 
-## 提供的工具
+一个包,两个入口:
+
+| 入口 | 命令 | 用在哪 |
+|---|---|---|
+| CLI | `npx hspace publish report.md` | 终端、脚本、Makefile,以及任何会跑 shell 的 agent(Aider / Codex CLI / 自研) |
+| MCP server | `npx -y hspace-mcp`(写进客户端配置) | Claude Code / Cursor / Codex / Claude Desktop 的对话里 |
+
+## CLI
+
+零安装试一下(发布无需注册):
+
+```bash
+npx hspace publish report.md          # → 链接 + 4 位密码,一行,一次粘贴发走
+npx hspace publish ./方案/            # 目录里的多篇 md/html 自动成合集
+cat report.md | npx hspace publish -  # 管道
+```
+
+装到全局用起来更顺手:`npm i -g hspace-mcp` → 直接 `hspace <命令>`。
+
+| 命令 | 作用 |
+|---|---|
+| `hspace publish <文件\|目录\|->` | 发布;一律自动生成 4 位密码 |
+| `hspace update <slug> <文件\|目录>` | 换内容,**链接不变**(别重新发布) |
+| `hspace passwd <slug>` | 改密码(新密码从 stdin 读,留空自动生成) |
+| `hspace ls` | 列出稿(登录=账户全部;未登录=本机记下的) |
+| `hspace stats <slug>` | 访问回执:被打开几次 |
+| `hspace grant <slug> --label 张三` | 每人一链:给一个人单独一把密码(需登录) |
+| `hspace grants <slug>` / `revoke <slug> <id>` | 看访问人 / 踢掉某个人(即时生效,不动其他人) |
+| `hspace renew <slug>` | 续期(需登录;每期最长 30 天) |
+| `hspace versions\|restore <slug>` | 版本历史 / 回滚(需登录) |
+| `hspace rm <slug>` | 删除,链接立即失效 |
+| `hspace login` / `logout` / `whoami` | 账户(API key 从 **stdin** 读,不写进命令行) |
+
+`--json` 给脚本用,`--expires <天>` 定有效期(1–30),`hspace help` 看全部。
+
+几个刻意的设计:
+
+- **密码永不通过命令行参数传**。shell history 与 CI 日志都会留痕,所以发布一律自动生成、改密码只从 stdin 读。也没有 `--public`:私密是默认。
+- **没有永久链接**。稿改了就 `hspace update`,**别重新发布**——链接不变,读者不用换书签,你也不会攒下一堆过期页。
+- **匿名发布的 `editToken` 记在 `~/.config/hspace/state.json`(0600)**,它是后续改/删/查回执的唯一凭据。换机器就管不了那一页了(想跨机器管理就登录)。
+
+## MCP:提供的工具
 
 | 工具 | 作用 |
 |---|---|
@@ -78,14 +119,18 @@ args = ["-y", "hspace-mcp"]
 | 变量 | 默认 | 说明 |
 |---|---|---|
 | `HSPACE_API_BASE` | 官方托管实例 | 后端 API 地址 |
-| `HSPACE_API_KEY` | 无 | 可选;登录凭据,解锁更长有效期(30 天/期,可续)与更高配额 |
+| `HSPACE_API_KEY` | 无 | 可选;登录凭据,解锁更长有效期(30 天/期,可续)与更高配额。CLI 里也可以 `hspace login` 存到本机 |
+| `HSPACE_CONFIG_DIR` | `~/.config/hspace` | 仅 CLI:本机状态目录(认 `XDG_CONFIG_HOME`) |
 
 ## 本地开发
 
 ```bash
 npm install
 npm run build
+npm test             # CLI 参数/装配/本机状态的单元测试
 node dist/index.js   # 通过 stdio 提供 MCP 服务
+node dist/cli.js --help
+HSPACE_API_BASE=http://localhost:8787 node dist/cli.js publish x.md   # 打自建/本地后端
 ```
 
 ## 发布到 npm(维护者)

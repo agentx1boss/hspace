@@ -17,7 +17,7 @@ Slogan:中「稿出即递,点开即读,心里有数。」/ 英「Ship to one, no
 ```
 backend/           Cloudflare Worker(TS):发布 API + 子域服务 + 密码门 + 落地/法务/埋点
 vscode-extension/  VS Code / Cursor 插件(TS)
-mcp-server/        MCP server(在 AI 对话里发布)
+mcp-server/        MCP server(AI 对话里发布)+ `hspace` CLI(终端里发布与管理;同一个 npm 包 hspace-mcp,两个 bin)
 clients/           Claude Code 插件(/share + 自带 MCP 配置;根 .claude-plugin/marketplace.json 使本仓库即 marketplace)
 docs/              见 docs/README.md;positioning.md 是文案权威
 assets/            品牌资源 + promo/(推广册子源文件:中 q0i7otn / 英 aqm3anv)
@@ -34,8 +34,8 @@ npx wrangler deploy       # 部署(或推 backend/** 到 main 自动部署)
 # 插件(cd vscode-extension)
 npm run compile && npx @vscode/vsce package
 # 发版 = 改 package.json version → git tag v<x> → push tag(CI 自动发双市场)
-# MCP(cd mcp-server):npm run build
-# MCP 发布 = 改 mcp-server/package.json version → git tag mcp-v<x> → push tag(CI 自动发 npm;需 secret NPM_TOKEN)
+# MCP + CLI(cd mcp-server):npm run build && npm test
+# MCP + CLI 发布 = 改 mcp-server/package.json version → git tag mcp-v<x> → push tag(CI 自动发 npm;需 secret NPM_TOKEN)
 # Claude Code 插件发版 = 改 clients/claude-code/.claude-plugin/plugin.json version → 推 main(版本 pin,无 tag/registry;改前跑 claude plugin validate)
 ```
 
@@ -50,6 +50,7 @@ npm run compile && npx @vscode/vsce package
 
 - **自包含页面**:落地页/密码页/阅读页/注入组件一律内联 CSS/JS/SVG,**不引外部脚本/字体/图片**(CSP 安全、加载快、隐私)。
 - **CSP 两档,别混**(`backend/src/headers.ts`):第一方外壳(密码页/md 阅读页/目录页/404)走 `shellHeaders()` 严格档,`script-src 'nonce-…'` —— 给外壳新增内联脚本必须经 `withNonce()`(即经 `htmlResp()`),否则线上不执行;HTML 稿走 `rawHtmlHeaders()`,保「原样能跑」。用户 md 里的原始 HTML 一律过 `src/sanitize.ts` 白名单;外链**图片**是刻意放行的(见 positioning §4/§9)。
+- **CLI 的三条硬约束**(`mcp-server/src/cli.ts`,有测试守着):① 密码不进 argv —— 发布一律自动生成 4 位、改密码只从 stdin 读,**不给 `--public`**;② 不给 CI 自动发布留示范(链接会过期,迭代走 `hspace update <slug>`,链接不变);③ 匿名 `editToken` 存 `~/.config/hspace/state.json`(0600)。
 - **文案**:一律取自 positioning.md——用「定向分享」不用「私域分发」;托管物营销叫「稿/Draft」、技术/API 用 `page`;卖结果不卖手段;英文为主(全球开发者画像)。改定位 = 改 positioning.md。
 - **不做**:多文件站点托管、构建、公开画廊、广告/数据变现(边界承诺,见 positioning §8)。
 - **Cloudflare 资源名保留 `html-share`**(bucket/D1/worker);品牌名是 HSpace,勿改资源名。
