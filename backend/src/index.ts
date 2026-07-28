@@ -18,6 +18,7 @@ import {
   verifyScopedToken,
 } from "./crypto";
 import { renderMarkdown } from "./render";
+import { rawHtmlHeaders, shellHeaders, withNonce, nonce } from "./headers";
 import { passwordPage, notFoundPage, lockedPage, readingPage, tocPage, injectCollectionNav, CollectionNav } from "./html";
 import { openapiSpec } from "./openapi";
 import { landingPage } from "./landing";
@@ -837,7 +838,7 @@ async function servePage(slug: string, docPath: string, request: Request, env: E
     return htmlResp(readingPage({ title: mdTitle(md, page.filename), articleHtml: article, toc, updatedAt: updated, saveToken }), 200);
   }
 
-  return new Response(obj.body, { status: 200, headers: securityHeaders() });
+  return new Response(obj.body, { status: 200, headers: rawHtmlHeaders() });
 }
 
 /** 合集分发：docPath "/" → 目录页；"/<n>" → 第 n 篇 */
@@ -874,11 +875,13 @@ async function serveCollection(env: Env, page: PageRow, docPath: string, saveTok
   }
   // html 篇目:保留原样,注入一个 Shadow DOM 隔离的悬浮导航(目录+翻页,不影响用户页面)
   const nav: CollectionNav = { collectionTitle: index.title, docs: navDocs, current: n };
-  return new Response(injectCollectionNav(await obj.text(), nav), { status: 200, headers: securityHeaders() });
+  return new Response(injectCollectionNav(await obj.text(), nav), { status: 200, headers: rawHtmlHeaders() });
 }
 
+/** 第一方外壳:每次响应一个 nonce,外壳内联脚本带 nonce,正文注入的脚本进不来 */
 function htmlResp(body: string, status: number): Response {
-  return new Response(body, { status, headers: securityHeaders() });
+  const n = nonce();
+  return new Response(withNonce(body, n), { status, headers: shellHeaders(n) });
 }
 
 /** 第一方埋点:GET /e?n=<事件>&l=<语言> → 聚合计数入 D1。只收白名单事件,无 PII */
@@ -1005,19 +1008,6 @@ async function serveSitePage(path: string, request: Request, env: Env): Promise<
     }
   }
   return null;
-}
-
-/** 隔离域名上的安全响应头 */
-function securityHeaders(): HeadersInit {
-  return {
-    "Content-Type": "text/html; charset=utf-8",
-    "X-Content-Type-Options": "nosniff",
-    "X-Robots-Tag": "noindex, nofollow",
-    "Referrer-Policy": "no-referrer",
-    // 允许页面自带内联脚本/样式(AI 生成常见)，但禁止被主站以外嵌套
-    "Content-Security-Policy": "frame-ancestors 'none';",
-    "X-Frame-Options": "DENY",
-  };
 }
 
 // ============================ 工具 ============================

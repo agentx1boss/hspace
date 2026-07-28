@@ -1,5 +1,6 @@
 // 边缘渲染:Markdown → 安全 HTML + 标题锚点 + TOC 数据。存原文,渲染即时生效。
 import { marked, Tokens, type Token } from "marked";
+import { sanitizeRawHtml, safeUrl, escapeAttr } from "./sanitize";
 import { markedHighlight } from "marked-highlight";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
@@ -80,6 +81,25 @@ function configure(): void {
     }),
     {
       renderer: {
+        // 用户 md 里内嵌的原始 HTML:过白名单(见 sanitize.ts)。marked 把块级
+        // 与行内的原始 HTML 都路由到这里,所以这一个覆写就封住了整条注入路径。
+        html(token: Tokens.HTML | Tokens.Tag): string {
+          return sanitizeRawHtml(token.text);
+        },
+        // marked 的 cleanUrl 只做 encodeURI,不看协议 —— javascript: 链接得自己挡。
+        link(token: Tokens.Link): string {
+          const text = this.parser.parseInline(token.tokens);
+          const href = safeUrl(token.href);
+          if (href === null) return text; // 协议不安全:留文字,不留链接
+          const title = token.title ? ` title="${escapeAttr(token.title)}"` : "";
+          return `<a href="${escapeAttr(href)}"${title}>${text}</a>`;
+        },
+        image(token: Tokens.Image): string {
+          const src = safeUrl(token.href);
+          if (src === null) return escapeHtml(token.text);
+          const title = token.title ? ` title="${escapeAttr(token.title)}"` : "";
+          return `<img src="${escapeAttr(src)}" alt="${escapeAttr(token.text)}"${title}>`;
+        },
         heading(token: Tokens.Heading): string {
           const text = this.parser.parseInline(token.tokens);
           const slug = (token as Tokens.Heading & { slug?: string }).slug;
