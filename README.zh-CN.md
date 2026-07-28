@@ -64,7 +64,7 @@ hspace/
 ├── mcp-server/         MCP server + `hspace` CLI(同一个 npm 包,两个 bin)
 ├── clients/            Claude Code 插件(/share 命令 + 自带 MCP 配置)
 ├── docs/               定位(对外文案权威)、商业假设、设计与运营文档
-├── assets/             品牌资源(appicon / favicon / lockup / OG 卡)
+├── assets/             品牌资源(appicon / favicon / lockup / OG 卡)+ promo/ 推广物料源
 └── .github/workflows/  CI(后端部署 / 插件发布 / npm 发布)
 ```
 
@@ -145,7 +145,8 @@ node mcp-server/dist/cli.js --help
 | 方法 | 路径 | 说明 | 鉴权 |
 |---|---|---|---|
 | POST | `/publish` | 发布(`html` / `markdown` / `files` 三选一),返回 `url`/`slug`/`editToken` | 可选 Bearer |
-| PATCH | `/pages/:slug` | 更新内容(升一版)/ 改密码 / 续期 | Bearer 或 `X-Edit-Token` |
+| PATCH | `/pages/:slug` | 更新内容(升一版)/ 改密码 | Bearer 或 `X-Edit-Token` |
+| PATCH | `/pages/:slug` | 续期(`expiresIn`)/ 移除密码 | 仅 Bearer |
 | DELETE | `/pages/:slug` | 删除(链接立即失效) | Bearer 或 `X-Edit-Token` |
 | GET | `/pages/:slug/stats` | 访问回执 | Bearer 或 `X-Edit-Token` |
 | GET · POST | `/pages/:slug/versions` · `…/versions/:v/restore` | 版本历史 / 回滚 | Bearer |
