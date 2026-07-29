@@ -9,7 +9,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 // API 客户端与 CLI(cli.ts)共用一份,省得两处各写一遍 fetch/鉴权/钳制
-import { type PublishResult, expiryFromDays, publish as callPublishApi, randomPin } from "./api.js";
+import { type PublishResult, expiryFromDays, oneClickUrl, publish as callPublishApi, randomPin } from "./api.js";
 
 const API_KEY = process.env.HSPACE_API_KEY;
 
@@ -18,7 +18,7 @@ const callPublish = (body: Record<string, unknown>): Promise<PublishResult> =>
 
 function resultText(r: PublishResult, password: string): string {
   const lines = [
-    `已发布:${r.url}`,
+    `已发布:${oneClickUrl(r.url, password)}`,
     `密码:${password}`,
     r.docs ? `合集共 ${r.docs.length} 篇:${r.docs.map((d) => `${d.index}. ${d.title}`).join(" / ")}` : "",
     r.expiresAt ? `有效期至:${r.expiresAt}(到期前可续期)` : "",

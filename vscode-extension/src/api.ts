@@ -25,6 +25,19 @@ export interface PublishOptions {
   expiresIn?: number | null; // 秒；后端钳制在档内上限(匿名 7 天 / 登录 30 天);没有永久链接
 }
 
+/** 一键链接:密码进 fragment(从不发给服务器)。密码不是链接安全字符时退回裸 URL。 */
+export function oneClickUrl(url: string, password: string): string {
+  if (!/^[A-Za-z0-9._~-]{1,32}$/.test(password)) return url;
+  try {
+    const u = new URL(url);
+    u.hash = "";
+    if (!u.pathname) u.pathname = "/";
+    return `${u.toString()}#p=${password}`;
+  } catch {
+    return url;
+  }
+}
+
 export class ApiError extends Error {
   constructor(public status: number, public code: string) {
     super(`API ${status}: ${code}`);

@@ -45,6 +45,23 @@ const BRAND_MARK = `<svg viewBox="0 0 64 64" width="28" height="28" aria-hidden=
 </svg>`;
 
 /**
+ * 一键链接:从 URL fragment `#p=…` 预填密码。只预填不提交(见 decisions-log)。
+ * 预填后必须摘掉 input 的 autofocus —— 它的候选刷新发生在内联脚本之后的渲染时机,
+ * 不摘就可能把焦点从「查看内容」抢回已填满的密码框(iOS 上还会顺带弹出键盘)。
+ */
+export const PW_AUTOFILL_JS = `(function(){try{
+  var h=location.hash;if(!h)return;
+  var m=/(?:^|[#&])p=([^&]*)/.exec(h);if(!m||!m[1])return;
+  var v=m[1];try{v=decodeURIComponent(v)}catch(e){}
+  if(v.length>128)return;
+  var i=document.querySelector('input[name=password]');if(!i)return;
+  i.value=v;
+  i.removeAttribute('autofocus');
+  try{history.replaceState(null,'',location.href.split('#')[0])}catch(e){}
+  var b=document.querySelector('button[type=submit]');if(b&&b.focus)b.focus({preventScroll:true});
+}catch(e){}})();`;
+
+/**
  * 密码门 —— 接收方唯一的品牌触点。私密、可信、亮暗自适应、移动端友好。
  * action="" → 提交到当前 URL；成功后服务端 303 跳回同一路径,深链得以保留。
  */
@@ -117,6 +134,7 @@ export function passwordPage(error = false, lang: "en" | "zh" = "en", expiresAt:
     <button type="submit">${t.btn}</button>
     ${error ? `<p class="err" role="alert">${t.err}</p>` : ""}
   </form>
+  ${error ? "" : `<script>${PW_AUTOFILL_JS}</script>`}
   <div class="foot"><span class="dot"></span><a href="${FOOT_HREF}" target="_blank" rel="noopener">${FOOT_SIG}</a></div>${expLine}
 </body></html>`;
 }

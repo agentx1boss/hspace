@@ -194,6 +194,19 @@ positioning §9 第 2 项落地。两个显式决策先行(#19 原文要求「�
 
 **验证**:禁用语扫描零命中(裸 `npx hspace`、「无任何第三方请求」、instant revoke、「所有页面都有密码」、「加密存储」);「永久/permanent」仅出现在否定句;数值逐项对过 `wrangler.toml`;README 里所有相对链接 `test -e` 通过;`npx --package=hspace-mcp hspace --version` → 0.2.0、`npm view hspace-mcp bin` 两个 bin 都在。
 
+## 2026-07-29 · 一键链接:`#p=` 片段预填密码页
+
+**决定:客户端输出 `https://…/#p=1234  密码:1234` 的超集格式;密码页读取 fragment 后只预填,由接收方再点一次「查看内容」。**
+
+- 选 fragment、不选 query:正常浏览器不会把 fragment 发到**我们的**服务器、Referer 或 Worker 日志,聊天软件 unfurl bot 也不能据此闯过密码门并污染回执/匿名访问额度。永远不加 `?p=` 兼容兜底,否则上述前提全部失效。
+- `#p=` **不是通行证**:POST 验密、防暴破和 Cookie 门禁一项不少;它不同于服务端验签、单次消费、60 秒有效的 `?k=` 免密令牌,也不改变 [design-per-recipient.md](design-per-recipient.md) 推迟的一人一 URL token 方案。
+- 不自动提交:旧链接在改密码后会填入错误值;若自动重试,同一办公室 NAT 下多人点击可快速撞满 `index.ts` 的 15 分钟 10 次失败上限。错误页不再输出预填脚本,掐断「填错 → 自动重交 → 再填错」的循环。注意上限口径:重新点一次原链接仍会重填那个陈旧密码,所以代价是**每次重新加载一次尝试**,不是每人一次(已在 wrangler dev 实测)。
+- 预填后立即 `history.replaceState` 剥掉 fragment:减少它留在历史、随 `action=""`/303 继承到内容页、再被裸 HTML 稿的 `location.hash` 读取的机会;清理保留现有 query。这里准确口径是**减少**,不是消除浏览器历史泄漏。
+- 输出保留旁边的明文密码,不拿一键链接替换它:fragment 被聊天软件吃掉时仍可手输。客户端只给 1–32 位链接安全 ASCII 密码加 fragment,长尾密码退回原格式;API 的 `url` 字段始终保持无密码,OpenAPI 不变。
+- `#p` 命名空间自此保留。它与阅读页 `#heading` 互斥;用 sessionStorage 把锚点带过 POST 属范围外。QR 码则自然保留 fragment,无需另做。
+- 接受的第三方局限:SafeLinks 一类 URL 重写器可能把完整原链百分号编码进自己的 query,密码因而进入第三方日志。只能承诺不发到**我们的**服务器,不能声称「密码永不触达服务器」。
+- 本功能不新增埋点:密码页/阅读页无客户端追踪,严格 CSP 也禁止 beacon;因此一键预填的使用率暂不可度量。
+
 ## 度量前置(已就绪)
 
 第一方埋点已接:落地页 `/e` beacon → D1 `metrics`(pv/install/try/gh/vsx,按天+语言)。查询见 [operations.md](operations.md)。用于验证"英文默认"假设(pv 中英占比)与安装转化。

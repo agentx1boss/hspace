@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { rawHtmlHeaders, shellHeaders, withNonce, nonce } from "../src/headers";
 import { renderMarkdown } from "../src/render";
-import { readingPage } from "../src/html";
+import { passwordPage, readingPage } from "../src/html";
 
 const csp = (h: HeadersInit) => (h as Record<string, string>)["Content-Security-Policy"];
 
@@ -66,11 +66,13 @@ describe("阅读页整页:注入的脚本进不来,外壳自己的脚本仍可�
     expect(article).not.toContain("evil.example/x.js");
     expect(article).not.toContain("evil.example/steal");
   });
-  it("整页里每个 <script> 都带 nonce(没有裸脚本能被 CSP 放过)", () => {
-    const total = page.match(/<script(?=[\s>])/gi) ?? [];
-    const nonced = page.match(new RegExp(`<script nonce="${n}"`, "gi")) ?? [];
-    expect(total.length).toBeGreaterThan(0);
-    expect(nonced.length).toBe(total.length);
+  it("阅读页和密码页里每个 <script> 都带 nonce(没有裸脚本能被 CSP 放过)", () => {
+    for (const fullPage of [page, withNonce(passwordPage(false, "en", null), n)]) {
+      const total = fullPage.match(/<script(?=[\s>])/gi) ?? [];
+      const nonced = fullPage.match(new RegExp(`<script nonce="${n}"`, "gi")) ?? [];
+      expect(total.length).toBeGreaterThan(0);
+      expect(nonced.length).toBe(total.length);
+    }
   });
   it("onerror 被剥掉,javascript: 链接只留文字", () => {
     expect(article).not.toContain("onerror");
