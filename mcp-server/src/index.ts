@@ -5,6 +5,7 @@
 //   HSPACE_API_BASE  后端地址(默认官方托管实例)
 //   HSPACE_API_KEY   可选;登录后可发更长有效期(30 天/期,可续)、更大体积、无日配额
 
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -28,7 +29,10 @@ function resultText(r: PublishResult, password: string): string {
   return lines.join("\n");
 }
 
-const server = new McpServer({ name: "hspace", version: "0.1.0" });
+// 版本从 package.json 读(同 cli.ts):握手里报的版本曾硬编码成 0.1.0 而漂移过
+const VERSION: string = (createRequire(import.meta.url)("../package.json") as { version: string }).version;
+
+const server = new McpServer({ name: "hspace", version: VERSION });
 
 server.registerTool(
   "publish",
