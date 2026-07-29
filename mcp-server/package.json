@@ -1,6 +1,6 @@
 {
   "name": "hspace-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "HSpace CLI + MCP server — publish HTML/Markdown as a private link + password, from your terminal or your AI chat.",
   "license": "MIT",
   "type": "module",
