@@ -21,7 +21,7 @@ Do this:
 
 3. **Passwords & expiry: use defaults.** Do NOT pass a custom `password` unless the user explicitly gave one — let it auto-generate. Don't set `expiresInDays` unless the user asked.
 
-4. **Report back for paste-and-send.** Give the user the **link and password together on one line** (e.g. `https://xxxx.zhanjian.space  password: 4831`) so they can paste it straight into chat/email, and remind them the recipient needs the password to open it.
+4. **Report back for paste-and-send.** Give the user the **one-click link and fallback password together on one line** (e.g. `https://xxxx.zhanjian.space/#p=4831  password: 4831`) so they can paste it straight into chat/email. Tell them the link prefills the password but still requires the recipient to click “View content”; if a chat app strips the fragment, the password remains available to enter manually.
 
 If the HSpace MCP tools are not available, tell the user to add the server first:
 `claude mcp add hspace -- npx -y hspace-mcp`

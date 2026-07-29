@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { ApiClient, PublishResult, CollectionFile, Grant, errorMessage } from "./api";
+import { ApiClient, PublishResult, CollectionFile, Grant, errorMessage, oneClickUrl } from "./api";
 
 const SECRET_KEY = "hspace.apiKey";
 const STATE_KEY = "hspace.recent";
@@ -108,10 +108,11 @@ async function publishCommand(context: vscode.ExtensionContext, provider: Recent
         });
         provider.refresh();
 
-        await vscode.env.clipboard.writeText(`${result.url}  password: ${password}`);
+        const clickUrl = oneClickUrl(result.url, password);
+        await vscode.env.clipboard.writeText(`${clickUrl}  password: ${password}`);
         const actions = ["Open in browser", "Change password"];
         const pick = await vscode.window.showInformationMessage(
-          `Published: ${result.url} (password ${password}; link & password copied)`,
+          `Published: ${clickUrl} (password ${password}; one-click link & fallback password copied)`,
           ...actions
         );
         if (pick === "Open in browser") vscode.env.openExternal(vscode.Uri.parse(result.url));
@@ -224,9 +225,10 @@ async function publishFolderCommand(
         });
         provider.refresh();
 
-        await vscode.env.clipboard.writeText(`${result.url}  password: ${password}`);
+        const clickUrl = oneClickUrl(result.url, password);
+        await vscode.env.clipboard.writeText(`${clickUrl}  password: ${password}`);
         const pick = await vscode.window.showInformationMessage(
-          `Collection published: ${result.url} (${files.length} docs, password ${password}; link & password copied)`,
+          `Collection published: ${clickUrl} (${files.length} docs, password ${password}; one-click link & fallback password copied)`,
           "Open in browser", "Change password"
         );
         if (pick === "Open in browser") vscode.env.openExternal(vscode.Uri.parse(result.url));
@@ -541,9 +543,9 @@ async function manageGrants(context: vscode.ExtensionContext, rec: Record) {
     if (label === undefined) return;
     try {
       const g = await client.createGrant(rec.slug, label.trim(), rec.editToken || undefined);
-      await vscode.env.clipboard.writeText(`${g.url}  password: ${g.password}`);
+      await vscode.env.clipboard.writeText(`${oneClickUrl(g.url, g.password)}  password: ${g.password}`);
       vscode.window.showInformationMessage(
-        `Created password ${g.password} for "${label || "recipient"}" (link & password copied — send it to them)`
+        `Created one-click link for "${label || "recipient"}" (copied with fallback password — send only to them so receipts stay attributed correctly)`
       );
     } catch (e) {
       vscode.window.showErrorMessage(`Create failed: ${errorMessage(e)}`);

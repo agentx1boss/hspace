@@ -30,6 +30,7 @@ import {
   listGrants,
   listPages,
   listVersions,
+  oneClickUrl,
   pageStats,
   patchPage,
   publish,
@@ -181,17 +182,19 @@ function isoDate(iso: string | null | undefined): string {
 
 /** 「链接 + 密码」一行,方便一次粘贴发走 */
 function reportPublish(r: PublishResult, password: string, json: boolean): void {
+  const clickUrl = oneClickUrl(r.url, password);
   if (json) {
-    out(JSON.stringify({ ...r, password }, null, 2));
+    out(JSON.stringify({ ...r, password, oneClickUrl: clickUrl }, null, 2));
     return;
   }
-  out(`${r.url}  密码: ${password}`);
+  out(`${clickUrl}  密码: ${password}`);
   const bits: string[] = [];
   if (r.docs) bits.push(`合集 ${r.docs.length} 篇`);
   if (r.expiresAt) bits.push(`有效期至 ${isoDate(r.expiresAt)}`);
   if (bits.length) out(bits.join(" · "));
   out();
   out("把链接和密码一起发给该看的人;没有密码打不开。");
+  out("链接已带密码,对方点开即预填;旁边仍保留密码,防聊天软件吃掉片段。");
   out(`改了内容不用换链接:hspace update ${r.slug} <文件>`);
 }
 
@@ -293,8 +296,9 @@ async function cmdPasswd(a: ParsedArgs): Promise<void> {
   const password = piped || randomPin();
   await patchPage(slug, { password }, authFor(slug));
   const rec = store.recall(slug);
-  if (a.flags.json) return out(JSON.stringify({ ok: true, slug, password }, null, 2));
-  out(`${rec?.url ?? slug}  新密码: ${password}`);
+  const clickUrl = oneClickUrl(rec?.url ?? slug, password);
+  if (a.flags.json) return out(JSON.stringify({ ok: true, slug, password, oneClickUrl: clickUrl }, null, 2));
+  out(`${clickUrl}  新密码: ${password}`);
   out("旧共享密码不再能通过密码页;但已验证过的浏览器最长 24 小时内仍可读(要立刻踢人用 hspace revoke)。");
 }
 
@@ -331,9 +335,10 @@ async function cmdGrant(a: ParsedArgs): Promise<void> {
   const slug = a.positional[0];
   if (!slug) throw new UserError("用法:hspace grant <slug> [--label 张三]");
   const g = await createGrant(slug, typeof a.flags.label === "string" ? a.flags.label : undefined, requireLogin());
-  if (a.flags.json) return out(JSON.stringify(g, null, 2));
-  out(`${g.url}  密码: ${g.password}${g.label ? `  (${g.label})` : ""}`);
-  out("这把密码只给这一个人;要踢掉 TA:hspace revoke " + slug + " " + g.id + "(即时生效,不影响其他人)");
+  const clickUrl = oneClickUrl(g.url, g.password);
+  if (a.flags.json) return out(JSON.stringify({ ...g, oneClickUrl: clickUrl }, null, 2));
+  out(`${clickUrl}  密码: ${g.password}${g.label ? `  (${g.label})` : ""}`);
+  out("这条一键链接只给 TA;转发会污染 TA 的访问回执。要踢掉 TA:hspace revoke " + slug + " " + g.id + "(即时生效,不影响其他人)");
 }
 
 async function cmdGrants(a: ParsedArgs): Promise<void> {

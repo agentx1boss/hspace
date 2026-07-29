@@ -66,6 +66,7 @@ npm run compile && npx @vscode/vsce package
 ## Gotchas
 
 - slug 用小写 base36(子域大小写不敏感);内容对象后缀即类型(`.md`/`.html`/`/index.json`=合集);vN 版本写带版本 key。
+- `#p=` fragment 命名空间已被一键链接占用(密码页只预填、不自动提交);不要拿 `#p` 表示 page 或其他锚点。
 - 匿名 vs 登录能力差异、各阈值在 `backend/wrangler.toml`。
 - 落地页「Try it yourself」demo 现指向 **`omcenj1`**(全栈教程合集,双语交互 HTML + 中/英深度教程,密码 1024;源在 `docs/tutorial-build-hspace.*`,founder key 发布 + 直接改库置顶)。中英 `trySlug` 都指向它。早期 promo 册子 q0i7otn / aqm3anv(密码 1024)**仍置顶留存但落地页已不再引用**,作营销物料源(改文案走 PATCH,见 assets/promo/README.md 与 docs/operations.md)。
 - 「册子」是被允许的叙事比喻(≠ 术语"合集");不要机械替换。

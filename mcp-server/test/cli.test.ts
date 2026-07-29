@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs, collectDocs, contentBody, publishBody, formatFromName, formatFromContent } from "../src/cli.js";
-import { DEFAULT_API_BASE, apiBase, apiBaseKey, expiryFromDays, randomPin } from "../src/api.js";
+import { DEFAULT_API_BASE, apiBase, apiBaseKey, expiryFromDays, oneClickUrl, randomPin } from "../src/api.js";
 
 describe("parseArgs", () => {
   it("拆出命令、位置参数与布尔/取值 flag", () => {
@@ -134,6 +134,27 @@ describe("产品级不变量", () => {
     const docs = [{ name: "a.md", content: "# x", format: "markdown" as const }];
     expect(publishBody(docs, { expiresDays: 3 }).body.expiresIn).toBe(3 * 86400);
     expect("expiresIn" in publishBody(docs).body).toBe(false);
+  });
+  it("一键链接补路径、剥已有 fragment 并保留 query", () => {
+    expect(oneClickUrl("https://draft.zhanjian.space", "1234")).toBe(
+      "https://draft.zhanjian.space/#p=1234",
+    );
+    expect(oneClickUrl("https://draft.zhanjian.space/doc?lang=zh#old", "a_b-1.~")).toBe(
+      "https://draft.zhanjian.space/doc?lang=zh#p=a_b-1.~",
+    );
+  });
+  it("一键链接只接受短 ASCII 安全密码,否则退回裸 URL", () => {
+    const url = "https://draft.zhanjian.space/";
+    for (const password of ["has space", "中文", "a".repeat(33)]) {
+      expect(oneClickUrl(url, password)).toBe(url);
+    }
+  });
+  it("自动生成的密码一定能进入一键链接", () => {
+    for (let i = 0; i < 50; i++) {
+      expect(oneClickUrl("https://draft.zhanjian.space", randomPin())).toMatch(
+        /^https:\/\/draft\.zhanjian\.space\/#p=\d{4}$/,
+      );
+    }
   });
 });
 
